@@ -6,7 +6,8 @@ jobs:
 
     steps:
       - checkout
-      - run: dotnet build /p:Configuration=Release AgDatabaseMove.sln
+      - run: dotnet build -c Debug AgDatabaseMove.sln
+      - run: dotnet build -c Release AgDatabaseMove.sln
       - run: dotnet test --no-build tests/AgDatabaseMove.Unit
       - run: find .
       - store_artifacts:
