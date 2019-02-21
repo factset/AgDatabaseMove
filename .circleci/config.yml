@@ -10,4 +10,4 @@ jobs:
       - run: dotnet test --no-build tests/AgDatabaseMove.Unit
       - run: find .
       - store_artifacts:
-        path: /bin/release
+          path: /bin/release
