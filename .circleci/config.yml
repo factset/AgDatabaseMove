@@ -8,7 +8,11 @@ jobs:
       - checkout
       - run: dotnet build -c Debug AgDatabaseMove.sln
       - run: dotnet build -c Release AgDatabaseMove.sln
-      - run: dotnet test --no-build tests/AgDatabaseMove.Unit
+      - run: dotnet test --no-build tests/agdatabasemove.unit --logger="trx;LogFileName=../../TestResults/AgDatabaseMove.Unit/results.xml"
       - run: find .
+      - store_test_results:
+          path: tests/TestResults
       - store_artifacts:
           path: src/bin/Release/netstandard2.0
+      - store_artifacts:
+          path: tests/TestResults
