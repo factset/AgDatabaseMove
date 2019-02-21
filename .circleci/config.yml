@@ -11,7 +11,7 @@ jobs:
       - run: dotnet test --no-build tests/AgDatabaseMove.Unit --logger="trx;LogFileName=../../TestResults/AgDatabaseMove.Unit/results.trx"
       - run: dotnet tool install -g trx2junit
       - run: find /root/.dotnet/tools
-      - run: export PATH="$PATH:/root/.dotnet/tools"; trx2junit tests/testresults/agdatabasemove.unit/results.trx
+      - run: export PATH="$PATH:/root/.dotnet/tools"; trx2junit tests/TestResults/AgDatabaseMove.Unit/results.trx
       - store_test_results:
           path: tests/TestResults
       - store_artifacts:
