@@ -18,7 +18,7 @@ jobs:
           path: src/bin/Release/netstandard2.0
       - store_artifacts:
           path: tests/TestResults
-build_win:
+  build_win:
     docker:
       - image: microsoft/dotnet:2.2-sdk
 
