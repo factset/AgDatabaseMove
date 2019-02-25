@@ -23,16 +23,16 @@
     ///   The availability group associated with the supplied listener.
     /// </summary>
     AvailabilityGroup AvailabilityGroup { get; set; }
-    
+
     /// <summary>
-    /// Executes the provided action on each availability group server instance.
-    /// This may use one or more threads to execute in parallel.
+    ///   Executes the provided action on each availability group server instance.
+    ///   This may use one or more threads to execute in parallel.
     /// </summary>
     void ForEachAgInstance(Action<Server, AvailabilityGroup> action);
-    
+
     /// <summary>
-    /// Executes the provided action on each availability group server instance.
-    /// This may use one or more threads to execute in parallel.
+    ///   Executes the provided action on each availability group server instance.
+    ///   This may use one or more threads to execute in parallel.
     /// </summary>
     void ForEachAgInstance(Action<Server> action);
   }
@@ -99,12 +99,6 @@
       }
     }
 
-    private static string AgListenerName(string dataSource)
-    {
-      var dotIndex = dataSource.IndexOf('.');
-      return dotIndex >= 0 ? dataSource.Remove(dotIndex) : dataSource;
-    }
-
 
     public void ForEachAgInstance(Action<Server> action)
     {
@@ -119,6 +113,12 @@
       // https://docs.microsoft.com/en-us/dotnet/standard/parallel-programming/potential-pitfalls-with-plinq#do-not-assume-that-iterations-of-foreach-for-and-forall-always-execute-in-parallel
       // I was thinking about ensuring the primary gets joined first by trying to synchronize in this action. Don't do that.
       Parallel.ForEach(ReplicaInstances, ri => InvokeOnReplica(ri, AvailabilityGroup.Name, action));
+    }
+
+    private static string AgListenerName(string dataSource)
+    {
+      var dotIndex = dataSource.IndexOf('.');
+      return dotIndex >= 0 ? dataSource.Remove(dotIndex) : dataSource;
     }
 
 

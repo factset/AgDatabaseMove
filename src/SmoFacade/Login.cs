@@ -41,17 +41,14 @@
       _login.LoginType = loginProperties.LoginType;
       _login.Sid = loginProperties.Sid;
       if(loginProperties.LoginType == Smo.LoginType.SqlLogin)
-        if(loginProperties.PasswordHash != null) {
+        if(loginProperties.PasswordHash != null)
           _login.Create(loginProperties.PasswordHash, Smo.LoginCreateOptions.IsHashed);
-        }
-        else if(loginProperties.Password != null) {
+        else if(loginProperties.Password != null)
           _login.Create(loginProperties.Password);
-        }
         else
           throw new Exception("Password or hash was not supplied for sql login.");
-      else {
+      else
         _login.Create();
-      }
     }
 
     public static IEqualityComparer<Login> Comparer { get; } = new LoginEqualityComparer();
@@ -77,7 +74,7 @@
       dbName.ParameterName = "loginName";
       dbName.Value = Name;
       cmd.Parameters.Add(dbName);
-      
+
       using(var reader = cmd.ExecuteReader()) {
         if(!reader.Read() || reader.IsDBNull(reader.GetOrdinal("passwordHash")))
           return null;

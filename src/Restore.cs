@@ -12,7 +12,7 @@
   {
     private readonly IAgDatabase _destination;
     private readonly IAgDatabase _source;
-    
+
     /// <summary>
     ///   Restores to an AG Database from an existing AgDatabase.
     /// </summary>

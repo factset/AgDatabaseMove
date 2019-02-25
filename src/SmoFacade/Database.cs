@@ -39,7 +39,7 @@
     {
       _database.Parent.KillDatabase(_database.Name);
     }
-    
+
     /// <summary>
     ///   Queries msdb on the instance for backups of this database.
     /// </summary>
