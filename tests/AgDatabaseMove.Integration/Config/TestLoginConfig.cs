@@ -1,4 +1,5 @@
-﻿namespace AgDatabaseMove.Integration.Config {
+﻿namespace AgDatabaseMove.Integration.Config
+{
   public class TestLoginConfig
   {
     public string ConnectionString { get; set; }

@@ -1,4 +1,5 @@
-﻿namespace AgDatabaseMove.Integration.Fixtures {
+﻿namespace AgDatabaseMove.Integration.Fixtures
+{
   using System;
   using System.Data.SqlClient;
   using Config;
@@ -22,14 +23,14 @@
     public SqlConnectionStringBuilder ConnectionStringBuilder =>
       new SqlConnectionStringBuilder(_config.ConnectionString);
 
-    public Server ConstructServer()
-    {
-      return new Server(_config.ConnectionString);
-    }
-
     public void Dispose()
     {
       _server?.Dispose();
+    }
+
+    public Server ConstructServer()
+    {
+      return new Server(_config.ConnectionString);
     }
   }
 }

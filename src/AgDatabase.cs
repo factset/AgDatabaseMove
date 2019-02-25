@@ -1,5 +1,8 @@
 ﻿using System.Runtime.CompilerServices;
+
+
 [assembly: InternalsVisibleTo("AgDatabaseMove.Integration")]
+
 namespace AgDatabaseMove
 {
   using System;

@@ -31,8 +31,11 @@
         to.Delete();
 
       Console.WriteLine("Beginning restore...");
-      var restore = new Restore(from, to)
-        { CopyLogins = arguments.CopyLogins, FileRelocator = (fileName) => RestoreFileRelocator(from.Name, to.Name, fileName), Finalize = arguments.Finalize, Overwrite = arguments.Overwrite };
+      var restore = new Restore(from, to) {
+        CopyLogins = arguments.CopyLogins,
+        FileRelocator = fileName => RestoreFileRelocator(from.Name, to.Name, fileName), Finalize = arguments.Finalize,
+        Overwrite = arguments.Overwrite
+      };
       from.LogBackup();
       restore.AgDbRestore();
       Console.WriteLine("Restore completed.");
@@ -41,7 +44,7 @@
       from.Delete();
       Console.WriteLine("Source deleted");
     }
-    
+
     private static string RestoreFileRelocator(string fromName, string toName, string fileName)
     {
       // Our integration environment is currently mixed.
