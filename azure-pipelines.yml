@@ -10,7 +10,7 @@ steps:
 - powershell: dotnet test --no-build tests/AgDatabaseMove.Unit --logger="trx;LogFileName=../../TestResults/AgDatabaseMove.Unit/results.trx" --configuration $(buildConfiguration)
   displayName: Test
 - powershell: |
-    dotnet add ./src/AgDatabaseMove.csproj package JetBrains.ReSharper.CommandLineTools --package-directory ./tools
+    nuget install JetBrains.ReSharper.CommandLineTools
     Get-ChildItem -Recurse -Path './*/cleanupcode.exe' | ForEach { &$_.Fullname /config="cleanupcode.config" }
     git diff --exit-code -- . ':(exclude)AgDatabaseMove.sln.DotSettings'
   displayName: ReSharper Code Cleanup
