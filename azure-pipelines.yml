@@ -12,7 +12,7 @@ steps:
 - powershell: |
     dotnet add ./src/AgDatabaseMove.csproj package JetBrains.ReSharper.CommandLineTools --package-directory ./tools
     Get-ChildItem -Recurse -Path './*/cleanupcode.exe' | ForEach { &$_.Fullname /config="cleanupcode.config" }
-    git diff --quiet -- . ':(exclude)AgDatabaseMove.sln.DotSettings'
+    git diff --exit-code -- . ':(exclude)AgDatabaseMove.sln.DotSettings'
   displayName: ReSharper Code Cleanup
 - task: PublishTestResults@2
   condition: succeededOrFailed()
