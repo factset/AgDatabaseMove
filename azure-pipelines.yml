@@ -5,9 +5,10 @@ variables:
   buildConfiguration: 'Release'
 
 steps:
-- powershell: |
-    dotnet build --configuration $(buildConfiguration)
-    dotnet test --no-build tests/AgDatabaseMove.Unit --logger="trx;LogFileName=../../TestResults/AgDatabaseMove.Unit/results.trx" --configuration $(buildConfiguration)
+- powershell: dotnet build --configuration $(buildConfiguration)
+  displayName: Build
+- powershell: dotnet test --no-build tests/AgDatabaseMove.Unit --logger="trx;LogFileName=../../TestResults/AgDatabaseMove.Unit/results.trx" --configuration $(buildConfiguration)
+  displayName: Test
 - powershell: |
     dotnet add ./src/AgDatabaseMove.csproj package JetBrains.ReSharper.CommandLineTools --package-directory ./tools
     Get-ChildItem -Recurse -Path './*/cleanupcode.exe' | ForEach { &$_.Fullname /config="cleanupcode.config" }
@@ -16,5 +17,5 @@ steps:
 - task: PublishTestResults@2
   condition: succeededOrFailed()
   inputs:
-    testRunner: XUnit
+    testRunner: xUnit
     testResultsFiles: '**/*.trx'
