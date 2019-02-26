@@ -1,4 +1,5 @@
-﻿namespace AgDatabaseMove.Integration.Config {
+﻿namespace AgDatabaseMove.Integration.Config
+{
   using Microsoft.Extensions.Configuration;
 
 

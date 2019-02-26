@@ -32,7 +32,7 @@
   }
 
   /// <summary>
-  /// Metadata about backups from msdb.dbo.backupset and msdb.dbo.backupmediafamily
+  ///   Metadata about backups from msdb.dbo.backupset and msdb.dbo.backupmediafamily
   /// </summary>
   public class BackupMetadata
   {

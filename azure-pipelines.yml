@@ -1,15 +1,22 @@
 pool:
-  vmImage: 'Ubuntu 16.04'
+  vmImage: 'vs2017-win2016'
   
 variables:
   buildConfiguration: 'Release'
 
 steps:
-- script: |
-    dotnet build --configuration $(buildConfiguration)
-    dotnet test --no-build tests/AgDatabaseMove.Unit --logger="trx;LogFileName=../../TestResults/AgDatabaseMove.Unit/results.trx" --configuration $(buildConfiguration)
+- powershell: dotnet build --configuration $(buildConfiguration)
+  displayName: Build
+- powershell: dotnet test --no-build tests/AgDatabaseMove.Unit --logger="trx;LogFileName=../../TestResults/AgDatabaseMove.Unit/results.trx" --configuration $(buildConfiguration)
+  displayName: Test
+- task: NuGetToolInstaller@0
+- powershell: |
+    nuget install JetBrains.ReSharper.CommandLineTools
+    Get-ChildItem -Recurse -Path './*/cleanupcode.exe' | ForEach { &$_.Fullname /config="cleanupcode.config" }
+    git diff --exit-code -- . ':(exclude)AgDatabaseMove.sln.DotSettings'
+  displayName: ReSharper Code Cleanup
 - task: PublishTestResults@2
   condition: succeededOrFailed()
   inputs:
-    testRunner: XUnit
+    testRunner: xUnit
     testResultsFiles: '**/*.trx'

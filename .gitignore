@@ -334,3 +334,7 @@ ASALocalRun/
 /AgDatabaseMove.Cli/Properties/launchSettings.json
 /AgDatabaseMove.Integration/config.json
 /src/AgDatabaseMove.Cli/Properties/launchSettings.json
+
+# Project specific
+tools/
+/JetBrains.ReSharper.CommandLineTools.*

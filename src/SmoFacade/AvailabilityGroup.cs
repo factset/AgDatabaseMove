@@ -54,7 +54,7 @@
       if(availabilityDatabase == null)
         return false;
       availabilityDatabase.Refresh();
-      
+
       return availabilityDatabase.SynchronizationState == Smo.AvailabilityDatabaseSynchronizationState.Initializing;
     }
   }
