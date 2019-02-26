@@ -9,6 +9,7 @@ steps:
   displayName: Build
 - powershell: dotnet test --no-build tests/AgDatabaseMove.Unit --logger="trx;LogFileName=../../TestResults/AgDatabaseMove.Unit/results.trx" --configuration $(buildConfiguration)
   displayName: Test
+- task: NuGetToolInstaller@0
 - powershell: |
     nuget install JetBrains.ReSharper.CommandLineTools
     Get-ChildItem -Recurse -Path './*/cleanupcode.exe' | ForEach { &$_.Fullname /config="cleanupcode.config" }
