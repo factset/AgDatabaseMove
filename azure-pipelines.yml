@@ -27,6 +27,7 @@ jobs:
     steps:
     - task: NuGetToolInstaller@0
     - powershell: |
+        dotnet restore
         nuget install JetBrains.ReSharper.CommandLineTools
         Get-ChildItem -Recurse -Path './*/cleanupcode.exe' | ForEach { &$_.Fullname /config="cleanupcode.config" }
         git diff --exit-code -- . ':(exclude)AgDatabaseMove.sln.DotSettings'
