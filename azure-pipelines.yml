@@ -1,22 +1,40 @@
-pool:
-  vmImage: 'vs2017-win2016'
-  
-variables:
-  buildConfiguration: 'Release'
+jobs:
+  - job: Release
+    pool:
+      vmImage: 'vs2017-win2016'
+    variables:
+      buildConfiguration: 'Release'
 
-steps:
-- powershell: dotnet build --configuration $(buildConfiguration)
-  displayName: Build
-- powershell: dotnet test --no-build tests/AgDatabaseMove.Unit --logger="trx;LogFileName=../../TestResults/AgDatabaseMove.Unit/results.trx" --configuration $(buildConfiguration)
-  displayName: Test
-- task: NuGetToolInstaller@0
-- powershell: |
-    nuget install JetBrains.ReSharper.CommandLineTools
-    Get-ChildItem -Recurse -Path './*/cleanupcode.exe' | ForEach { &$_.Fullname /config="cleanupcode.config" }
-    git diff --exit-code -- . ':(exclude)AgDatabaseMove.sln.DotSettings'
-  displayName: ReSharper Code Cleanup
-- task: PublishTestResults@2
-  condition: succeededOrFailed()
-  inputs:
-    testRunner: xUnit
-    testResultsFiles: '**/*.trx'
+    steps:
+    - powershell: dotnet build --configuration $(buildConfiguration)
+      displayName: Build
+    - powershell: dotnet test --no-build tests/AgDatabaseMove.Unit --logger="trx;LogFileName=../../TestResults/AgDatabaseMove.Unit/results.trx" --configuration $(buildConfiguration)
+      displayName: Test
+    - task: PublishTestResults@2
+      condition: succeededOrFailed()
+      inputs:
+        testRunner: xUnit
+        testResultsFiles: '**/*.trx'
+
+  - job: Debug
+    pool:
+      vmImage: 'vs2017-win2016'
+    variables:
+      buildConfiguration: 'Debug'
+
+    steps:
+    - powershell: dotnet build --configuration $(buildConfiguration)
+      displayName: Build
+    - powershell: dotnet test --no-build tests/AgDatabaseMove.Unit --logger="trx;LogFileName=../../TestResults/AgDatabaseMove.Unit/results.trx" --configuration $(buildConfiguration)
+      displayName: Test
+    - task: NuGetToolInstaller@0
+    - powershell: |
+        nuget install JetBrains.ReSharper.CommandLineTools
+        Get-ChildItem -Recurse -Path './*/cleanupcode.exe' | ForEach { &$_.Fullname /config="cleanupcode.config" }
+        git diff --exit-code -- . ':(exclude)AgDatabaseMove.sln.DotSettings'
+      displayName: ReSharper Code Cleanup
+    - task: PublishTestResults@2
+      condition: succeededOrFailed()
+      inputs:
+        testRunner: xUnit
+        testResultsFiles: '**/*.trx'
