@@ -33,7 +33,7 @@ jobs:
         testRunner: xUnit
         testResultsFiles: '**/*.trx'
 
-  - job: Check CodeCleanup
+  - job: CodeCleanup
     steps:
     - task: NuGetToolInstaller@0
     - powershell: |
