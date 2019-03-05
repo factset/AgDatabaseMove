@@ -11,7 +11,7 @@ jobs:
           buildConfiguration: Debug
 
     steps:
-    - powershell: dotnet build --configuration $(buildConfiguration) -o bin
+    - powershell: dotnet build --configuration $(buildConfiguration)
       displayName: Build
     - powershell: dotnet test --no-build tests/AgDatabaseMove.Unit --logger="trx;LogFileName=../../TestResults/AgDatabaseMove.Unit/results.trx" --configuration $(buildConfiguration)
       displayName: Test
