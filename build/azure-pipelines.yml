@@ -11,7 +11,7 @@ jobs:
           buildConfiguration: Debug
 
     steps:
-    - powershell: dotnet build --configuration $(buildConfiguration)
+    - powershell: dotnet build --configuration $(buildConfiguration) -o bin
       displayName: Build
     - powershell: dotnet test --no-build tests/AgDatabaseMove.Unit --logger="trx;LogFileName=../../TestResults/AgDatabaseMove.Unit/results.trx" --configuration $(buildConfiguration)
       displayName: Test
@@ -20,6 +20,10 @@ jobs:
       inputs:
         testRunner: xUnit
         testResultsFiles: '**/*.trx'
+    - task: NuGetCommand@2
+      inputs:
+        command: pack
+        packagesToPack: '**/*.csproj'
 
   - job: CodeCleanup
     pool:
