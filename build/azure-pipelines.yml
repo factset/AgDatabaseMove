@@ -20,7 +20,8 @@ jobs:
       inputs:
         testRunner: xUnit
         testResultsFiles: '**/*.trx'
-    - powershell: dotnet pack src/AgDatabaseMove.csproj -o artifacts/ -c $(buildConfiguration)
+    - powershell: dotnet pack src/AgDatabaseMove.csproj -o artifacts/$(buildConfiguration)/ -c $(buildConfiguration)
+      condition: eq($(buildConfiguration), 'Release')
 
   - job: CodeCleanup
     pool:
