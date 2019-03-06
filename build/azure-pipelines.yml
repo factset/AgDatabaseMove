@@ -20,8 +20,18 @@ jobs:
       inputs:
         testRunner: xUnit
         testResultsFiles: '**/*.trx'
-    - powershell: dotnet pack src/AgDatabaseMove.csproj -o artifacts/$(buildConfiguration)/ -c $(buildConfiguration)
+    - powershell: dotnet pack src/AgDatabaseMove.csproj -o $(Build.ArtifactStagingDirectory) -c $(buildConfiguration)
       condition: eq(variables['buildConfiguration'], 'Release')
+      displayName: 'dotnet pack'
+    - task: NuGetCommand@2
+      displayName: 'NuGet push'
+      condition: and(startsWith(variables['Build.SourceBranch'], 'refs/tags/v'), eq(variables['buildConfiguration'], 'Release'))
+      inputs:
+        command: push
+        feedsToUse: 'FactSet Nuget'
+        allowPackageConflicts: true
+        versioningScheme: byEnvVar
+        versionEnvVar: Build.SourceBranch
 
   - job: CodeCleanup
     pool:
