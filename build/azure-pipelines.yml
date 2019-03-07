@@ -29,6 +29,7 @@ jobs:
         command: 'build'
         arguments: "-c $(BuildConfiguration)"
       displayName: Build
+    # Using this task publishes the test results to Azure Pipelines
     - task: DotNetCoreCLI@2
       inputs:
         command: 'test'
@@ -39,6 +40,8 @@ jobs:
     - powershell: |
         $env:VersionNumber = "$(Build.SourceBranch)"  -replace "refs/tags/v", ""
         Write-Host "##vso[task.setvariable variable=VersionNumber]$env:VersionNumber"
+      displayName: 'Extract version from git tag'
+    # Nuget pack does not work with dotnet standard packages
     - task: DotNetCoreCLI@2
       condition: ne(variables['VersionNumber'], '')
       displayName: 'dotnet pack'
@@ -47,6 +50,7 @@ jobs:
         packagesToPack: src/AgDatabaseMove.csproj
         versioningScheme: byEnvVar
         versionEnvVar: VersionNumber
+    # DotNet push doesn't work with encrypted api keys
     - task: NuGetCommand@2
       displayName: 'NuGet push'
       condition: and(ne(variables['VersionNumber'], ''), eq(variables['BuildConfiguration'], 'Release'))
