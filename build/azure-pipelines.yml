@@ -38,7 +38,7 @@ jobs:
         nobuild: true
       displayName: Test
     - powershell: |
-        "($(Build.SourceBranch)" -match "(refs/tags/v)(.*)) -and $env:VersionNumber = $Matches[2]"
+        ($(Build.SourceBranch) -match "(refs/tags/v)(.*)") -and ($env:VersionNumber = $Matches[2])
         Write-Host "##vso[task.setvariable variable=VersionNumber]$env:VersionNumber"
       displayName: 'Extract version from git tag'
     # Nuget pack does not work with dotnet standard packages
