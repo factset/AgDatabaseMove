@@ -25,8 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.SqlServer.Smo" Version="150.18040.0-xplat" />
-    <PackageReference Include="Microsoft.SqlServer.SmoExtended" Version="150.18040.0-xplat" />
+    <PackageReference Include="Microsoft.SqlServer.SqlManagementObjects" Version="140.17283.0" />
     <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
     <PackageReference Include="System.Data.SqlClient" Version="4.5.1" />
   </ItemGroup>
