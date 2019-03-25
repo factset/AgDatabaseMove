@@ -1,5 +1,6 @@
 ﻿namespace AgDatabaseMove.SmoFacade
 {
+  using System;
   using System.Collections.Generic;
   using System.Linq;
   using Smo = Microsoft.SqlServer.Management.Smo;
@@ -32,6 +33,12 @@
 
     public void JoinSecondary(string dbName)
     {
+      Smo.AvailabilityDatabase database = _availabilityGroup.AvailabilityDatabases[dbName];
+      if(database == null)
+        _availabilityGroup.AvailabilityDatabases.Refresh();
+      database = _availabilityGroup.AvailabilityDatabases[dbName];
+      if(database == null)
+        throw new Exception("Availability database not found");
       _availabilityGroup.AvailabilityDatabases[dbName].JoinAvailablityGroup();
     }
 
