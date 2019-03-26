@@ -4,6 +4,7 @@
   using SmoFacade;
   using System;
   using System.Collections.Generic;
+  using System.IO;
 
 
   /// <summary>
@@ -15,7 +16,11 @@
 
     private BackupChain(IEnumerable<BackupMetadata> recentBackups)
     {
-      var backups = recentBackups.Distinct(new BackupMetadataEqualityComparer()).ToList();
+      var distinctBackups = recentBackups.Distinct(new BackupMetadataEqualityComparer()).ToList();
+
+      // A third party application caused invalid path strings to be inserted into backupmediafamily
+      var backups = distinctBackups.Where(b => IsValidFilePath(b.PhysicalDeviceName)).ToList();
+
       var lastFullBackup = backups.Where(b => b.BackupType == "D").OrderByDescending(d => d.CheckpointLsn).First();
       _orderedBackups = new List<BackupMetadata> { lastFullBackup };
 
@@ -51,15 +56,30 @@
     public IEnumerable<BackupMetadata> RestoreOrder => _orderedBackups;
 
     /// <summary>
-    ///   This assumes your access to the backup files is the same as they will be on the sql server(s) which run the restore
-    ///   operations.
-    ///   This should be an extra safety check run before restoring with an overwrite flag so you don't get stuck mid backup.
-    ///   Perhaps I should restore with file list only each of these from the server instead of just checking the file exists?
+    ///   This should be an extra safety check run before restoring with an overwrite flag so you don't get stuck mid restore.
+    ///   Restore with file list only on each of these from the server instead of just checking the file exists.
     /// </summary>
     private void ValidateBackupFiles()
     {
       // TODO: implement backup validation.
       throw new NotImplementedException();
+    }
+
+    private bool IsValidFilePath(string path)
+    {
+      // A quick check before leaning on exceptions
+      if(Path.GetInvalidPathChars().Any(path.Contains))
+        return false;
+
+      try {
+        // This will throw an argument exception if the path is invalid
+        Path.GetFullPath(path);
+        // Any word such as "foo" is a valid 
+        return Path.IsPathRooted(path);
+      }
+      catch(ArgumentException) {
+        return false;
+      }
     }
   }
 }

@@ -60,10 +60,15 @@
       if(lastLsn != null && !_destination.Restoring)
         throw new
           Exception("Database is not in a restoring state. Last LSN parameter must be null to restore from backup chain.");
+      var backupChain = new BackupChain(_source); 
+      var backupList = backupChain.RestoreOrder.ToList();
 
-      var backupList = new BackupChain(_source).RestoreOrder.ToList();
-
-      if(_destination.Restoring && lastLsn != null) backupList.RemoveAll(b => b.LastLsn <= lastLsn.Value);
+      if(_destination.Restoring && lastLsn != null) {
+        backupList.RemoveAll(b => b.LastLsn <= lastLsn.Value);
+        
+        if(!backupList.Any())
+          throw new Exception("No backups found to restore.");
+      }
 
       _destination.Restore(backupList, FileRelocator);
 
