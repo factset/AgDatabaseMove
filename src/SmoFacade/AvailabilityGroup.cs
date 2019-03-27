@@ -33,7 +33,7 @@
 
     public void JoinSecondary(string dbName)
     {
-      Smo.AvailabilityDatabase database = _availabilityGroup.AvailabilityDatabases[dbName];
+      var database = _availabilityGroup.AvailabilityDatabases[dbName];
       if(database == null)
         _availabilityGroup.AvailabilityDatabases.Refresh();
       database = _availabilityGroup.AvailabilityDatabases[dbName];

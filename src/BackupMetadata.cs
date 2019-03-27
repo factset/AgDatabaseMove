@@ -61,9 +61,9 @@
     public DateTime StartTime { get; set; }
 
     /// <summary>
-    /// Type of backup
-    /// D = Database, I = Differential database, L = Log
-    /// https://docs.microsoft.com/en-us/sql/relational-databases/system-tables/backupset-transact-sql?view=sql-server-2017
+    ///   Type of backup
+    ///   D = Database, I = Differential database, L = Log
+    ///   https://docs.microsoft.com/en-us/sql/relational-databases/system-tables/backupset-transact-sql?view=sql-server-2017
     /// </summary>
     public string BackupType { get; set; }
   }
