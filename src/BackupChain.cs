@@ -16,10 +16,10 @@
 
     private BackupChain(IEnumerable<BackupMetadata> recentBackups)
     {
-      var distinctBackups = recentBackups.Distinct(new BackupMetadataEqualityComparer()).ToList();
-
-      // A third party application caused invalid path strings to be inserted into backupmediafamily
-      var backups = distinctBackups.Where(b => IsValidFilePath(b.PhysicalDeviceName)).ToList();
+      var backups = recentBackups
+        .Distinct(new BackupMetadataEqualityComparer())
+        .Where(b => IsValidFilePath(b.PhysicalDeviceName)) // A third party application caused invalid path strings to be inserted into backupmediafamily
+        .ToList();
 
       var lastFullBackup = backups.Where(b => b.BackupType == "D").OrderByDescending(d => d.CheckpointLsn).First();
       _orderedBackups = new List<BackupMetadata> { lastFullBackup };
@@ -74,7 +74,7 @@
       try {
         // This will throw an argument exception if the path is invalid
         Path.GetFullPath(path);
-        // Any word such as "foo" is a valid 
+        // A relative path won't help us much if the destination is another server. It needs to be rooted.
         return Path.IsPathRooted(path);
       }
       catch(ArgumentException) {
