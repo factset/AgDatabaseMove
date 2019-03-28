@@ -18,7 +18,8 @@
       _availabilityGroup = availabilityGroup;
     }
 
-    public bool IsPrimaryInstance => _availabilityGroup.PrimaryReplicaServerName == _availabilityGroup.Parent.Name;
+    public bool IsPrimaryInstance => _availabilityGroup.PrimaryReplicaServerName == _availabilityGroup.Parent.NetName;
+    
     public string PrimaryInstance => _availabilityGroup.PrimaryReplicaServerName;
     public string Name => _availabilityGroup.Name;
 
