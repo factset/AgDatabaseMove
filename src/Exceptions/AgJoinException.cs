@@ -1,5 +1,4 @@
-﻿
-namespace AgDatabaseMove.Exceptions
+﻿namespace AgDatabaseMove.Exceptions
 {
   public class AgJoinException : AgDatabaseMoveException
   {
