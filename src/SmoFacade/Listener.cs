@@ -4,6 +4,7 @@
   using System.Collections.Generic;
   using System.Data.SqlClient;
   using System.Linq;
+  using System.Net;
   using System.Threading.Tasks;
 
 
@@ -66,11 +67,11 @@
         var secondaryNames = availabilityGroup.Replicas.Where(l => l != primaryName);
 
         // Connect to each server instance
-        connectionStringBuilder.DataSource = System.Net.Dns.GetHostEntry(primaryName).HostName;
+        connectionStringBuilder.DataSource = Dns.GetHostEntry(primaryName).HostName;
         Primary = new Server(connectionStringBuilder.ToString());
         var secondaryServers = new List<Server>();
         foreach(var secondaryName in secondaryNames) {
-          connectionStringBuilder.DataSource = System.Net.Dns.GetHostEntry(secondaryName).HostName;
+          connectionStringBuilder.DataSource = Dns.GetHostEntry(secondaryName).HostName;
           secondaryServers.Add(new Server(connectionStringBuilder.ToString()));
         }
 
