@@ -2,6 +2,7 @@
 {
   using System;
   using System.Data.SqlClient;
+  using System.Linq;
   using Config;
   using Microsoft.Extensions.Configuration;
   using SmoFacade;
@@ -25,6 +26,7 @@
 
     public void Dispose()
     {
+      _server.Logins.SingleOrDefault(l => l.Name == LoginName)?.Drop();
       _server?.Dispose();
     }
 
