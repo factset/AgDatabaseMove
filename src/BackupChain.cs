@@ -38,6 +38,9 @@
           _orderedBackups.Add(log);
         nextLogLsn = log?.LastLsn;
       }
+
+      if(_orderedBackups.Last().LastLsn != backups.Max(b => b.LastLsn))
+        throw new Exception("Backup chain does not include the latest log backup.");
     }
 
     /// <summary>
