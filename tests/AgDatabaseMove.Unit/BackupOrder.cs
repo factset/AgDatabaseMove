@@ -5,6 +5,7 @@ namespace AgDatabaseMove.Unit
   using System.Collections.Generic;
   using System.Linq;
   using System.Security.Authentication;
+  using Exceptions;
   using Moq;
   using Xunit;
   using Xunit.Sdk;
@@ -67,7 +68,7 @@ namespace AgDatabaseMove.Unit
       var backups = ListBackups().Where(b => b.FirstLsn != 126000000955200001).ToList();
       var agDatabase = new Mock<IAgDatabase>();
       agDatabase.Setup(agd => agd.RecentBackups()).Returns(backups);
-      Exception ex = Assert.Throws<Exception>(() => new BackupChain(agDatabase.Object));
+      var ex = Assert.Throws<BackupChainException>(() => new BackupChain(agDatabase.Object));
     }
 
     // TODO: test skipping of logs if diff last LSN and log last LSN matches

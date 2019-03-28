@@ -136,7 +136,7 @@ namespace AgDatabaseMove
 
       while(availabilityGroup.IsInitializing(Name)) {
         if(wait > maxWait)
-          throw new Exception($"{server.Name} is initializing. Wait period expired.");
+          throw new TimeoutException($"{server.Name} is initializing. Wait period expired.");
         Thread.Sleep(wait);
         wait *= multiplier;
       }

@@ -3,6 +3,7 @@
   using System;
   using System.Linq;
   using System.Text.RegularExpressions;
+  using Exceptions;
 
 
   /// <summary>
@@ -55,11 +56,12 @@
     public decimal AgDbRestore(decimal? lastLsn = null)
     {
       if(!Overwrite && _destination.Exists() && !_destination.Restoring)
-        throw new Exception("Database exists and overwrite option is not set.");
+        throw new ArgumentException("Database exists and overwrite option is not set.");
 
       if(lastLsn != null && !_destination.Restoring)
         throw new
-          Exception("Database is not in a restoring state. Last LSN parameter must be null to restore from backup chain.");
+          ArgumentException("Database is not in a restoring state which is required to use the lastLsn parameter.");
+
       var backupChain = new BackupChain(_source);
       var backupList = backupChain.RestoreOrder.ToList();
 
@@ -67,7 +69,7 @@
         backupList.RemoveAll(b => b.LastLsn <= lastLsn.Value);
 
         if(!backupList.Any())
-          throw new Exception("No backups found to restore.");
+          throw new BackupChainException("No backups found to restore.");
       }
 
       _destination.Restore(backupList, FileRelocator);

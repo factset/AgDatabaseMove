@@ -3,6 +3,7 @@
   using System;
   using System.Collections.Generic;
   using System.Linq;
+  using Exceptions;
   using Smo = Microsoft.SqlServer.Management.Smo;
 
 
@@ -38,7 +39,7 @@
         _availabilityGroup.AvailabilityDatabases.Refresh();
       database = _availabilityGroup.AvailabilityDatabases[dbName];
       if(database == null)
-        throw new Exception("Availability database not found");
+        throw new AgJoinException("Availability database not found");
       _availabilityGroup.AvailabilityDatabases[dbName].JoinAvailablityGroup();
     }
 
