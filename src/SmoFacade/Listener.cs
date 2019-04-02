@@ -4,6 +4,7 @@
   using System.Collections.Generic;
   using System.Data.SqlClient;
   using System.Linq;
+  using System.Net;
   using System.Threading.Tasks;
 
 
@@ -66,11 +67,11 @@
         var secondaryNames = availabilityGroup.Replicas.Where(l => l != primaryName);
 
         // Connect to each server instance
-        connectionStringBuilder.DataSource = primaryName;
+        connectionStringBuilder.DataSource = Dns.GetHostEntry(primaryName).HostName;
         Primary = new Server(connectionStringBuilder.ToString());
         var secondaryServers = new List<Server>();
         foreach(var secondaryName in secondaryNames) {
-          connectionStringBuilder.DataSource = secondaryName;
+          connectionStringBuilder.DataSource = Dns.GetHostEntry(secondaryName).HostName;
           secondaryServers.Add(new Server(connectionStringBuilder.ToString()));
         }
 
@@ -130,12 +131,7 @@
     /// <param name="action">The action to execute.</param>
     private void InvokeOnReplica(Server replica, string AgName, Action<Server, AvailabilityGroup> action)
     {
-      try {
-        action.Invoke(replica, replica.AvailabilityGroups.Single(ag => ag.Name == AgName));
-      }
-      catch(Exception e) {
-        throw e;
-      }
+      action.Invoke(replica, replica.AvailabilityGroups.Single(ag => ag.Name == AgName));
     }
   }
 }
