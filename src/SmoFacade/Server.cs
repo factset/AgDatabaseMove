@@ -6,6 +6,7 @@
   using System.Data.SqlClient;
   using System.IO;
   using System.Linq;
+  using Exceptions;
   using Microsoft.SqlServer.Management.Common;
   using Smo = Microsoft.SqlServer.Management.Smo;
 
@@ -115,7 +116,7 @@
           foreach(var file in restore.ReadFileList(_server).AsEnumerable()) {
             var physicalName = (string)file["PhysicalName"];
             var fileName = Path.GetFileName(physicalName) ??
-                           throw new Exception("Data file name is null");
+                           throw new InvalidBackupException($"Physical name in backup is incomplete: {physicalName}");
 
             if(fileRelocation != null)
               fileName = fileRelocation(fileName);

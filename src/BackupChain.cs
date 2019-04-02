@@ -5,6 +5,7 @@
   using System;
   using System.Collections.Generic;
   using System.IO;
+  using Exceptions;
 
 
   /// <summary>
@@ -38,6 +39,9 @@
           _orderedBackups.Add(log);
         nextLogLsn = log?.LastLsn;
       }
+
+      if(_orderedBackups.Last().LastLsn != backups.Max(b => b.LastLsn))
+        throw new BackupChainException("Backup chain does not include the latest log backup.");
     }
 
     /// <summary>

@@ -4,15 +4,23 @@ namespace AgDatabaseMove.Unit
   using System.Collections;
   using System.Collections.Generic;
   using System.Linq;
+  using System.Security.Authentication;
+  using Exceptions;
   using Moq;
   using Xunit;
+  using Xunit.Sdk;
 
 
   public class BackupOrder
   {
     public BackupOrder()
     {
-      _listBackups = new List<BackupMetadata> {
+      _listBackups = ListBackups();
+    }
+
+    private static List<BackupMetadata> ListBackups()
+    {
+      return new List<BackupMetadata> {
         new BackupMetadata {
           BackupType = "L", DatabaseBackupLsn = 126000000943800037, CheckpointLsn = 126000000953600034,
           FirstLsn = 126000000955500001, LastLsn = 126000000955800001, DatabaseName = "TestDb", ServerName = "ServerB",
@@ -52,6 +60,15 @@ namespace AgDatabaseMove.Unit
       var expected = _listBackups.OrderBy(bu => bu.FirstLsn);
 
       Assert.Equal<IEnumerable>(backupChain.RestoreOrder, expected);
+    }
+
+    [Fact]
+    public void MissingLink()
+    {
+      var backups = ListBackups().Where(b => b.FirstLsn != 126000000955200001).ToList();
+      var agDatabase = new Mock<IAgDatabase>();
+      agDatabase.Setup(agd => agd.RecentBackups()).Returns(backups);
+      var ex = Assert.Throws<BackupChainException>(() => new BackupChain(agDatabase.Object));
     }
 
     // TODO: test skipping of logs if diff last LSN and log last LSN matches

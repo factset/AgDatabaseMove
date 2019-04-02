@@ -3,6 +3,7 @@
   using System;
   using System.Collections.Generic;
   using System.Linq;
+  using Exceptions;
   using Smo = Microsoft.SqlServer.Management.Smo;
 
 
@@ -18,7 +19,8 @@
       _availabilityGroup = availabilityGroup;
     }
 
-    public bool IsPrimaryInstance => _availabilityGroup.PrimaryReplicaServerName == _availabilityGroup.Parent.Name;
+    public bool IsPrimaryInstance => _availabilityGroup.PrimaryReplicaServerName == _availabilityGroup.Parent.NetName;
+
     public string PrimaryInstance => _availabilityGroup.PrimaryReplicaServerName;
     public string Name => _availabilityGroup.Name;
 
@@ -38,7 +40,7 @@
         _availabilityGroup.AvailabilityDatabases.Refresh();
       database = _availabilityGroup.AvailabilityDatabases[dbName];
       if(database == null)
-        throw new Exception("Availability database not found");
+        throw new AgJoinException("Availability database not found");
       _availabilityGroup.AvailabilityDatabases[dbName].JoinAvailablityGroup();
     }
 

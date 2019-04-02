@@ -46,7 +46,7 @@
         else if(loginProperties.Password != null)
           _login.Create(loginProperties.Password);
         else
-          throw new Exception("Password or hash was not supplied for sql login.");
+          throw new ArgumentException("Password or hash was not supplied for sql login.");
       else
         _login.Create();
     }
