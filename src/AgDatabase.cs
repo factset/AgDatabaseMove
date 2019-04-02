@@ -72,11 +72,6 @@ namespace AgDatabaseMove
       _listener.Primary.LogBackup(Name, _backupPathTemplate);
     }
 
-    public void FullBackup()
-    {
-      _listener.Primary.FullBackup(Name, _backupPathTemplate);
-    }
-
     /// <summary>
     ///   Restores the database backups to each instance in the AG.
     ///   We suggest using <see cref="AgDatabaseMove.Restore" /> to assist with restores.
@@ -131,6 +126,11 @@ namespace AgDatabaseMove
     public void Dispose()
     {
       _listener?.Dispose();
+    }
+
+    public void FullBackup()
+    {
+      _listener.Primary.FullBackup(Name, _backupPathTemplate);
     }
 
     private void WaitForInitialization(Server server, AvailabilityGroup availabilityGroup)

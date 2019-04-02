@@ -151,7 +151,8 @@
       Backup(databaseName, backupPathTemplate, Smo.BackupActionType.Log, Smo.BackupTruncateLogType.Truncate);
     }
 
-    private void Backup(string databaseName, string backupPathTemplate, Smo.BackupActionType backupActionType, Smo.BackupTruncateLogType truncateType)
+    private void Backup(string databaseName, string backupPathTemplate, Smo.BackupActionType backupActionType,
+      Smo.BackupTruncateLogType truncateType)
     {
       var backup = new Smo.Backup {
         Action = backupActionType, Database = databaseName, LogTruncation = truncateType
