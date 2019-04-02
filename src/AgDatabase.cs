@@ -8,6 +8,7 @@ namespace AgDatabaseMove
   using System;
   using System.Collections.Concurrent;
   using System.Collections.Generic;
+  using System.Data.Common;
   using System.Linq;
   using System.Threading;
   using SmoFacade;
@@ -167,6 +168,16 @@ namespace AgDatabaseMove
           Interlocked.Increment(ref result);
       });
       return result > 0;
+    }
+
+    public void RestrictedUserMode()
+    {
+      _listener.Primary.Database(Name).RestrictedUserMode();
+    }
+
+    public void MultiUserMode()
+    {
+      _listener.Primary.Database(Name).MultiUserMode();
     }
   }
 }
