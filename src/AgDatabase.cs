@@ -129,6 +129,11 @@ namespace AgDatabaseMove
       _listener?.Dispose();
     }
 
+    public void FullBackup()
+    {
+      _listener.Primary.FullBackup(Name, _backupPathTemplate);
+    }
+
     private void WaitForInitialization(Server server, AvailabilityGroup availabilityGroup)
     {
       var wait = 100;

@@ -148,8 +148,14 @@
     public void LogBackup(string databaseName, string backupPathTemplate)
     {
       backupPathTemplate = backupPathTemplate ?? DefaultBackupPathTemplate() + ".trn";
+      Backup(databaseName, backupPathTemplate, Smo.BackupActionType.Log, Smo.BackupTruncateLogType.Truncate);
+    }
+
+    private void Backup(string databaseName, string backupPathTemplate, Smo.BackupActionType backupActionType,
+      Smo.BackupTruncateLogType truncateType)
+    {
       var backup = new Smo.Backup {
-        Action = Smo.BackupActionType.Log, Database = databaseName, LogTruncation = Smo.BackupTruncateLogType.Truncate
+        Action = backupActionType, Database = databaseName, LogTruncation = truncateType
       };
       var bdi =
         new Smo.BackupDeviceItem(string.Format(backupPathTemplate,
@@ -159,6 +165,21 @@
 
       backup.Devices.Add(bdi);
       backup.SqlBackup(_server);
+    }
+
+    /// <summary>
+    ///   Generate a full backup, not truncating the transaction log, and storing it in the default backup destination.
+    ///   TODO: we should support a backup path somehow with configuration
+    /// </summary>
+    /// <param name="backupPathTemplate">
+    ///   A template string for backup location:
+    ///   {0} databaseName
+    ///   {1} time
+    /// </param>
+    public void FullBackup(string databaseName, string backupPathTemplate)
+    {
+      backupPathTemplate = backupPathTemplate ?? DefaultBackupPathTemplate() + ".bak";
+      Backup(databaseName, backupPathTemplate, Smo.BackupActionType.Database, Smo.BackupTruncateLogType.NoTruncate);
     }
 
     /// <summary>
