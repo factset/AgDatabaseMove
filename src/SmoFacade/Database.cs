@@ -69,5 +69,17 @@
 
       return backups;
     }
+
+    public void RestrictedUserMode()
+    {
+      _database.DatabaseOptions.UserAccess = Smo.DatabaseUserAccess.Restricted;
+      _database.Alter(Smo.TerminationClause.RollbackTransactionsImmediately);
+    }
+
+    public void MultiUserMode()
+    {
+      _database.DatabaseOptions.UserAccess = Smo.DatabaseUserAccess.Multiple;
+      _database.Alter(Smo.TerminationClause.RollbackTransactionsImmediately);
+    }
   }
 }

@@ -138,12 +138,15 @@ namespace AgDatabaseMove.Integration
       } while(seconds > 5);
 
       // Do things here to disconnect users: Set single user mode, signal the service etc.
+      Source.RestrictedUserMode();
+
       // Hopefully a quick backup and restore.
       Source.LogBackup();
       restore.Finalize = true;
       restore.AgDbRestore(lastLsn);
       // The database is migrated
 
+      Source.MultiUserMode();
       Test.Delete();
     }
 

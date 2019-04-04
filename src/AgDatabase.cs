@@ -9,6 +9,7 @@ namespace AgDatabaseMove
   using System;
   using System.Collections.Concurrent;
   using System.Collections.Generic;
+  using System.Data.Common;
   using System.Linq;
   using System.Threading;
   using SmoFacade;
@@ -129,6 +130,11 @@ namespace AgDatabaseMove
       _listener?.Dispose();
     }
 
+    public void FullBackup()
+    {
+      _listener.Primary.FullBackup(Name, _backupPathTemplate);
+    }
+
     private void WaitForInitialization(Server server, AvailabilityGroup availabilityGroup)
     {
       var wait = 100;
@@ -168,6 +174,16 @@ namespace AgDatabaseMove
           Interlocked.Increment(ref result);
       });
       return result > 0;
+    }
+
+    public void RestrictedUserMode()
+    {
+      _listener.Primary.Database(Name).RestrictedUserMode();
+    }
+
+    public void MultiUserMode()
+    {
+      _listener.Primary.Database(Name).MultiUserMode();
     }
   }
 }
