@@ -41,6 +41,7 @@
       _login = _server.ConstructLogin(loginProperties.Name);
       _login.LoginType = loginProperties.LoginType;
       _login.Sid = loginProperties.Sid;
+      _login.DefaultDatabase = loginProperties.DefaultDatabase;
       if(loginProperties.LoginType == Smo.LoginType.SqlLogin)
         if(loginProperties.PasswordHash != null)
           _login.Create(loginProperties.PasswordHash, Smo.LoginCreateOptions.IsHashed);
@@ -57,6 +58,7 @@
     public string Name => _login.Name;
     public byte[] Sid => _login.Sid;
     private Smo.LoginType LoginType => _login.LoginType;
+    private string DefaultDatabase => _login.DefaultDatabase;
 
 
     /// <summary>
@@ -99,7 +101,8 @@
         LoginType = LoginType,
         Name = Name,
         PasswordHash = LoginType == Smo.LoginType.SqlLogin ? PasswordHash() : null,
-        Sid = Sid
+        Sid = Sid,
+        DefaultDatabase = DefaultDatabase
       };
     }
 
