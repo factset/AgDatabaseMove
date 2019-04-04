@@ -2,6 +2,7 @@
 
 
 [assembly: InternalsVisibleTo("AgDatabaseMove.Integration")]
+[assembly: InternalsVisibleTo("AgDatabaseMove.Unit")]
 
 namespace AgDatabaseMove
 {

@@ -4,6 +4,7 @@
   using System.Linq;
   using System.Text.RegularExpressions;
   using Exceptions;
+  using SmoFacade;
 
 
   /// <summary>
@@ -47,6 +48,12 @@
     /// </summary>
     public Func<string, string> FileRelocator { get; set; }
 
+    internal LoginProperties UpdateDefaultDb(LoginProperties loginProperties)
+    {
+      loginProperties.DefaultDatabase = _source.Name == loginProperties.DefaultDatabase ? _destination.Name : null;
+      return loginProperties;
+    }
+
     /// <summary>
     ///   Restore the database to all instances of the availability group.
     ///   To join the AG, Finalize must be set.
@@ -77,7 +84,7 @@
       if(Finalize)
         _destination.JoinAg();
 
-      if(CopyLogins) _destination.CopyLogins(_source.AssociatedLogins().ToList());
+      if(CopyLogins) _destination.CopyLogins(_source.AssociatedLogins().Select(UpdateDefaultDb).ToList());
 
       return backupList.Max(bl => bl.LastLsn);
     }
