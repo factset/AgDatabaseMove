@@ -36,7 +36,7 @@
 
     public static Func<int, TimeSpan> AgSyncWait =>
       retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(2, retryAttempt) * 100);
-    
+
     public void JoinSecondary(string dbName)
     {
       var database = Policy.HandleResult<Smo.AvailabilityDatabase>(r => r == null)
@@ -45,7 +45,7 @@
           _availabilityGroup.AvailabilityDatabases.Refresh();
           return _availabilityGroup.AvailabilityDatabases[dbName];
         });
-      
+
       if(database == null)
         throw new AgJoinException("Availability database not found");
 
