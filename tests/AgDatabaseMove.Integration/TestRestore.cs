@@ -103,7 +103,7 @@ namespace AgDatabaseMove.Integration
         }
 
         var fillTableSql =
-          "INSERT INTO TestSync (script) (SELECT TOP 10000 sm.[definition] FROM sys.all_sql_modules AS sm CROSS JOIN sys.all_sql_modules AS asm)";
+          "INSERT INTO TestSync (script) (SELECT TOP 100000 sm.[definition] FROM sys.all_sql_modules AS sm CROSS JOIN sys.all_sql_modules AS asm)";
         using(var fillTable = new SqlCommand(fillTableSql, connection)) {
           fillTable.ExecuteNonQuery();
         }

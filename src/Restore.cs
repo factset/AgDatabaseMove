@@ -50,7 +50,7 @@
 
     internal LoginProperties UpdateDefaultDb(LoginProperties loginProperties)
     {
-      loginProperties.DefaultDatabase = _source.Name == loginProperties.DefaultDatabase ? _destination.Name : null;
+      loginProperties.DefaultDatabase = _source.Name == loginProperties.DefaultDatabase ? _destination.Name : "master";
       return loginProperties;
     }
 
