@@ -138,7 +138,7 @@ namespace AgDatabaseMove
     private void WaitForInitialization(Server server, AvailabilityGroup availabilityGroup)
     {
       var policy = Policy.HandleResult(true)
-        .WaitAndRetry(10, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(2, retryAttempt) * 100));
+        .WaitAndRetry(10, AvailabilityGroup.AgSyncWait);
 
       if(policy.Execute(() => availabilityGroup.IsInitializing(Name)))
         throw new TimeoutException($"{server.Name} is initializing. Wait period expired.");

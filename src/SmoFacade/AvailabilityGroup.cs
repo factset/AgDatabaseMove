@@ -4,6 +4,7 @@
   using System.Collections.Generic;
   using System.Linq;
   using Exceptions;
+  using Polly;
   using Smo = Microsoft.SqlServer.Management.Smo;
 
 
@@ -33,15 +34,22 @@
     public IEnumerable<string> Databases =>
       _availabilityGroup.AvailabilityDatabases.Cast<Smo.AvailabilityDatabase>().Select(d => d.Name);
 
+    public static Func<int, TimeSpan> AgSyncWait =>
+      retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(2, retryAttempt) * 100);
+    
     public void JoinSecondary(string dbName)
     {
-      var database = _availabilityGroup.AvailabilityDatabases[dbName];
-      if(database == null)
-        _availabilityGroup.AvailabilityDatabases.Refresh();
-      database = _availabilityGroup.AvailabilityDatabases[dbName];
+      var database = Policy.HandleResult<Smo.AvailabilityDatabase>(r => r == null)
+        .WaitAndRetry(8, AgSyncWait)
+        .Execute(() => {
+          _availabilityGroup.AvailabilityDatabases.Refresh();
+          return _availabilityGroup.AvailabilityDatabases[dbName];
+        });
+      
       if(database == null)
         throw new AgJoinException("Availability database not found");
-      _availabilityGroup.AvailabilityDatabases[dbName].JoinAvailablityGroup();
+
+      database.JoinAvailablityGroup();
     }
 
     public void JoinPrimary(string dbName)
