@@ -9,9 +9,9 @@ namespace AgDatabaseMove
   using System;
   using System.Collections.Concurrent;
   using System.Collections.Generic;
-  using System.Data.Common;
   using System.Linq;
   using System.Threading;
+  using Polly;
   using SmoFacade;
 
 
@@ -137,16 +137,11 @@ namespace AgDatabaseMove
 
     private void WaitForInitialization(Server server, AvailabilityGroup availabilityGroup)
     {
-      var wait = 100;
-      var maxWait = 60000;
-      var multiplier = 2;
+      var policy = Policy.HandleResult(true)
+        .WaitAndRetry(10, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(2, retryAttempt) * 100));
 
-      while(availabilityGroup.IsInitializing(Name)) {
-        if(wait > maxWait)
-          throw new TimeoutException($"{server.Name} is initializing. Wait period expired.");
-        Thread.Sleep(wait);
-        wait *= multiplier;
-      }
+      if(policy.Execute(() => availabilityGroup.IsInitializing(Name)))
+        throw new TimeoutException($"{server.Name} is initializing. Wait period expired.");
     }
 
     public void FinalizePrimary()
