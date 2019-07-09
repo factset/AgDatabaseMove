@@ -81,7 +81,7 @@
       using(var reader = cmd.ExecuteReader()) {
         if(!reader.Read() || reader.IsDBNull(reader.GetOrdinal("passwordHash")))
           return null;
-        return HashString((byte[])reader["passwordHash"]);
+        return _passwordHash = HashString((byte[])reader["passwordHash"]);
       }
     }
 
