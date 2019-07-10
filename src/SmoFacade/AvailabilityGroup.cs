@@ -19,7 +19,9 @@
       _availabilityGroup = availabilityGroup;
     }
 
-    public bool IsPrimaryInstance => _availabilityGroup.PrimaryReplicaServerName == _availabilityGroup.Parent.NetName;
+    public bool IsPrimaryInstance =>
+      _availabilityGroup.PrimaryReplicaServerName.Equals(_availabilityGroup.Parent.NetName,
+                                                         StringComparison.InvariantCultureIgnoreCase);
 
     public string PrimaryInstance => _availabilityGroup.PrimaryReplicaServerName;
     public string Name => _availabilityGroup.Name;
@@ -59,7 +61,7 @@
     {
       // The availability database needs to be refreshed since the state changes on the server side.
       var availabilityDatabase = _availabilityGroup.AvailabilityDatabases.Cast<Smo.AvailabilityDatabase>()
-        .SingleOrDefault(d => d.Name == dbName);
+        .SingleOrDefault(d => d.Name.Equals(dbName, StringComparison.InvariantCultureIgnoreCase));
       if(availabilityDatabase == null)
         return false;
       availabilityDatabase.Refresh();

@@ -28,7 +28,8 @@
 
     public void Dispose()
     {
-      _server.Logins.SingleOrDefault(l => l.Name == LoginName)?.Drop();
+      _server.Logins.SingleOrDefault(l => l.Name.Equals(LoginName, StringComparison.InvariantCultureIgnoreCase))
+        ?.Drop();
       _server?.Dispose();
     }
 

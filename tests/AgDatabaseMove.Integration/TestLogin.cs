@@ -1,5 +1,6 @@
 ﻿namespace AgDatabaseMove.Integration
 {
+  using System;
   using System.Linq;
   using System.Security.Cryptography;
   using Fixtures;
@@ -38,7 +39,9 @@
     private void TestLoginExists(Login login)
     {
       using(var testServer = _testLoginFixture.ConstructServer()) {
-        var existingLogin = testServer.Logins.SingleOrDefault(l => l.Name == login.Name);
+        var existingLogin =
+          testServer.Logins.SingleOrDefault(l => l.Name.Equals(login.Name,
+                                                               StringComparison.InvariantCultureIgnoreCase));
         Assert.NotNull(existingLogin);
       }
     }

@@ -199,7 +199,8 @@
     public void EnsureLogins(IEnumerable<LoginProperties> newLogins)
     {
       foreach(var login in newLogins) {
-        var matchingLogin = Logins.SingleOrDefault(l => l.Name == login.Name);
+        var matchingLogin =
+          Logins.SingleOrDefault(l => l.Name.Equals(login.Name, StringComparison.InvariantCultureIgnoreCase));
         if(matchingLogin == null)
           new Login(login, this);
       }

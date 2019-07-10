@@ -17,7 +17,7 @@
     }
 
     [Theory]
-    [InlineData("foo", "foo", "foo")]
+    [InlineData("Foo", "foo", "foo")]
     [InlineData("bar", "bar", "master")]
     [InlineData("foo", "bar", "bar")]
     public void DefaultDatabase(string sourceDbName, string destinationDbName, string defaultDb)
