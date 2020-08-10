@@ -58,7 +58,7 @@ namespace AgDatabaseMove
     /// </summary>
     /// <param name="lastLsn">The last restored LSN used to continue while in no recovery mode.</param>
     /// <returns>The last LSN restored.</returns>
-    public decimal AgDbRestore(decimal? lastLsn = null)
+    public decimal Move(decimal? lastLsn = null)
     {
       if (_options.Overwrite)
         _options.Destination.Delete();

@@ -94,7 +94,7 @@ namespace AgDatabaseMove.Integration
         FileRelocator = RestoreFileRelocator
       });
 
-      mover.AgDbRestore();
+      mover.Move();
 
       // AgDatabaseMove with recovery primary
       Test.FinalizePrimary();
@@ -147,7 +147,7 @@ namespace AgDatabaseMove.Integration
       do {
         var timer = new Stopwatch();
         timer.Start();
-        lastLsn = mover.AgDbRestore(lastLsn);
+        lastLsn = mover.Move(lastLsn);
         timer.Stop();
         seconds = timer.Elapsed.Seconds;
       } while(seconds > 5);
@@ -157,7 +157,7 @@ namespace AgDatabaseMove.Integration
 
       // Hopefully a quick backup and restore
       mover._options.Finalize = true;
-      mover.AgDbRestore(lastLsn);
+      mover.Move(lastLsn);
 
       // The database is migrated
       Source.MultiUserMode();
@@ -178,7 +178,7 @@ namespace AgDatabaseMove.Integration
         FileRelocator = RestoreFileRelocator
       });
 
-      mover.AgDbRestore();
+      mover.Move();
       Assert.True(Test.Exists());
 
       Test.Delete();

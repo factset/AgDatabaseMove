@@ -70,7 +70,7 @@ namespace AgDatabaseMove
 
     private BackupMetadata NextDifferentialBackup(IList<BackupMetadata> backups, BackupMetadata lastFullBackup)
     {
-      return backups.Where(b => b.DatabaseBackupLsn == lastFullBackup.CheckpointLsn && b.BackupType == "I")
+      return backups.Where(b => b.BackupType == "I" && b.DatabaseBackupLsn == lastFullBackup.CheckpointLsn)
         .OrderByDescending(b => b.LastLsn)
         .FirstOrDefault();
     }

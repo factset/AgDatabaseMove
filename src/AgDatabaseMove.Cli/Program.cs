@@ -33,7 +33,7 @@ namespace AgDatabaseMove.Cli
           FileRelocator = filename => RestoreFileRelocator(arguments.From.DatabaseName, arguments.To.DatabaseName, filename)
         });
 
-      restore.AgDbRestore();
+      restore.Move();
 
     }
 
