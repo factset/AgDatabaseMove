@@ -1,10 +1,9 @@
-﻿namespace AgDatabaseMove.Integration.Fixtures
+namespace AgDatabaseMove.Integration.Fixtures
 {
   using System;
   using System.Data.SqlClient;
   using System.Linq;
   using Config;
-  using Microsoft.Extensions.Configuration;
   using SmoFacade;
 
 

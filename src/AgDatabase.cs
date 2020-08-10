@@ -1,4 +1,4 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 
 
 [assembly: InternalsVisibleTo("AgDatabaseMove.Integration")]
@@ -9,10 +9,29 @@ namespace AgDatabaseMove
   using System;
   using System.Collections.Concurrent;
   using System.Collections.Generic;
-  using System.Data.Common;
+  using System.Data.SqlClient;
   using System.Linq;
   using System.Threading;
   using SmoFacade;
+  using AvailabilityGroup = global::AgDatabaseMove.SmoFacade.AvailabilityGroup;
+  using Server = global::AgDatabaseMove.SmoFacade.Server;
+
+
+  public interface IAgDatabase
+  {
+    bool Restoring { get; }
+    string Name { get; }
+    bool Exists();
+    void Delete();
+    void LogBackup();
+    List<BackupMetadata> RecentBackups();
+    void JoinAg();
+
+    void Restore(IEnumerable<BackupMetadata> backupOrder, Func<string, string> fileRelocation = null);
+
+    void CopyLogins(IEnumerable<LoginProperties> logins);
+    IEnumerable<LoginProperties> AssociatedLogins();
+  }
 
 
   /// <summary>
@@ -31,8 +50,8 @@ namespace AgDatabaseMove
     /// <param name="dbConfig">A DatabaseConfig where the DataSource is the AG listener.</param>
     public AgDatabase(DatabaseConfig dbConfig)
     {
-      _listener = new Listener(dbConfig.ConnectionString);
       Name = dbConfig.DatabaseName;
+      _listener = new Listener(new SqlConnectionStringBuilder(dbConfig.ConnectionString) {InitialCatalog = "master"});
       _backupPathTemplate = dbConfig.BackupPathTemplate;
     }
 
@@ -76,12 +95,11 @@ namespace AgDatabaseMove
 
     /// <summary>
     ///   Restores the database backups to each instance in the AG.
-    ///   We suggest using <see cref="AgDatabaseMove.Restore" /> to assist with restores.
+    ///   We suggest using <see cref="AgDatabaseMove" /> to assist with restores.
     /// </summary>
     /// <param name="backupOrder">An ordered list of backups to restore.</param>
     /// <param name="fileRelocation">A method to generate the new file location when moving the database.</param>
-    public void Restore(IEnumerable<BackupMetadata> backupOrder,
-      Func<string, string> fileRelocation = null)
+    public void Restore(IEnumerable<BackupMetadata> backupOrder, Func<string, string> fileRelocation = null)
     {
       _listener.ForEachAgInstance(s => s.Restore(backupOrder, Name, fileRelocation));
     }
@@ -92,8 +110,7 @@ namespace AgDatabaseMove
     public List<BackupMetadata> RecentBackups()
     {
       var bag = new ConcurrentBag<BackupMetadata>();
-      _listener.ForEachAgInstance(s => s.Database(Name).RecentBackups()
-                                    .ForEach(bu => bag.Add(bu)));
+      _listener.ForEachAgInstance(s => s.Database(Name).RecentBackups().ForEach(bu => bag.Add(bu)));
       return bag.ToList();
     }
 
@@ -108,7 +125,8 @@ namespace AgDatabaseMove
           ag.JoinPrimary(Name);
       });
       _listener.ForEachAgInstance((s, ag) => {
-        if(!ag.IsPrimaryInstance) ag.JoinSecondary(Name);
+        if(!ag.IsPrimaryInstance)
+          ag.JoinSecondary(Name);
       });
     }
 

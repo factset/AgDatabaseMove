@@ -1,4 +1,4 @@
-﻿namespace AgDatabaseMove.SmoFacade
+namespace AgDatabaseMove.SmoFacade
 {
   using System;
   using System.Collections.Generic;
@@ -22,7 +22,6 @@
   {
     private readonly Smo.Login _login;
     private readonly Server _server;
-    private string _passwordHash;
 
     public Login(Smo.Login login, Server server)
     {
@@ -38,19 +37,7 @@
     public Login(LoginProperties loginProperties, Server server)
     {
       _server = server;
-      _login = _server.ConstructLogin(loginProperties.Name);
-      _login.LoginType = loginProperties.LoginType;
-      _login.Sid = loginProperties.Sid;
-      _login.DefaultDatabase = loginProperties.DefaultDatabase;
-      if(loginProperties.LoginType == Smo.LoginType.SqlLogin)
-        if(loginProperties.PasswordHash != null)
-          _login.Create(loginProperties.PasswordHash, Smo.LoginCreateOptions.IsHashed);
-        else if(loginProperties.Password != null)
-          _login.Create(loginProperties.Password);
-        else
-          throw new ArgumentException("Password or hash was not supplied for sql login.");
-      else
-        _login.Create();
+      _login = _server.ConstructLogin(loginProperties);
     }
 
     public static IEqualityComparer<Login> Comparer { get; } = new LoginEqualityComparer();
@@ -67,9 +54,6 @@
     /// <returns>A string containing the hex representation of the password hash.</returns>
     public string PasswordHash()
     {
-      if(_passwordHash != null)
-        return _passwordHash;
-
       var sql = "SELECT CAST(password AS varbinary(max)) as passwordHash FROM sys.syslogins WHERE name = @loginName";
 
       var cmd = new SqlCommand(sql, _server.SqlConnection);

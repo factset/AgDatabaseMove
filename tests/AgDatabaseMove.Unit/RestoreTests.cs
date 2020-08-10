@@ -1,4 +1,4 @@
-﻿namespace AgDatabaseMove.Unit
+namespace AgDatabaseMove.Unit
 {
   using Moq;
   using SmoFacade;
@@ -27,7 +27,10 @@
 
       var destination = new Mock<IAgDatabase>();
       destination.Setup(d => d.Name).Returns(destinationDbName);
-      var restore = new Restore(source.Object, destination.Object);
+      var restore = new AgDatabaseMove(new MoveOptions{
+        Source  = source.Object,
+        Destination = destination.Object
+      });
 
       restore.UpdateDefaultDb(_loginProperties);
 

@@ -1,8 +1,7 @@
-﻿namespace AgDatabaseMove.Integration
+namespace AgDatabaseMove.Integration
 {
   using System;
   using System.Linq;
-  using System.Security.Cryptography;
   using Fixtures;
   using SmoFacade;
   using Xunit;

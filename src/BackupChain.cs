@@ -1,47 +1,51 @@
-﻿namespace AgDatabaseMove
+namespace AgDatabaseMove
 {
   using System.Linq;
-  using SmoFacade;
   using System;
   using System.Collections.Generic;
   using System.IO;
   using Exceptions;
+  using Database = SmoFacade.Database;
 
 
+  public interface IBackupChain
+  {
+    IEnumerable<BackupMetadata> RestoreOrder { get; }
+  }
+  
   /// <summary>
   ///   Encapsulates the logic for determining the order to apply recent backups.
   /// </summary>
   public class BackupChain : IBackupChain
   {
-    private readonly List<BackupMetadata> _orderedBackups;
+    private readonly IList<BackupMetadata> _orderedBackups;
 
-    private BackupChain(IEnumerable<BackupMetadata> recentBackups)
+    private BackupChain(IList<BackupMetadata> recentBackups)
     {
       var backups = recentBackups
         .Distinct(new BackupMetadataEqualityComparer())
-        .Where(b => IsValidFilePath(b.PhysicalDeviceName)) // A third party application caused invalid path strings to be inserted into backupmediafamily
+        .Where(b => IsValidFilePath(b)) // A third party application caused invalid path strings to be inserted into backupmediafamily
         .ToList();
 
-      var lastFullBackup = backups.Where(b => b.BackupType == "D").OrderByDescending(d => d.CheckpointLsn).First();
+      var lastFullBackup = LastFullBackup(recentBackups);
       _orderedBackups = new List<BackupMetadata> { lastFullBackup };
 
-      var differentialBackup = backups
-        .Where(b => b.DatabaseBackupLsn == lastFullBackup.CheckpointLsn && b.BackupType == "I")
-        .OrderByDescending(b => b.LastLsn).FirstOrDefault();
-      if(differentialBackup != null)
+      var differentialBackup = NextDifferentialBackup(backups, lastFullBackup);
+
+      if (differentialBackup != null)
         _orderedBackups.Add(differentialBackup);
 
       decimal? nextLogLsn = _orderedBackups.Last().LastLsn;
       while(nextLogLsn != null) {
-        var log = backups.Where(b => b.BackupType == "L")
-          .SingleOrDefault(d => nextLogLsn >= d.FirstLsn && nextLogLsn + 1 < d.LastLsn);
-        if(log != null)
-          _orderedBackups.Add(log);
-        nextLogLsn = log?.LastLsn;
+        var logBackup = NextLogBackup(backups, nextLogLsn);
+
+        if(logBackup != null)
+          _orderedBackups.Add(logBackup);
+        nextLogLsn = logBackup?.LastLsn;
       }
 
       if(_orderedBackups.Last().LastLsn != backups.Max(b => b.LastLsn))
-        throw new BackupChainException("Backup chain does not include the latest log backup.");
+        throw new BackupChainException("Backup chain does not include the latest log backup");
     }
 
     /// <summary>
@@ -59,20 +63,29 @@
     /// </summary>
     public IEnumerable<BackupMetadata> RestoreOrder => _orderedBackups;
 
-    /// <summary>
-    ///   This should be an extra safety check run before restoring with an overwrite flag so you don't get stuck mid restore.
-    ///   Restore with file list only on each of these from the server instead of just checking the file exists.
-    /// </summary>
-    private void ValidateBackupFiles()
+    private BackupMetadata LastFullBackup(IList<BackupMetadata> backups)
     {
-      // TODO: implement backup validation.
-      throw new NotImplementedException();
+      return backups.Where(b => b.BackupType == "D").OrderByDescending(d => d.CheckpointLsn).First();
     }
 
-    private bool IsValidFilePath(string path)
+    private BackupMetadata NextDifferentialBackup(IList<BackupMetadata> backups, BackupMetadata lastFullBackup)
     {
+      return backups.Where(b => b.DatabaseBackupLsn == lastFullBackup.CheckpointLsn && b.BackupType == "I")
+        .OrderByDescending(b => b.LastLsn)
+        .FirstOrDefault();
+    }
+
+    private BackupMetadata NextLogBackup(IList<BackupMetadata> backups, decimal? nextLogLsn)
+    {
+      return backups.Where(b => b.BackupType == "L")
+        .SingleOrDefault(d => nextLogLsn >= d.FirstLsn && nextLogLsn + 1 < d.LastLsn);
+    }
+
+    private bool IsValidFilePath(BackupMetadata meta)
+    {
+      var path = meta.PhysicalDeviceName;
       // A quick check before leaning on exceptions
-      if(Path.GetInvalidPathChars().Any(path.Contains))
+      if (Path.GetInvalidPathChars().Any(path.Contains))
         return false;
 
       try {

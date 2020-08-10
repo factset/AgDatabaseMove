@@ -1,4 +1,4 @@
-﻿namespace AgDatabaseMove.SmoFacade
+namespace AgDatabaseMove.SmoFacade
 {
   using System;
   using System.Collections.Generic;
@@ -147,7 +147,7 @@
     /// </param>
     public void LogBackup(string databaseName, string backupPathTemplate)
     {
-      backupPathTemplate = backupPathTemplate ?? DefaultBackupPathTemplate() + ".trn";
+      backupPathTemplate = backupPathTemplate ?? DefaultBackupPathTemplate(".trn");
       Backup(databaseName, backupPathTemplate, Smo.BackupActionType.Log, Smo.BackupTruncateLogType.Truncate);
     }
 
@@ -171,6 +171,7 @@
     ///   Generate a full backup, not truncating the transaction log, and storing it in the default backup destination.
     ///   TODO: we should support a backup path somehow with configuration
     /// </summary>
+    /// <param name="databaseName">name of the database to backup</param>
     /// <param name="backupPathTemplate">
     ///   A template string for backup location:
     ///   {0} databaseName
@@ -178,7 +179,7 @@
     /// </param>
     public void FullBackup(string databaseName, string backupPathTemplate)
     {
-      backupPathTemplate = backupPathTemplate ?? DefaultBackupPathTemplate() + ".bak";
+      backupPathTemplate = backupPathTemplate ?? DefaultBackupPathTemplate(".bak");
       Backup(databaseName, backupPathTemplate, Smo.BackupActionType.Database, Smo.BackupTruncateLogType.NoTruncate);
     }
 
@@ -186,21 +187,37 @@
     ///   Builds a backup path template from the server's default backup directory.
     ///   If this path is not valid on the destination instance the restore process will fail.
     /// </summary>
-    private string DefaultBackupPathTemplate()
+    private string DefaultBackupPathTemplate(string extension)
     {
-      return _server.BackupDirectory + "\\{0}_backup_{1}";
+      return _server.BackupDirectory + "\\{0}_backup_{1}" + extension;
     }
-
-    internal Smo.Login ConstructLogin(string name)
+     
+    internal Smo.Login ConstructLogin(LoginProperties loginProperties)
     {
-      return new Smo.Login(_server, name);
+      var login = new Smo.Login(_server, loginProperties.Name) {
+        LoginType = loginProperties.LoginType, Sid = loginProperties.Sid, DefaultDatabase = loginProperties.DefaultDatabase
+      };
+
+      if (loginProperties.LoginType == Smo.LoginType.SqlLogin)
+      {
+        if (loginProperties.PasswordHash != null)
+          login.Create(loginProperties.PasswordHash, Smo.LoginCreateOptions.IsHashed);
+        else if (loginProperties.Password != null)
+          login.Create(loginProperties.Password);
+        else
+          throw new ArgumentException("Password or hash was not supplied for sql login.");
+      }
+      else
+        login.Create();
+
+      return login;
     }
 
     public void EnsureLogins(IEnumerable<LoginProperties> newLogins)
     {
-      foreach(var login in newLogins) {
-        var matchingLogin =
-          Logins.SingleOrDefault(l => l.Name.Equals(login.Name, StringComparison.InvariantCultureIgnoreCase));
+      foreach(var login in newLogins) 
+      {
+        var matchingLogin = Logins.SingleOrDefault(l => l.Name.Equals(login.Name, StringComparison.InvariantCultureIgnoreCase));
         if(matchingLogin == null)
           new Login(login, this);
       }

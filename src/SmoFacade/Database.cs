@@ -1,5 +1,6 @@
-﻿namespace AgDatabaseMove.SmoFacade
+namespace AgDatabaseMove.SmoFacade
 {
+  using System;
   using System.Collections.Generic;
   using System.Linq;
   using Smo = Microsoft.SqlServer.Management.Smo;
@@ -63,7 +64,17 @@
         cmd.Parameters.Add(dbName);
         using(var reader = cmd.ExecuteReader()) {
           while(reader.Read())
-            backups.Add(new BackupMetadata(reader));
+            backups.Add(new BackupMetadata {
+              CheckpointLsn = (decimal)reader["checkpoint_lsn"],
+              DatabaseBackupLsn = (decimal)reader["database_backup_lsn"],
+              DatabaseName = (string)reader["database_name"],
+              FirstLsn = (decimal)reader["first_lsn"],
+              LastLsn = (decimal)reader["last_lsn"],
+              PhysicalDeviceName = (string)reader["physical_device_name"],
+              ServerName = (string)reader["server_name"],
+              StartTime = (DateTime)reader["backup_start_date"],
+              BackupType = (string)reader["backup_type"],
+            });
         }
       }
 

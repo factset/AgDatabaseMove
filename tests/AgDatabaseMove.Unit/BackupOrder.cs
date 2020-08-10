@@ -4,15 +4,15 @@ namespace AgDatabaseMove.Unit
   using System.Collections;
   using System.Collections.Generic;
   using System.Linq;
-  using System.Security.Authentication;
   using Exceptions;
   using Moq;
   using Xunit;
-  using Xunit.Sdk;
 
 
   public class BackupOrder
   {
+    private readonly List<BackupMetadata> _listBackups;
+
     public BackupOrder()
     {
       _listBackups = ListBackups();
@@ -47,8 +47,6 @@ namespace AgDatabaseMove.Unit
         }
       };
     }
-
-    private readonly List<BackupMetadata> _listBackups;
 
     [Fact]
     public void BackupChainOrdered()

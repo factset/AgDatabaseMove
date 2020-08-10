@@ -1,4 +1,4 @@
-﻿namespace AgDatabaseMove.SmoFacade
+namespace AgDatabaseMove.SmoFacade
 {
   using System;
   using System.Collections.Generic;
@@ -18,7 +18,7 @@
     /// <summary>
     ///   The secondary instances at the time of construction.
     /// </summary>
-    IEnumerable<Server> Secondaries { get; set; }
+    IList<Server> Secondaries { get; set; }
 
     /// <summary>
     ///   The availability group associated with the supplied listener.
@@ -40,21 +40,19 @@
 
   internal class Listener : IListener
   {
-    public Listener(string connectionString)
+    /**
+     * We initially connect an availability group instance by way of a listener name. This creates a different connection and
+     * SMO server object from connecting directly to the primary instance. Having different SMO server objects results in the
+     * data cached by SMO getting out of sync between the two and forces us to refresh the objects regularly. This should
+     * prevent us from having to do the refreshes by only using SMO objects that connect directly to the server. The initial
+     * connection to find those server names though is done through the listener and that instance is thrown away in this
+     * constructor so it won't be used again.
+     */
+    public Listener(SqlConnectionStringBuilder connectionStringBuilder)
     {
-      /*
-       * We initially connect an availability group instance by way of a listener name. This creates a different connection and
-       * SMO server object from connecting directly to the primary instance. Having different SMO server objects results in the
-       * data cached by SMO getting out of sync between the two and forces us to refresh the objects regularly. This should
-       * prevent us from having to do the refreshes by only using SMO objects that connect directly to the server. The initial
-       * connection to find those server names though is done through the listener and that instance is thrown away in this
-       * constructor so it won't be used again.
-       */
+      if (connectionStringBuilder.DataSource == null)
+        throw new ArgumentException("DataSource not supplied in connection string");
 
-      var connectionStringBuilder = new SqlConnectionStringBuilder(connectionString);
-      connectionStringBuilder.InitialCatalog = "master";
-      if(connectionStringBuilder.DataSource == null)
-        throw new ArgumentException("DataSource not supplied in connection string.");
       using(var server = new Server(connectionStringBuilder.ToString())) {
         // Find the AG associated with the listener
         var availabilityGroup =
@@ -67,17 +65,13 @@
         var secondaryNames = availabilityGroup.Replicas.Where(l => l != primaryName);
 
         // Connect to each server instance
-        connectionStringBuilder.DataSource = Dns.GetHostEntry(primaryName).HostName;
-        Primary = new Server(connectionStringBuilder.ToString());
-        var secondaryServers = new List<Server>();
-        foreach(var secondaryName in secondaryNames) {
-          connectionStringBuilder.DataSource = Dns.GetHostEntry(secondaryName).HostName;
-          secondaryServers.Add(new Server(connectionStringBuilder.ToString()));
-        }
-
-        Secondaries = secondaryServers;
-
+        Primary = AgListenerNameToServer(ref connectionStringBuilder, primaryName);
         AvailabilityGroup = Primary.AvailabilityGroups.Single(ag => ag.Name == availabilityGroup.Name);
+
+        Secondaries = new List<Server>();
+        foreach(var secondaryName in secondaryNames) {
+          Secondaries.Add(AgListenerNameToServer(ref connectionStringBuilder, secondaryName));
+        }
       }
     }
 
@@ -86,7 +80,7 @@
     // TODO: This could change due to fail over, so we may want to build a better accessor here.
     public Server Primary { get; set; }
 
-    public IEnumerable<Server> Secondaries { get; set; }
+    public IList<Server> Secondaries { get; set; }
 
     public AvailabilityGroup AvailabilityGroup { get; set; }
 
@@ -99,8 +93,7 @@
         Secondaries = null;
       }
     }
-
-
+    
     public void ForEachAgInstance(Action<Server> action)
     {
       ForEachAgInstance((s, ag) => action(s));
@@ -116,13 +109,6 @@
       Parallel.ForEach(ReplicaInstances, ri => InvokeOnReplica(ri, AvailabilityGroup.Name, action));
     }
 
-    private static string AgListenerName(string dataSource)
-    {
-      var dotIndex = dataSource.IndexOf('.');
-      return dotIndex >= 0 ? dataSource.Remove(dotIndex) : dataSource;
-    }
-
-
     /// <summary>
     ///   Connects to a given replica and executes the action.
     /// </summary>
@@ -132,6 +118,18 @@
     private void InvokeOnReplica(Server replica, string AgName, Action<Server, AvailabilityGroup> action)
     {
       action.Invoke(replica, replica.AvailabilityGroups.Single(ag => ag.Name == AgName));
+    }
+
+    private static string AgListenerName(string dataSource)
+    {
+      var dotIndex = dataSource.IndexOf('.');
+      return dotIndex >= 0 ? dataSource.Remove(dotIndex) : dataSource;
+    }
+
+    private static Server AgListenerNameToServer(ref SqlConnectionStringBuilder connBuilder, string agInstanceName)
+    {
+      connBuilder.DataSource = Dns.GetHostEntry(agInstanceName).HostName;
+      return new Server(connBuilder.ToString());
     }
   }
 }

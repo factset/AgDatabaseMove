@@ -1,7 +1,6 @@
-﻿namespace AgDatabaseMove.Cli
+namespace AgDatabaseMove.Cli
 {
   using System;
-  using System.Security.Cryptography;
   using System.Text.RegularExpressions;
   using Microsoft.Extensions.Configuration;
 
@@ -19,30 +18,23 @@
   {
     private static void Main(string[] args)
     {
-      var builder = new ConfigurationBuilder()
-        .AddCommandLine(args);
+      var builder = new ConfigurationBuilder().AddCommandLine(args);
       var arguments = builder.Build().Get<MoveArgs>();
 
-      var from = new AgDatabase(arguments.From);
-      var to = new AgDatabase(arguments.To);
-
-      // TODO: This should be baked into the restore class. We have a property for it.
-      if(arguments.Overwrite)
-        to.Delete();
-
       Console.WriteLine("Beginning restore...");
-      var restore = new Restore(from, to) {
-        CopyLogins = arguments.CopyLogins,
-        FileRelocator = fileName => RestoreFileRelocator(from.Name, to.Name, fileName), Finalize = arguments.Finalize,
-        Overwrite = arguments.Overwrite
-      };
-      from.LogBackup();
-      restore.AgDbRestore();
-      Console.WriteLine("Restore completed.");
 
-      Console.WriteLine("Deleting source.");
-      from.Delete();
-      Console.WriteLine("Source deleted");
+      var restore = new AgDatabaseMove(new MoveOptions
+         {
+          Source = new AgDatabase(arguments.From),
+          Destination = new AgDatabase(arguments.To),
+          Overwrite = arguments.Overwrite,
+          Finalize = arguments.Finalize,
+          CopyLogins = arguments.CopyLogins,
+          FileRelocator = filename => RestoreFileRelocator(arguments.From.DatabaseName, arguments.To.DatabaseName, filename)
+        });
+
+      restore.AgDbRestore();
+
     }
 
     private static string RestoreFileRelocator(string fromName, string toName, string fileName)
