@@ -13,8 +13,8 @@ namespace AgDatabaseMove
   using System.Linq;
   using System.Threading;
   using SmoFacade;
-  using AvailabilityGroup = global::AgDatabaseMove.SmoFacade.AvailabilityGroup;
-  using Server = global::AgDatabaseMove.SmoFacade.Server;
+  using AvailabilityGroup =SmoFacade.AvailabilityGroup;
+  using Server = SmoFacade.Server;
 
 
   public interface IAgDatabase
@@ -110,7 +110,7 @@ namespace AgDatabaseMove
     public List<BackupMetadata> RecentBackups()
     {
       var bag = new ConcurrentBag<BackupMetadata>();
-      _listener.ForEachAgInstance(s => s.Database(Name).RecentBackups().ForEach(bu => bag.Add(bu)));
+      _listener.ForEachAgInstance(s => s.Database(Name).RecentBackups().ForEach(backup => bag.Add(backup)));
       return bag.ToList();
     }
 

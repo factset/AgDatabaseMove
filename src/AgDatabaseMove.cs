@@ -41,9 +41,6 @@ namespace AgDatabaseMove
     public AgDatabaseMove(IMoveOptions options)
     {
       _options = options;
-
-      if(_options.Overwrite)
-        _options.Destination.Delete();
     }
     
     internal LoginProperties UpdateDefaultDb(LoginProperties loginProperties)
@@ -63,6 +60,9 @@ namespace AgDatabaseMove
     /// <returns>The last LSN restored.</returns>
     public decimal AgDbRestore(decimal? lastLsn = null)
     {
+      if (_options.Overwrite)
+        _options.Destination.Delete();
+
       _options.Source.LogBackup();
 
       if(!_options.Overwrite && _options.Destination.Exists() && !_options.Destination.Restoring)
