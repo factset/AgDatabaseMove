@@ -1,4 +1,4 @@
-﻿namespace AgDatabaseMove.Integration.Config
+namespace AgDatabaseMove.Integration.Config
 {
   using Microsoft.Extensions.Configuration;
 
@@ -9,8 +9,7 @@
 
     public TestConfiguration(string section)
     {
-      var builder = new ConfigurationBuilder()
-        .AddJsonFile("config.json", false);
+      var builder = new ConfigurationBuilder().AddJsonFile("config.json", false);
 
       _config = builder.Build().GetSection(section).Get<T>();
     }

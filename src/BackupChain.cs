@@ -12,7 +12,7 @@ namespace AgDatabaseMove
   {
     IEnumerable<BackupMetadata> RestoreOrder { get; }
   }
-  
+
   /// <summary>
   ///   Encapsulates the logic for determining the order to apply recent backups.
   /// </summary>
@@ -22,8 +22,7 @@ namespace AgDatabaseMove
 
     private BackupChain(IList<BackupMetadata> recentBackups)
     {
-      var backups = recentBackups
-        .Distinct(new BackupMetadataEqualityComparer())
+      var backups = recentBackups.Distinct(new BackupMetadataEqualityComparer())
         .Where(b => IsValidFilePath(b)) // A third party application caused invalid path strings to be inserted into backupmediafamily
         .ToList();
 
@@ -32,7 +31,7 @@ namespace AgDatabaseMove
 
       var differentialBackup = NextDifferentialBackup(backups, lastFullBackup);
 
-      if (differentialBackup != null)
+      if(differentialBackup != null)
         _orderedBackups.Add(differentialBackup);
 
       decimal? nextLogLsn = _orderedBackups.Last().LastLsn;
@@ -70,22 +69,19 @@ namespace AgDatabaseMove
 
     private BackupMetadata NextDifferentialBackup(IList<BackupMetadata> backups, BackupMetadata lastFullBackup)
     {
-      return backups.Where(b => b.BackupType == "I" && b.DatabaseBackupLsn == lastFullBackup.CheckpointLsn)
-        .OrderByDescending(b => b.LastLsn)
-        .FirstOrDefault();
+      return backups.Where(b => b.BackupType == "I" && b.DatabaseBackupLsn == lastFullBackup.CheckpointLsn).OrderByDescending(b => b.LastLsn).FirstOrDefault();
     }
 
     private BackupMetadata NextLogBackup(IList<BackupMetadata> backups, decimal? nextLogLsn)
     {
-      return backups.Where(b => b.BackupType == "L")
-        .SingleOrDefault(d => nextLogLsn >= d.FirstLsn && nextLogLsn + 1 < d.LastLsn);
+      return backups.Where(b => b.BackupType == "L").SingleOrDefault(d => nextLogLsn >= d.FirstLsn && nextLogLsn + 1 < d.LastLsn);
     }
 
     private bool IsValidFilePath(BackupMetadata meta)
     {
       var path = meta.PhysicalDeviceName;
       // A quick check before leaning on exceptions
-      if (Path.GetInvalidPathChars().Any(path.Contains))
+      if(Path.GetInvalidPathChars().Any(path.Contains))
         return false;
 
       try {

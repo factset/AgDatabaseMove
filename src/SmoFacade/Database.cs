@@ -49,12 +49,11 @@ namespace AgDatabaseMove.SmoFacade
     {
       var backups = new List<BackupMetadata>();
 
-      var query =
-        "SELECT s.database_name, m.physical_device_name, s.backup_start_date, s.first_lsn,   s.last_lsn,   " +
-        "s.database_backup_lsn,   s.checkpoint_lsn,   s.[type] AS backup_type,   s.server_name, " +
-        "s.recovery_model   FROM msdb.dbo.backupset s INNER JOIN msdb.dbo.backupmediafamily m ON s.media_set_id = m.media_set_id WHERE " +
-        "s.last_lsn >= (SELECT MAX(last_lsn)  FROM msdb.dbo.backupset WHERE  [type] = 'D' and database_name = @dbName) AND " +
-        "s.database_name = @dbName ORDER BY s.backup_start_date DESC, backup_finish_date";
+      var query = "SELECT s.database_name, m.physical_device_name, s.backup_start_date, s.first_lsn,   s.last_lsn,   " +
+                  "s.database_backup_lsn,   s.checkpoint_lsn,   s.[type] AS backup_type,   s.server_name, " +
+                  "s.recovery_model   FROM msdb.dbo.backupset s INNER JOIN msdb.dbo.backupmediafamily m ON s.media_set_id = m.media_set_id WHERE " +
+                  "s.last_lsn >= (SELECT MAX(last_lsn)  FROM msdb.dbo.backupset WHERE  [type] = 'D' and database_name = @dbName) AND " +
+                  "s.database_name = @dbName ORDER BY s.backup_start_date DESC, backup_finish_date";
 
       using(var cmd = _server.SqlConnection.CreateCommand()) {
         cmd.CommandText = query;
@@ -63,7 +62,7 @@ namespace AgDatabaseMove.SmoFacade
         dbName.Value = _database.Name;
         cmd.Parameters.Add(dbName);
         using(var reader = cmd.ExecuteReader()) {
-          while(reader.Read())
+          while(reader.Read()) {
             backups.Add(new BackupMetadata {
               CheckpointLsn = (decimal)reader["checkpoint_lsn"],
               DatabaseBackupLsn = (decimal)reader["database_backup_lsn"],
@@ -75,6 +74,7 @@ namespace AgDatabaseMove.SmoFacade
               StartTime = (DateTime)reader["backup_start_date"],
               BackupType = (string)reader["backup_type"],
             });
+          }
         }
       }
 

@@ -3,6 +3,7 @@ namespace AgDatabaseMove
   using System;
   using System.Collections.Generic;
 
+
   /// <summary>
   ///   Occasionally we wind up with the same entry for a backup on multiple instance's msdb.
   ///   For now we'll consider these backups to be equal despite their file location,
@@ -12,10 +13,7 @@ namespace AgDatabaseMove
   {
     public bool Equals(BackupMetadata x, BackupMetadata y)
     {
-      return x.LastLsn == y.LastLsn &&
-             x.FirstLsn == y.FirstLsn &&
-             x.BackupType == y.BackupType &&
-             x.DatabaseName == y.DatabaseName;
+      return x.LastLsn == y.LastLsn && x.FirstLsn == y.FirstLsn && x.BackupType == y.BackupType && x.DatabaseName == y.DatabaseName;
     }
 
     public int GetHashCode(BackupMetadata obj)

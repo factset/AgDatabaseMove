@@ -102,10 +102,14 @@ namespace AgDatabaseMove.SmoFacade
     {
       public bool Equals(Login x, Login y)
       {
-        if(ReferenceEquals(x, y)) return true;
-        if(ReferenceEquals(x, null)) return false;
-        if(ReferenceEquals(y, null)) return false;
-        if(x.GetType() != y.GetType()) return false;
+        if(ReferenceEquals(x, y))
+          return true;
+        if(ReferenceEquals(x, null))
+          return false;
+        if(ReferenceEquals(y, null))
+          return false;
+        if(x.GetType() != y.GetType())
+          return false;
         return x.Name.Equals(y.Name, StringComparison.InvariantCultureIgnoreCase) && x.Sid.SequenceEqual(y.Sid);
       }
 

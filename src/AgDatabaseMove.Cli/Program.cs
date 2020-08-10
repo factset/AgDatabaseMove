@@ -23,18 +23,16 @@ namespace AgDatabaseMove.Cli
 
       Console.WriteLine("Beginning restore...");
 
-      var restore = new AgDatabaseMove(new MoveOptions
-         {
-          Source = new AgDatabase(arguments.From),
-          Destination = new AgDatabase(arguments.To),
-          Overwrite = arguments.Overwrite,
-          Finalize = arguments.Finalize,
-          CopyLogins = arguments.CopyLogins,
-          FileRelocator = filename => RestoreFileRelocator(arguments.From.DatabaseName, arguments.To.DatabaseName, filename)
-        });
+      var restore = new AgDatabaseMove(new MoveOptions {
+        Source = new AgDatabase(arguments.From),
+        Destination = new AgDatabase(arguments.To),
+        Overwrite = arguments.Overwrite,
+        Finalize = arguments.Finalize,
+        CopyLogins = arguments.CopyLogins,
+        FileRelocator = filename => RestoreFileRelocator(arguments.From.DatabaseName, arguments.To.DatabaseName, filename)
+      });
 
       restore.Move();
-
     }
 
     private static string RestoreFileRelocator(string fromName, string toName, string fileName)

@@ -13,7 +13,7 @@ namespace AgDatabaseMove
   using System.Linq;
   using System.Threading;
   using SmoFacade;
-  using AvailabilityGroup =SmoFacade.AvailabilityGroup;
+  using AvailabilityGroup = SmoFacade.AvailabilityGroup;
   using Server = SmoFacade.Server;
 
 
@@ -51,7 +51,7 @@ namespace AgDatabaseMove
     public AgDatabase(DatabaseConfig dbConfig)
     {
       Name = dbConfig.DatabaseName;
-      _listener = new Listener(new SqlConnectionStringBuilder(dbConfig.ConnectionString) {InitialCatalog = "master"});
+      _listener = new Listener(new SqlConnectionStringBuilder(dbConfig.ConnectionString) { InitialCatalog = "master" });
       _backupPathTemplate = dbConfig.BackupPathTemplate;
     }
 

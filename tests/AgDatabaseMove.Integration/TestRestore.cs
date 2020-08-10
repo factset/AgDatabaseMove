@@ -26,8 +26,7 @@ namespace AgDatabaseMove.Integration
 
     public TestRestoreFixture()
     {
-      var builder = new ConfigurationBuilder()
-        .AddJsonFile("config.json", false);
+      var builder = new ConfigurationBuilder().AddJsonFile("config.json", false);
 
       _config = builder.Build().GetSection("TestRestore").Get<TestRestoreConfig>();
 
@@ -53,8 +52,9 @@ namespace AgDatabaseMove.Integration
     {
       var postTestLogins = server.Logins.ToList();
       var newLogins = postTestLogins.Where(post => _preTestLogins.All(pre => pre.Name != post.Name));
-      foreach(var login in newLogins)
+      foreach(var login in newLogins) {
         login.Drop();
+      }
     }
   }
 
@@ -104,8 +104,7 @@ namespace AgDatabaseMove.Integration
       connectionStringBuilder.InitialCatalog = Test.Name;
       using(var connection = new SqlConnection(connectionStringBuilder.ToString())) {
         connection.Open();
-        var createTableSql =
-          "CREATE TABLE TestSync (Id INT IDENTITY(1,1) NOT NULL PRIMARY KEY, script VARCHAR(MAX) NULL)";
+        var createTableSql = "CREATE TABLE TestSync (Id INT IDENTITY(1,1) NOT NULL PRIMARY KEY, script VARCHAR(MAX) NULL)";
         using(var createTable = new SqlCommand(createTableSql, connection)) {
           createTable.ExecuteNonQuery();
         }
@@ -131,8 +130,7 @@ namespace AgDatabaseMove.Integration
     [Fact]
     public void ProgressiveRestore()
     {
-      var mover = new AgDatabaseMove(new MoveOptions
-      {
+      var mover = new AgDatabaseMove(new MoveOptions {
         Source = Source,
         Destination = Test,
         Overwrite = false,
@@ -169,8 +167,7 @@ namespace AgDatabaseMove.Integration
     {
       Assert.False(Test.Exists());
 
-      var mover = new AgDatabaseMove(new MoveOptions
-      {
+      var mover = new AgDatabaseMove(new MoveOptions {
         Source = Source,
         Destination = Test,
         Finalize = true,

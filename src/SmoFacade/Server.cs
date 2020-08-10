@@ -24,19 +24,16 @@ namespace AgDatabaseMove.SmoFacade
       _server = new Smo.Server(new ServerConnection(SqlConnection));
     }
 
-    public Server(SqlConnectionStringBuilder connectionStringBuilder) :
-      this(connectionStringBuilder.ConnectionString) { }
+    public Server(SqlConnectionStringBuilder connectionStringBuilder) : this(connectionStringBuilder.ConnectionString) { }
 
     public SqlConnection SqlConnection { get; }
 
-    public IEnumerable<AvailabilityGroup> AvailabilityGroups => _server.AvailabilityGroups
-      .Cast<Smo.AvailabilityGroup>().Select(ag => new AvailabilityGroup(ag));
+    public IEnumerable<AvailabilityGroup> AvailabilityGroups =>
+      _server.AvailabilityGroups.Cast<Smo.AvailabilityGroup>().Select(ag => new AvailabilityGroup(ag));
 
-    public IEnumerable<Database> Databases => _server.Databases.Cast<Smo.Database>()
-      .Select(d => new Database(d, this));
+    public IEnumerable<Database> Databases => _server.Databases.Cast<Smo.Database>().Select(d => new Database(d, this));
 
-    private AvailabilityGroup AvailabilityGroup =>
-      AvailabilityGroups.Single(ag => ag.Listeners.Contains(AgName(), StringComparer.InvariantCultureIgnoreCase));
+    private AvailabilityGroup AvailabilityGroup => AvailabilityGroups.Single(ag => ag.Listeners.Contains(AgName(), StringComparer.InvariantCultureIgnoreCase));
 
     public string Name => _server.Name;
 
@@ -101,8 +98,7 @@ namespace AgDatabaseMove.SmoFacade
     /// <param name="backupOrder">An ordered list of backups to apply.</param>
     /// <param name="databaseName">Database to restore to.</param>
     /// <param name="fileRelocation">Option for renaming files during the restore.</param>
-    public void Restore(IEnumerable<BackupMetadata> backupOrder, string databaseName,
-      Func<string, string> fileRelocation = null)
+    public void Restore(IEnumerable<BackupMetadata> backupOrder, string databaseName, Func<string, string> fileRelocation = null)
     {
       var restore = new Smo.Restore();
       var defaultFileLocations = DefaultFileLocations();
@@ -115,8 +111,7 @@ namespace AgDatabaseMove.SmoFacade
           restore.RelocateFiles.Clear();
           foreach(var file in restore.ReadFileList(_server).AsEnumerable()) {
             var physicalName = (string)file["PhysicalName"];
-            var fileName = Path.GetFileName(physicalName) ??
-                           throw new InvalidBackupException($"Physical name in backup is incomplete: {physicalName}");
+            var fileName = Path.GetFileName(physicalName) ?? throw new InvalidBackupException($"Physical name in backup is incomplete: {physicalName}");
 
             if(fileRelocation != null)
               fileName = fileRelocation(fileName);
@@ -151,17 +146,10 @@ namespace AgDatabaseMove.SmoFacade
       Backup(databaseName, backupPathTemplate, Smo.BackupActionType.Log, Smo.BackupTruncateLogType.Truncate);
     }
 
-    private void Backup(string databaseName, string backupPathTemplate, Smo.BackupActionType backupActionType,
-      Smo.BackupTruncateLogType truncateType)
+    private void Backup(string databaseName, string backupPathTemplate, Smo.BackupActionType backupActionType, Smo.BackupTruncateLogType truncateType)
     {
-      var backup = new Smo.Backup {
-        Action = backupActionType, Database = databaseName, LogTruncation = truncateType
-      };
-      var bdi =
-        new Smo.BackupDeviceItem(string.Format(backupPathTemplate,
-                                               databaseName,
-                                               DateTime.Now.ToString("yyyy_MM_dd_hhmmss_fff")),
-                                 Smo.DeviceType.File);
+      var backup = new Smo.Backup { Action = backupActionType, Database = databaseName, LogTruncation = truncateType };
+      var bdi = new Smo.BackupDeviceItem(string.Format(backupPathTemplate, databaseName, DateTime.Now.ToString("yyyy_MM_dd_hhmmss_fff")), Smo.DeviceType.File);
 
       backup.Devices.Add(bdi);
       backup.SqlBackup(_server);
@@ -191,18 +179,17 @@ namespace AgDatabaseMove.SmoFacade
     {
       return _server.BackupDirectory + "\\{0}_backup_{1}" + extension;
     }
-     
+
     internal Smo.Login ConstructLogin(LoginProperties loginProperties)
     {
       var login = new Smo.Login(_server, loginProperties.Name) {
         LoginType = loginProperties.LoginType, Sid = loginProperties.Sid, DefaultDatabase = loginProperties.DefaultDatabase
       };
 
-      if (loginProperties.LoginType == Smo.LoginType.SqlLogin)
-      {
-        if (loginProperties.PasswordHash != null)
+      if(loginProperties.LoginType == Smo.LoginType.SqlLogin) {
+        if(loginProperties.PasswordHash != null)
           login.Create(loginProperties.PasswordHash, Smo.LoginCreateOptions.IsHashed);
-        else if (loginProperties.Password != null)
+        else if(loginProperties.Password != null)
           login.Create(loginProperties.Password);
         else
           throw new ArgumentException("Password or hash was not supplied for sql login.");
@@ -215,8 +202,7 @@ namespace AgDatabaseMove.SmoFacade
 
     public void EnsureLogins(IEnumerable<LoginProperties> newLogins)
     {
-      foreach(var login in newLogins) 
-      {
+      foreach(var login in newLogins) {
         var matchingLogin = Logins.SingleOrDefault(l => l.Name.Equals(login.Name, StringComparison.InvariantCultureIgnoreCase));
         if(matchingLogin == null)
           new Login(login, this);

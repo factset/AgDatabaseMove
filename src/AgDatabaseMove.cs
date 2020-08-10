@@ -11,6 +11,7 @@ namespace AgDatabaseMove
   using Exceptions;
   using SmoFacade;
 
+
   public interface IMoveOptions
   {
     IAgDatabase Source { get; set; }
@@ -30,7 +31,7 @@ namespace AgDatabaseMove
     public bool CopyLogins { get; set; }
     public Func<string, string> FileRelocator { get; set; }
   }
-  
+
   /// <summary>
   ///   Used to manage the restore process.
   /// </summary>
@@ -42,13 +43,12 @@ namespace AgDatabaseMove
     {
       _options = options;
     }
-    
+
     internal LoginProperties UpdateDefaultDb(LoginProperties loginProperties)
     {
-      loginProperties.DefaultDatabase =
-        _options.Source.Name.Equals(loginProperties.DefaultDatabase, StringComparison.InvariantCultureIgnoreCase)
-          ? _options.Destination.Name
-          : "master";
+      loginProperties.DefaultDatabase = _options.Source.Name.Equals(loginProperties.DefaultDatabase, StringComparison.InvariantCultureIgnoreCase)
+        ? _options.Destination.Name
+        : "master";
       return loginProperties;
     }
 
@@ -60,7 +60,7 @@ namespace AgDatabaseMove
     /// <returns>The last LSN restored.</returns>
     public decimal Move(decimal? lastLsn = null)
     {
-      if (_options.Overwrite)
+      if(_options.Overwrite)
         _options.Destination.Delete();
 
       _options.Source.LogBackup();
@@ -68,15 +68,14 @@ namespace AgDatabaseMove
       if(!_options.Overwrite && _options.Destination.Exists() && !_options.Destination.Restoring)
         throw new ArgumentException("Database exists and overwrite option is not set.");
 
-      if(lastLsn != null && !_options.Destination.Restoring)
-        throw new
-          ArgumentException("Database is not in a restoring state which is required to use the lastLsn parameter.");
+      if(lastLsn != null && !_options.Destination.Restoring) {
+        throw new ArgumentException("Database is not in a restoring state which is required to use the lastLsn parameter.");
+      }
 
       var backupChain = new BackupChain(_options.Source);
       var backupList = backupChain.RestoreOrder.ToList();
 
-      if(_options.Destination.Restoring && lastLsn != null)
-      {
+      if(_options.Destination.Restoring && lastLsn != null) {
         backupList.RemoveAll(b => b.LastLsn <= lastLsn.Value);
 
         if(!backupList.Any())

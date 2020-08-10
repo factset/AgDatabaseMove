@@ -50,15 +50,14 @@ namespace AgDatabaseMove.SmoFacade
      */
     public Listener(SqlConnectionStringBuilder connectionStringBuilder)
     {
-      if (connectionStringBuilder.DataSource == null)
+      if(connectionStringBuilder.DataSource == null)
         throw new ArgumentException("DataSource not supplied in connection string");
 
       using(var server = new Server(connectionStringBuilder.ToString())) {
         // Find the AG associated with the listener
         var availabilityGroup =
-          server.AvailabilityGroups.Single(ag =>
-                                             ag.Listeners.Contains(AgListenerName(connectionStringBuilder.DataSource),
-                                                                   StringComparer.InvariantCultureIgnoreCase));
+          server.AvailabilityGroups.Single(ag => ag.Listeners.Contains(AgListenerName(connectionStringBuilder.DataSource),
+                                                                       StringComparer.InvariantCultureIgnoreCase));
 
         // List out the servers in the AG
         var primaryName = availabilityGroup.PrimaryInstance;
@@ -88,12 +87,14 @@ namespace AgDatabaseMove.SmoFacade
     {
       Primary?.Dispose();
       if(Secondaries != null) {
-        foreach(var secondary in Secondaries)
+        foreach(var secondary in Secondaries) {
           secondary?.Dispose();
+        }
+
         Secondaries = null;
       }
     }
-    
+
     public void ForEachAgInstance(Action<Server> action)
     {
       ForEachAgInstance((s, ag) => action(s));

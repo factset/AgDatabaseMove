@@ -1,4 +1,4 @@
-﻿namespace AgDatabaseMove.SmoFacade
+namespace AgDatabaseMove.SmoFacade
 {
   using System;
   using System.Collections.Generic;
@@ -20,20 +20,18 @@
     }
 
     public bool IsPrimaryInstance =>
-      _availabilityGroup.PrimaryReplicaServerName.Equals(_availabilityGroup.Parent.NetName,
-                                                         StringComparison.InvariantCultureIgnoreCase);
+      _availabilityGroup.PrimaryReplicaServerName.Equals(_availabilityGroup.Parent.NetName, StringComparison.InvariantCultureIgnoreCase);
 
     public string PrimaryInstance => _availabilityGroup.PrimaryReplicaServerName;
     public string Name => _availabilityGroup.Name;
 
     public IEnumerable<string> Listeners => _availabilityGroup.AvailabilityGroupListeners
-      .Cast<Smo.AvailabilityGroupListener>().Select(agl => agl.Name.ToString());
+      .Cast<Smo.AvailabilityGroupListener>()
+      .Select(agl => agl.Name.ToString());
 
-    public IEnumerable<string> Replicas =>
-      _availabilityGroup.AvailabilityReplicas.Cast<Smo.AvailabilityReplica>().Select(ar => ar.Name);
+    public IEnumerable<string> Replicas => _availabilityGroup.AvailabilityReplicas.Cast<Smo.AvailabilityReplica>().Select(ar => ar.Name);
 
-    public IEnumerable<string> Databases =>
-      _availabilityGroup.AvailabilityDatabases.Cast<Smo.AvailabilityDatabase>().Select(d => d.Name);
+    public IEnumerable<string> Databases => _availabilityGroup.AvailabilityDatabases.Cast<Smo.AvailabilityDatabase>().Select(d => d.Name);
 
     public void JoinSecondary(string dbName)
     {

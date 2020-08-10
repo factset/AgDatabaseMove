@@ -11,9 +11,7 @@ namespace AgDatabaseMove.Unit
 
     public RestoreTests()
     {
-      _loginProperties = new LoginProperties {
-        DefaultDatabase = "foo"
-      };
+      _loginProperties = new LoginProperties { DefaultDatabase = "foo" };
     }
 
     [Theory]
@@ -27,10 +25,7 @@ namespace AgDatabaseMove.Unit
 
       var destination = new Mock<IAgDatabase>();
       destination.Setup(d => d.Name).Returns(destinationDbName);
-      var restore = new AgDatabaseMove(new MoveOptions{
-        Source  = source.Object,
-        Destination = destination.Object
-      });
+      var restore = new AgDatabaseMove(new MoveOptions { Source = source.Object, Destination = destination.Object });
 
       restore.UpdateDefaultDb(_loginProperties);
 
