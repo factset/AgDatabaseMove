@@ -29,7 +29,8 @@ namespace AgDatabaseMove.Cli
         Overwrite = arguments.Overwrite,
         Finalize = arguments.Finalize,
         CopyLogins = arguments.CopyLogins,
-        FileRelocator = filename => RestoreFileRelocator(arguments.From.DatabaseName, arguments.To.DatabaseName, filename)
+        FileRelocator = filename =>
+          RestoreFileRelocator(arguments.From.DatabaseName, arguments.To.DatabaseName, filename)
       });
 
       restore.Move();

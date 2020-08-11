@@ -20,13 +20,15 @@ namespace AgDatabaseMove.Integration.Fixtures
 
     public string LoginName => _config.LoginName;
 
-    public SqlConnectionStringBuilder ConnectionStringBuilder => new SqlConnectionStringBuilder(_config.ConnectionString);
+    public SqlConnectionStringBuilder ConnectionStringBuilder =>
+      new SqlConnectionStringBuilder(_config.ConnectionString);
 
     public string DefaultDatabase => _config.DefaultDatabase;
 
     public void Dispose()
     {
-      _server.Logins.SingleOrDefault(l => l.Name.Equals(LoginName, StringComparison.InvariantCultureIgnoreCase))?.Drop();
+      _server.Logins.SingleOrDefault(l => l.Name.Equals(LoginName, StringComparison.InvariantCultureIgnoreCase))
+        ?.Drop();
       _server?.Dispose();
     }
 

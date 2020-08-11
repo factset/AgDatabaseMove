@@ -4,13 +4,13 @@ namespace AgDatabaseMove.SmoFacade
   using System.Collections.Generic;
   using System.Data.SqlClient;
   using System.Linq;
-  using Smo = Microsoft.SqlServer.Management.Smo;
+  using Microsoft.SqlServer.Management.Smo;
 
 
   public class LoginProperties
   {
     public string Name { get; set; }
-    public Smo.LoginType LoginType { get; set; }
+    public LoginType LoginType { get; set; }
     public byte[] Sid { get; set; }
     public string PasswordHash { get; set; }
     public string Password { get; set; }
@@ -20,10 +20,10 @@ namespace AgDatabaseMove.SmoFacade
 
   public class Login
   {
-    private readonly Smo.Login _login;
+    private readonly Microsoft.SqlServer.Management.Smo.Login _login;
     private readonly Server _server;
 
-    public Login(Smo.Login login, Server server)
+    public Login(Microsoft.SqlServer.Management.Smo.Login login, Server server)
     {
       _login = login;
       _server = server;
@@ -44,7 +44,7 @@ namespace AgDatabaseMove.SmoFacade
 
     public string Name => _login.Name;
     public byte[] Sid => _login.Sid;
-    private Smo.LoginType LoginType => _login.LoginType;
+    private LoginType LoginType => _login.LoginType;
     private string DefaultDatabase => _login.DefaultDatabase;
 
 
@@ -84,7 +84,7 @@ namespace AgDatabaseMove.SmoFacade
       return new LoginProperties {
         LoginType = LoginType,
         Name = Name,
-        PasswordHash = LoginType == Smo.LoginType.SqlLogin ? PasswordHash() : null,
+        PasswordHash = LoginType == LoginType.SqlLogin ? PasswordHash() : null,
         Sid = Sid,
         DefaultDatabase = DefaultDatabase
       };

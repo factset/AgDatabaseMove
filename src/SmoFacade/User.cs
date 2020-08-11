@@ -1,14 +1,11 @@
 ﻿namespace AgDatabaseMove.SmoFacade
 {
-  using Smo = Microsoft.SqlServer.Management.Smo;
-
-
   public class User
   {
     private readonly Server _server;
-    private readonly Smo.User _user;
+    private readonly Microsoft.SqlServer.Management.Smo.User _user;
 
-    public User(Smo.User user, Server server)
+    public User(Microsoft.SqlServer.Management.Smo.User user, Server server)
     {
       _user = user;
       _server = server;

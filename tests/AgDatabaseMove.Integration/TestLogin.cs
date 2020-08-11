@@ -3,9 +3,11 @@ namespace AgDatabaseMove.Integration
   using System;
   using System.Linq;
   using Fixtures;
+  using Microsoft.SqlServer.Management.Smo;
   using SmoFacade;
   using Xunit;
-  using Smo = Microsoft.SqlServer.Management.Smo;
+  using Login = global::AgDatabaseMove.SmoFacade.Login;
+  using Server = global::AgDatabaseMove.SmoFacade.Server;
 
 
   public class TestLogin : IClassFixture<TestLoginFixture>
@@ -38,7 +40,9 @@ namespace AgDatabaseMove.Integration
     private void TestLoginExists(Login login)
     {
       using(var testServer = _testLoginFixture.ConstructServer()) {
-        var existingLogin = testServer.Logins.SingleOrDefault(l => l.Name.Equals(login.Name, StringComparison.InvariantCultureIgnoreCase));
+        var existingLogin =
+          testServer.Logins.SingleOrDefault(l => l.Name.Equals(login.Name,
+                                                               StringComparison.InvariantCultureIgnoreCase));
         Assert.NotNull(existingLogin);
       }
     }
@@ -52,10 +56,11 @@ namespace AgDatabaseMove.Integration
     public void CreateLoginAndCopy()
     {
       var newLoginProperties = new LoginProperties {
-        Sid = new byte[] { 0xEA, 0x11, 0x6E, 0x4D, 0x2A, 0x9E, 0x43, 0x4B, 0x84, 0x04, 0xB9, 0x93, 0xF4, 0x8F, 0x1E, 0xA5 },
+        Sid = new byte[]
+          { 0xEA, 0x11, 0x6E, 0x4D, 0x2A, 0x9E, 0x43, 0x4B, 0x84, 0x04, 0xB9, 0x93, 0xF4, 0x8F, 0x1E, 0xA5 },
         Name = LoginName,
         Password = Password,
-        LoginType = Smo.LoginType.SqlLogin,
+        LoginType = LoginType.SqlLogin,
         DefaultDatabase = DefaultDatabase
       };
 

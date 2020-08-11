@@ -13,7 +13,8 @@ namespace AgDatabaseMove
   {
     public bool Equals(BackupMetadata x, BackupMetadata y)
     {
-      return x.LastLsn == y.LastLsn && x.FirstLsn == y.FirstLsn && x.BackupType == y.BackupType && x.DatabaseName == y.DatabaseName;
+      return x.LastLsn == y.LastLsn && x.FirstLsn == y.FirstLsn && x.BackupType == y.BackupType &&
+             x.DatabaseName == y.DatabaseName;
     }
 
     public int GetHashCode(BackupMetadata obj)

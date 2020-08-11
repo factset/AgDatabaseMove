@@ -46,9 +46,10 @@ namespace AgDatabaseMove
 
     internal LoginProperties UpdateDefaultDb(LoginProperties loginProperties)
     {
-      loginProperties.DefaultDatabase = _options.Source.Name.Equals(loginProperties.DefaultDatabase, StringComparison.InvariantCultureIgnoreCase)
-        ? _options.Destination.Name
-        : "master";
+      loginProperties.DefaultDatabase =
+        _options.Source.Name.Equals(loginProperties.DefaultDatabase, StringComparison.InvariantCultureIgnoreCase)
+          ? _options.Destination.Name
+          : "master";
       return loginProperties;
     }
 
@@ -69,7 +70,8 @@ namespace AgDatabaseMove
         throw new ArgumentException("Database exists and overwrite option is not set.");
 
       if(lastLsn != null && !_options.Destination.Restoring)
-        throw new ArgumentException("Database is not in a restoring state which is required to use the lastLsn parameter.");
+        throw new
+          ArgumentException("Database is not in a restoring state which is required to use the lastLsn parameter.");
 
       var backupChain = new BackupChain(_options.Source);
       var backupList = backupChain.RestoreOrder.ToList();

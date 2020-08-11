@@ -13,8 +13,6 @@ namespace AgDatabaseMove
   using System.Linq;
   using System.Threading;
   using SmoFacade;
-  using AvailabilityGroup = SmoFacade.AvailabilityGroup;
-  using Server = SmoFacade.Server;
 
 
   public interface IAgDatabase

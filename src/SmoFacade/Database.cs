@@ -3,7 +3,7 @@ namespace AgDatabaseMove.SmoFacade
   using System;
   using System.Collections.Generic;
   using System.Linq;
-  using Smo = Microsoft.SqlServer.Management.Smo;
+  using Microsoft.SqlServer.Management.Smo;
 
 
   /// <summary>
@@ -11,20 +11,21 @@ namespace AgDatabaseMove.SmoFacade
   /// </summary>
   public class Database
   {
-    private readonly Smo.Database _database;
+    private readonly Microsoft.SqlServer.Management.Smo.Database _database;
     private readonly Server _server;
 
-    internal Database(Smo.Database database, Server server)
+    internal Database(Microsoft.SqlServer.Management.Smo.Database database, Server server)
     {
       _database = database;
       _server = server;
     }
 
-    public IEnumerable<User> Users => _database.Users.Cast<Smo.User>().Select(u => new User(u, _server));
+    public IEnumerable<User> Users => _database.Users.Cast<Microsoft.SqlServer.Management.Smo.User>()
+      .Select(u => new User(u, _server));
 
     public string Name => _database.Name;
 
-    public bool Restoring => _database.Status == Smo.DatabaseStatus.Restoring;
+    public bool Restoring => _database.Status == DatabaseStatus.Restoring;
 
     public void RestoreWithRecovery()
     {
@@ -62,7 +63,7 @@ namespace AgDatabaseMove.SmoFacade
         dbName.Value = _database.Name;
         cmd.Parameters.Add(dbName);
         using(var reader = cmd.ExecuteReader()) {
-          while(reader.Read()) {
+          while(reader.Read())
             backups.Add(new BackupMetadata {
               CheckpointLsn = (decimal)reader["checkpoint_lsn"],
               DatabaseBackupLsn = (decimal)reader["database_backup_lsn"],
@@ -74,7 +75,6 @@ namespace AgDatabaseMove.SmoFacade
               StartTime = (DateTime)reader["backup_start_date"],
               BackupType = (string)reader["backup_type"]
             });
-          }
         }
       }
 
@@ -83,14 +83,14 @@ namespace AgDatabaseMove.SmoFacade
 
     public void RestrictedUserMode()
     {
-      _database.DatabaseOptions.UserAccess = Smo.DatabaseUserAccess.Restricted;
-      _database.Alter(Smo.TerminationClause.RollbackTransactionsImmediately);
+      _database.DatabaseOptions.UserAccess = DatabaseUserAccess.Restricted;
+      _database.Alter(TerminationClause.RollbackTransactionsImmediately);
     }
 
     public void MultiUserMode()
     {
-      _database.DatabaseOptions.UserAccess = Smo.DatabaseUserAccess.Multiple;
-      _database.Alter(Smo.TerminationClause.RollbackTransactionsImmediately);
+      _database.DatabaseOptions.UserAccess = DatabaseUserAccess.Multiple;
+      _database.Alter(TerminationClause.RollbackTransactionsImmediately);
     }
   }
 }

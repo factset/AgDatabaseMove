@@ -4,7 +4,7 @@ namespace AgDatabaseMove.SmoFacade
   using System.Collections.Generic;
   using System.Linq;
   using Exceptions;
-  using Smo = Microsoft.SqlServer.Management.Smo;
+  using Microsoft.SqlServer.Management.Smo;
 
 
   /// <summary>
@@ -12,26 +12,29 @@ namespace AgDatabaseMove.SmoFacade
   /// </summary>
   public class AvailabilityGroup
   {
-    private readonly Smo.AvailabilityGroup _availabilityGroup;
+    private readonly Microsoft.SqlServer.Management.Smo.AvailabilityGroup _availabilityGroup;
 
-    internal AvailabilityGroup(Smo.AvailabilityGroup availabilityGroup)
+    internal AvailabilityGroup(Microsoft.SqlServer.Management.Smo.AvailabilityGroup availabilityGroup)
     {
       _availabilityGroup = availabilityGroup;
     }
 
     public bool IsPrimaryInstance =>
-      _availabilityGroup.PrimaryReplicaServerName.Equals(_availabilityGroup.Parent.NetName, StringComparison.InvariantCultureIgnoreCase);
+      _availabilityGroup.PrimaryReplicaServerName.Equals(_availabilityGroup.Parent.NetName,
+                                                         StringComparison.InvariantCultureIgnoreCase);
 
     public string PrimaryInstance => _availabilityGroup.PrimaryReplicaServerName;
     public string Name => _availabilityGroup.Name;
 
     public IEnumerable<string> Listeners => _availabilityGroup.AvailabilityGroupListeners
-      .Cast<Smo.AvailabilityGroupListener>()
+      .Cast<AvailabilityGroupListener>()
       .Select(agl => agl.Name.ToString());
 
-    public IEnumerable<string> Replicas => _availabilityGroup.AvailabilityReplicas.Cast<Smo.AvailabilityReplica>().Select(ar => ar.Name);
+    public IEnumerable<string> Replicas =>
+      _availabilityGroup.AvailabilityReplicas.Cast<AvailabilityReplica>().Select(ar => ar.Name);
 
-    public IEnumerable<string> Databases => _availabilityGroup.AvailabilityDatabases.Cast<Smo.AvailabilityDatabase>().Select(d => d.Name);
+    public IEnumerable<string> Databases =>
+      _availabilityGroup.AvailabilityDatabases.Cast<AvailabilityDatabase>().Select(d => d.Name);
 
     public void JoinSecondary(string dbName)
     {
@@ -46,7 +49,7 @@ namespace AgDatabaseMove.SmoFacade
 
     public void JoinPrimary(string dbName)
     {
-      var availabilityGroupDb = new Smo.AvailabilityDatabase(_availabilityGroup, dbName);
+      var availabilityGroupDb = new AvailabilityDatabase(_availabilityGroup, dbName);
       availabilityGroupDb.Create();
     }
 
@@ -58,13 +61,13 @@ namespace AgDatabaseMove.SmoFacade
     public bool IsInitializing(string dbName)
     {
       // The availability database needs to be refreshed since the state changes on the server side.
-      var availabilityDatabase = _availabilityGroup.AvailabilityDatabases.Cast<Smo.AvailabilityDatabase>()
+      var availabilityDatabase = _availabilityGroup.AvailabilityDatabases.Cast<AvailabilityDatabase>()
         .SingleOrDefault(d => d.Name.Equals(dbName, StringComparison.InvariantCultureIgnoreCase));
       if(availabilityDatabase == null)
         return false;
       availabilityDatabase.Refresh();
 
-      return availabilityDatabase.SynchronizationState == Smo.AvailabilityDatabaseSynchronizationState.Initializing;
+      return availabilityDatabase.SynchronizationState == AvailabilityDatabaseSynchronizationState.Initializing;
     }
   }
 }

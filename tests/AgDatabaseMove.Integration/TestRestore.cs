@@ -52,9 +52,7 @@ namespace AgDatabaseMove.Integration
     {
       var postTestLogins = server.Logins.ToList();
       var newLogins = postTestLogins.Where(post => _preTestLogins.All(pre => pre.Name != post.Name));
-      foreach(var login in newLogins) {
-        login.Drop();
-      }
+      foreach(var login in newLogins) login.Drop();
     }
   }
 
@@ -104,7 +102,8 @@ namespace AgDatabaseMove.Integration
       connectionStringBuilder.InitialCatalog = Test.Name;
       using(var connection = new SqlConnection(connectionStringBuilder.ToString())) {
         connection.Open();
-        var createTableSql = "CREATE TABLE TestSync (Id INT IDENTITY(1,1) NOT NULL PRIMARY KEY, script VARCHAR(MAX) NULL)";
+        var createTableSql =
+          "CREATE TABLE TestSync (Id INT IDENTITY(1,1) NOT NULL PRIMARY KEY, script VARCHAR(MAX) NULL)";
         using(var createTable = new SqlCommand(createTableSql, connection)) {
           createTable.ExecuteNonQuery();
         }

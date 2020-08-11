@@ -56,8 +56,9 @@ namespace AgDatabaseMove.SmoFacade
       using(var server = new Server(connectionStringBuilder.ToString())) {
         // Find the AG associated with the listener
         var availabilityGroup =
-          server.AvailabilityGroups.Single(ag => ag.Listeners.Contains(AgListenerName(connectionStringBuilder.DataSource),
-                                                                       StringComparer.InvariantCultureIgnoreCase));
+          server.AvailabilityGroups.Single(ag =>
+                                             ag.Listeners.Contains(AgListenerName(connectionStringBuilder.DataSource),
+                                                                   StringComparer.InvariantCultureIgnoreCase));
 
         // List out the servers in the AG
         var primaryName = availabilityGroup.PrimaryInstance;
@@ -68,9 +69,8 @@ namespace AgDatabaseMove.SmoFacade
         AvailabilityGroup = Primary.AvailabilityGroups.Single(ag => ag.Name == availabilityGroup.Name);
 
         Secondaries = new List<Server>();
-        foreach(var secondaryName in secondaryNames) {
+        foreach(var secondaryName in secondaryNames)
           Secondaries.Add(AgListenerNameToServer(ref connectionStringBuilder, secondaryName));
-        }
       }
     }
 
@@ -87,9 +87,7 @@ namespace AgDatabaseMove.SmoFacade
     {
       Primary?.Dispose();
       if(Secondaries != null) {
-        foreach(var secondary in Secondaries) {
-          secondary?.Dispose();
-        }
+        foreach(var secondary in Secondaries) secondary?.Dispose();
 
         Secondaries = null;
       }

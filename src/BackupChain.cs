@@ -1,11 +1,11 @@
 namespace AgDatabaseMove
 {
-  using System.Linq;
   using System;
   using System.Collections.Generic;
   using System.IO;
+  using System.Linq;
   using Exceptions;
-  using Database = SmoFacade.Database;
+  using SmoFacade;
 
 
   public interface IBackupChain
@@ -69,12 +69,14 @@ namespace AgDatabaseMove
 
     private BackupMetadata NextDifferentialBackup(IList<BackupMetadata> backups, BackupMetadata lastFullBackup)
     {
-      return backups.Where(b => b.BackupType == "I" && b.DatabaseBackupLsn == lastFullBackup.CheckpointLsn).OrderByDescending(b => b.LastLsn).FirstOrDefault();
+      return backups.Where(b => b.BackupType == "I" && b.DatabaseBackupLsn == lastFullBackup.CheckpointLsn)
+        .OrderByDescending(b => b.LastLsn).FirstOrDefault();
     }
 
     private BackupMetadata NextLogBackup(IList<BackupMetadata> backups, decimal? nextLogLsn)
     {
-      return backups.Where(b => b.BackupType == "L").SingleOrDefault(d => nextLogLsn >= d.FirstLsn && nextLogLsn + 1 < d.LastLsn);
+      return backups.Where(b => b.BackupType == "L")
+        .SingleOrDefault(d => nextLogLsn >= d.FirstLsn && nextLogLsn + 1 < d.LastLsn);
     }
 
     private bool IsValidFilePath(BackupMetadata meta)
