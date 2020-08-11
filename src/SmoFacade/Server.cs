@@ -196,7 +196,7 @@ namespace AgDatabaseMove.SmoFacade
       return login;
     }
 
-    public void EnsureLogins(IList<LoginProperties> newLogins)
+    public void EnsureLogins(IEnumerable<LoginProperties> newLogins)
     {
       foreach(var login in newLogins) {
         var matchingLogin = Logins.SingleOrDefault(l => l.Name.Equals(login.Name, StringComparison.InvariantCultureIgnoreCase));
