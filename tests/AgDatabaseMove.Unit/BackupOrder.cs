@@ -11,12 +11,12 @@ namespace AgDatabaseMove.Unit
 
   public class BackupOrder
   {
-    private readonly List<BackupMetadata> _listBackups;
-
     public BackupOrder()
     {
       _listBackups = ListBackups();
     }
+
+    private readonly List<BackupMetadata> _listBackups;
 
     private static List<BackupMetadata> ListBackups()
     {

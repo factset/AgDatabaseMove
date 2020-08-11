@@ -72,7 +72,7 @@ namespace AgDatabaseMove.SmoFacade
               PhysicalDeviceName = (string)reader["physical_device_name"],
               ServerName = (string)reader["server_name"],
               StartTime = (DateTime)reader["backup_start_date"],
-              BackupType = (string)reader["backup_type"],
+              BackupType = (string)reader["backup_type"]
             });
           }
         }

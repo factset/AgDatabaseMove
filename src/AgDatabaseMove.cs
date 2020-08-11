@@ -68,9 +68,8 @@ namespace AgDatabaseMove
       if(!_options.Overwrite && _options.Destination.Exists() && !_options.Destination.Restoring)
         throw new ArgumentException("Database exists and overwrite option is not set.");
 
-      if(lastLsn != null && !_options.Destination.Restoring) {
+      if(lastLsn != null && !_options.Destination.Restoring)
         throw new ArgumentException("Database is not in a restoring state which is required to use the lastLsn parameter.");
-      }
 
       var backupChain = new BackupChain(_options.Source);
       var backupList = backupChain.RestoreOrder.ToList();

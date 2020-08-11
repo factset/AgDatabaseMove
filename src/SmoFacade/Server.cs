@@ -63,8 +63,6 @@ namespace AgDatabaseMove.SmoFacade
     /// <returns>A DefaultFileLocations object which contains default log and data directories.</returns>
     private DefaultFileLocations DefaultFileLocations()
     {
-      var defaultFileLocations = new DefaultFileLocations();
-
       var query =
         "SELECT SERVERPROPERTY('InstanceDefaultDataPath') AS InstanceDefaultDataPath, SERVERPROPERTY('InstanceDefaultLogPath') AS InstanceDefaultLogPath";
 
@@ -74,12 +72,9 @@ namespace AgDatabaseMove.SmoFacade
           if(!reader.Read())
             return null;
 
-          defaultFileLocations.Log = (string)reader["InstanceDefaultLogPath"];
-          defaultFileLocations.Data = (string)reader["InstanceDefaultDataPath"];
+          return new DefaultFileLocations { Log = (string)reader["InstanceDefaultLogPath"], Data = (string)reader["InstanceDefaultDataPath"] };
         }
       }
-
-      return defaultFileLocations;
     }
 
     public Database Database(string dbName)
@@ -107,6 +102,7 @@ namespace AgDatabaseMove.SmoFacade
         restore.Devices.Add(backupDeviceItem);
         restore.Database = databaseName;
         restore.NoRecovery = true;
+
         if(defaultFileLocations != null) {
           restore.RelocateFiles.Clear();
           foreach(var file in restore.ReadFileList(_server).AsEnumerable()) {
@@ -200,7 +196,7 @@ namespace AgDatabaseMove.SmoFacade
       return login;
     }
 
-    public void EnsureLogins(IEnumerable<LoginProperties> newLogins)
+    public void EnsureLogins(IList<LoginProperties> newLogins)
     {
       foreach(var login in newLogins) {
         var matchingLogin = Logins.SingleOrDefault(l => l.Name.Equals(login.Name, StringComparison.InvariantCultureIgnoreCase));
