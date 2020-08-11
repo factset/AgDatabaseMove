@@ -9,7 +9,7 @@ namespace AgDatabaseMove.Integration
   using Login = SmoFacade.Login;
   using Server = SmoFacade.Server;
 
-  
+
   public class TestLogin : IClassFixture<TestLoginFixture>
   {
     public TestLogin(TestLoginFixture testLoginFixture)
