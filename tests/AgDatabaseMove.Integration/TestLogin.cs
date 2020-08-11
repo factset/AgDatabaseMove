@@ -6,10 +6,10 @@ namespace AgDatabaseMove.Integration
   using Microsoft.SqlServer.Management.Smo;
   using SmoFacade;
   using Xunit;
-  using Login = global::AgDatabaseMove.SmoFacade.Login;
-  using Server = global::AgDatabaseMove.SmoFacade.Server;
+  using Login = SmoFacade.Login;
+  using Server = SmoFacade.Server;
 
-
+  
   public class TestLogin : IClassFixture<TestLoginFixture>
   {
     public TestLogin(TestLoginFixture testLoginFixture)
