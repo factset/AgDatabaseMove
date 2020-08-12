@@ -55,6 +55,8 @@ namespace AgDatabaseMove.SmoFacade
       if(connectionStringBuilder.DataSource == null)
         throw new ArgumentException("DataSource not supplied in connection string");
 
+      connectionStringBuilder.InitialCatalog = "master";
+
       using(var server = new Server(connectionStringBuilder.ToString())) {
         // Find the AG associated with the listener
         var availabilityGroup =
