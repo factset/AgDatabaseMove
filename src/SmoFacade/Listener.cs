@@ -40,7 +40,7 @@ namespace AgDatabaseMove.SmoFacade
 
   internal class Listener : IListener
   {
-    private readonly IList<Server> _secondaries;
+    private IList<Server> _secondaries;
 
     /**
      * We initially connect an availability group instance by way of a listener name. This creates a different connection and
@@ -88,10 +88,10 @@ namespace AgDatabaseMove.SmoFacade
     public void Dispose()
     {
       Primary?.Dispose();
-      if(Secondaries != null) {
-        foreach(var secondary in Secondaries) secondary?.Dispose();
+      if(_secondaries != null) {
+        foreach(var secondary in _secondaries) secondary?.Dispose();
 
-        Secondaries = null;
+        _secondaries = null;
       }
     }
 
