@@ -16,7 +16,7 @@ namespace AgDatabaseMove.SmoFacade
   /// </summary>
   public class Server : IDisposable
   {
-    private readonly Microsoft.SqlServer.Management.Smo.Server _server;
+    internal readonly Microsoft.SqlServer.Management.Smo.Server _server;
 
     public Server(string connectionString)
     {
@@ -186,28 +186,6 @@ namespace AgDatabaseMove.SmoFacade
     private string DefaultBackupPathTemplate(string extension)
     {
       return _server.BackupDirectory + "\\{0}_backup_{1}" + extension;
-    }
-
-    internal Microsoft.SqlServer.Management.Smo.Login ConstructLogin(LoginProperties loginProperties)
-    {
-      var login = new Microsoft.SqlServer.Management.Smo.Login(_server, loginProperties.Name) {
-        LoginType = loginProperties.LoginType, Sid = loginProperties.Sid,
-        DefaultDatabase = loginProperties.DefaultDatabase
-      };
-
-      if(loginProperties.LoginType == LoginType.SqlLogin) {
-        if(loginProperties.PasswordHash != null)
-          login.Create(loginProperties.PasswordHash, LoginCreateOptions.IsHashed);
-        else if(loginProperties.Password != null)
-          login.Create(loginProperties.Password);
-        else
-          throw new ArgumentException("Password or hash was not supplied for sql login.");
-      }
-      else {
-        login.Create();
-      }
-
-      return login;
     }
 
     public void EnsureLogins(IEnumerable<LoginProperties> newLogins)

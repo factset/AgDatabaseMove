@@ -18,7 +18,7 @@ namespace AgDatabaseMove.SmoFacade
     /// <summary>
     ///   The secondary instances at the time of construction.
     /// </summary>
-    IList<Server> Secondaries { get; set; }
+    IEnumerable<Server> Secondaries { get; }
 
     /// <summary>
     ///   The availability group associated with the supplied listener.
@@ -40,6 +40,8 @@ namespace AgDatabaseMove.SmoFacade
 
   internal class Listener : IListener
   {
+    private readonly IList<Server> _secondaries;
+
     /**
      * We initially connect an availability group instance by way of a listener name. This creates a different connection and
      * SMO server object from connecting directly to the primary instance. Having different SMO server objects results in the
@@ -68,9 +70,9 @@ namespace AgDatabaseMove.SmoFacade
         Primary = AgListenerNameToServer(ref connectionStringBuilder, primaryName);
         AvailabilityGroup = Primary.AvailabilityGroups.Single(ag => ag.Name == availabilityGroup.Name);
 
-        Secondaries = new List<Server>();
+        _secondaries = new List<Server>();
         foreach(var secondaryName in secondaryNames)
-          Secondaries.Add(AgListenerNameToServer(ref connectionStringBuilder, secondaryName));
+          _secondaries.Add(AgListenerNameToServer(ref connectionStringBuilder, secondaryName));
       }
     }
 
@@ -79,7 +81,7 @@ namespace AgDatabaseMove.SmoFacade
     // TODO: This could change due to fail over, so we may want to build a better accessor here.
     public Server Primary { get; set; }
 
-    public IList<Server> Secondaries { get; set; }
+    public IEnumerable<Server> Secondaries => _secondaries;
 
     public AvailabilityGroup AvailabilityGroup { get; set; }
 

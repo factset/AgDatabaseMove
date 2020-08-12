@@ -37,7 +37,7 @@ namespace AgDatabaseMove.SmoFacade
     public Login(LoginProperties loginProperties, Server server)
     {
       _server = server;
-      _login = _server.ConstructLogin(loginProperties);
+      _login = ConstructLogin(loginProperties, server);
     }
 
     public static IEqualityComparer<Login> Comparer { get; } = new LoginEqualityComparer();
@@ -93,6 +93,30 @@ namespace AgDatabaseMove.SmoFacade
     public void Drop()
     {
       _login.Drop();
+    }
+
+    private static Microsoft.SqlServer.Management.Smo.Login ConstructLogin(LoginProperties loginProperties,
+      Server server)
+    {
+      var login = new Microsoft.SqlServer.Management.Smo.Login(server._server, loginProperties.Name) {
+        LoginType = loginProperties.LoginType,
+        Sid = loginProperties.Sid,
+        DefaultDatabase = loginProperties.DefaultDatabase
+      };
+
+      if(loginProperties.LoginType == LoginType.SqlLogin) {
+        if(loginProperties.PasswordHash != null)
+          login.Create(loginProperties.PasswordHash, LoginCreateOptions.IsHashed);
+        else if(loginProperties.Password != null)
+          login.Create(loginProperties.Password);
+        else
+          throw new ArgumentException("Password or hash was not supplied for sql login.");
+      }
+      else {
+        login.Create();
+      }
+
+      return login;
     }
 
     /// <summary>
