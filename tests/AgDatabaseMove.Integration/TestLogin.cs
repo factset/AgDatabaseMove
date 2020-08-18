@@ -6,20 +6,20 @@ namespace AgDatabaseMove.Integration
   using Microsoft.SqlServer.Management.Smo;
   using SmoFacade;
   using Xunit;
-  using Login = global::AgDatabaseMove.SmoFacade.Login;
-  using Server = global::AgDatabaseMove.SmoFacade.Server;
+  using FacadeServer = SmoFacade.Server;
+  using FacadeLogin = SmoFacade.Login;
 
 
   public class TestLogin : IClassFixture<TestLoginFixture>
   {
-    private readonly TestLoginFixture _testLoginFixture;
-
     public TestLogin(TestLoginFixture testLoginFixture)
     {
       _testLoginFixture = testLoginFixture;
     }
 
-    private Server Server => _testLoginFixture._server;
+    private readonly TestLoginFixture _testLoginFixture;
+
+    private FacadeServer Server => _testLoginFixture._server;
     private string Password => _testLoginFixture.Password;
     private string LoginName => _testLoginFixture.LoginName;
     private string DefaultDatabase => _testLoginFixture.DefaultDatabase;
@@ -37,7 +37,7 @@ namespace AgDatabaseMove.Integration
     ///   Opens a new server object so we're certain the SMO caching isn't faking us out.
     /// </summary>
     /// <param name="login"></param>
-    private void TestLoginExists(Login login)
+    private void TestLoginExists(FacadeLogin login)
     {
       using(var testServer = _testLoginFixture.ConstructServer()) {
         var existingLogin =
@@ -47,9 +47,9 @@ namespace AgDatabaseMove.Integration
       }
     }
 
-    private Login CreateTestLogin(LoginProperties loginProperties)
+    private FacadeLogin CreateTestLogin(LoginProperties loginProperties)
     {
-      return new Login(loginProperties, Server);
+      return new FacadeLogin(loginProperties, Server);
     }
 
     [Fact]
