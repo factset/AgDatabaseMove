@@ -5,7 +5,7 @@ namespace AgDatabaseMove
   using System.IO;
   using System.Linq;
   using Microsoft.SqlServer.Management.Smo;
-  using Database = global::AgDatabaseMove.SmoFacade.Database;
+  using Database = SmoFacade.Database;
 
 
   public interface IBackupChain
