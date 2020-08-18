@@ -12,12 +12,12 @@ namespace AgDatabaseMove.Integration
 
   public class TestLogin : IClassFixture<TestLoginFixture>
   {
+    private readonly TestLoginFixture _testLoginFixture;
+
     public TestLogin(TestLoginFixture testLoginFixture)
     {
       _testLoginFixture = testLoginFixture;
     }
-
-    private readonly TestLoginFixture _testLoginFixture;
 
     private FacadeServer Server => _testLoginFixture._server;
     private string Password => _testLoginFixture.Password;

@@ -10,9 +10,9 @@ namespace AgDatabaseMove
   {
     public enum BackupType
     {
-      Full, // bak / D
+      Full, // bak  / D
       Diff, // diff / I
-      Log // trn / L
+      Log // trn  / L
     }
 
     public static bool IsUrl(string path)
