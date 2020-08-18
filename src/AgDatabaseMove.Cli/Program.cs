@@ -21,9 +21,9 @@ namespace AgDatabaseMove.Cli
       var builder = new ConfigurationBuilder().AddCommandLine(args);
       var arguments = builder.Build().Get<MoveArgs>();
 
-      Console.WriteLine("Beginning restore...");
+      Console.WriteLine("Beginning AgDatabaseMove...");
 
-      var restore = new AgDatabaseMove(new MoveOptions {
+      var mover = new AgDatabaseMove(new MoveOptions {
         Source = new AgDatabase(arguments.From),
         Destination = new AgDatabase(arguments.To),
         Overwrite = arguments.Overwrite,
@@ -33,7 +33,7 @@ namespace AgDatabaseMove.Cli
           RestoreFileRelocator(arguments.From.DatabaseName, arguments.To.DatabaseName, filename)
       });
 
-      restore.Move();
+      mover.Move();
     }
 
     private static string RestoreFileRelocator(string fromName, string toName, string fileName)

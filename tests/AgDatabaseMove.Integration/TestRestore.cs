@@ -58,12 +58,12 @@ namespace AgDatabaseMove.Integration
 
   public class TestRestore : IClassFixture<TestRestoreFixture>
   {
+    private readonly TestRestoreFixture _testRestoreFixture;
+
     public TestRestore(TestRestoreFixture testRestoreFixture)
     {
       _testRestoreFixture = testRestoreFixture;
     }
-
-    private readonly TestRestoreFixture _testRestoreFixture;
 
     private AgDatabase Test => _testRestoreFixture._test;
     private AgDatabase Source => _testRestoreFixture._source;

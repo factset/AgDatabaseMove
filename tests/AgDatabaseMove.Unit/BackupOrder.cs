@@ -4,25 +4,24 @@ namespace AgDatabaseMove.Unit
   using System.Collections;
   using System.Collections.Generic;
   using System.Linq;
-  using Exceptions;
   using Moq;
   using Xunit;
 
 
   public class BackupOrder
   {
+    private readonly List<BackupMetadata> _listBackups;
+
     public BackupOrder()
     {
       _listBackups = ListBackups();
     }
 
-    private readonly List<BackupMetadata> _listBackups;
-
     private static List<BackupMetadata> ListBackups()
     {
       return new List<BackupMetadata> {
         new BackupMetadata {
-          BackupType = "L",
+          BackupType = FileTools.BackupType.Log,
           DatabaseBackupLsn = 126000000943800037,
           CheckpointLsn = 126000000953600034,
           FirstLsn = 126000000955500001,
@@ -33,7 +32,7 @@ namespace AgDatabaseMove.Unit
           StartTime = DateTime.Parse("2018-10-29 03:00:06.000")
         },
         new BackupMetadata {
-          BackupType = "D",
+          BackupType = FileTools.BackupType.Full,
           DatabaseBackupLsn = 126000000882000037,
           CheckpointLsn = 126000000943800037,
           FirstLsn = 126000000936100001,
@@ -44,7 +43,7 @@ namespace AgDatabaseMove.Unit
           StartTime = DateTime.Parse("2018-10-28 00:02:28.000")
         },
         new BackupMetadata {
-          BackupType = "I",
+          BackupType = FileTools.BackupType.Diff,
           DatabaseBackupLsn = 126000000943800037,
           CheckpointLsn = 126000000953600034,
           FirstLsn = 126000000943800037,
@@ -55,7 +54,7 @@ namespace AgDatabaseMove.Unit
           StartTime = DateTime.Parse("2018-10-29 00:03:39.000")
         },
         new BackupMetadata {
-          BackupType = "L",
+          BackupType = FileTools.BackupType.Log,
           DatabaseBackupLsn = 126000000882000037,
           CheckpointLsn = 126000000953600034,
           FirstLsn = 126000000955200001,
@@ -77,7 +76,7 @@ namespace AgDatabaseMove.Unit
 
       var expected = _listBackups.OrderBy(bu => bu.FirstLsn);
 
-      Assert.Equal<IEnumerable>(backupChain.RestoreOrder, expected);
+      Assert.Equal<IEnumerable>(backupChain.OrderedBackups, expected);
     }
 
     [Fact]
@@ -86,7 +85,9 @@ namespace AgDatabaseMove.Unit
       var backups = ListBackups().Where(b => b.FirstLsn != 126000000955200001).ToList();
       var agDatabase = new Mock<IAgDatabase>();
       agDatabase.Setup(agd => agd.RecentBackups()).Returns(backups);
-      var ex = Assert.Throws<BackupChainException>(() => new BackupChain(agDatabase.Object));
+
+      var chain = new BackupChain(agDatabase.Object).OrderedBackups;
+      Assert.NotEqual(chain.Last().LastLsn, ListBackups().Max(b => b.LastLsn));
     }
 
     // TODO: test skipping of logs if diff last LSN and log last LSN matches

@@ -61,27 +61,26 @@ namespace AgDatabaseMove
     /// <returns>The last LSN restored.</returns>
     public decimal Move(decimal? lastLsn = null)
     {
+      if(!_options.Overwrite && _options.Destination.Exists() && !_options.Destination.Restoring)
+        throw new ArgumentException("Database exists and overwrite option is not set");
+
+      if(lastLsn != null && !_options.Destination.Restoring)
+        throw new
+          ArgumentException("lastLsn parameter can only be used if the Destination database is in a restoring state");
+
       if(_options.Overwrite)
         _options.Destination.Delete();
 
       _options.Source.LogBackup();
 
-      if(!_options.Overwrite && _options.Destination.Exists() && !_options.Destination.Restoring)
-        throw new ArgumentException("Database exists and overwrite option is not set.");
-
-      if(lastLsn != null && !_options.Destination.Restoring)
-        throw new
-          ArgumentException("Database is not in a restoring state which is required to use the lastLsn parameter.");
-
       var backupChain = new BackupChain(_options.Source);
-      var backupList = backupChain.RestoreOrder.ToList();
+      var backupList = backupChain.OrderedBackups.ToList();
 
-      if(_options.Destination.Restoring && lastLsn != null) {
+      if(_options.Destination.Restoring && lastLsn != null)
         backupList.RemoveAll(b => b.LastLsn <= lastLsn.Value);
 
-        if(!backupList.Any())
-          throw new BackupChainException("No backups found to restore.");
-      }
+      if(!backupList.Any())
+        throw new BackupChainException("No backups found to restore");
 
       _options.Destination.Restore(backupList, _options.FileRelocator);
 

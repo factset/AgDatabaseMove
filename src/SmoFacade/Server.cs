@@ -61,7 +61,6 @@ namespace AgDatabaseMove.SmoFacade
       return dotIndex >= 0 ? SqlConnection.DataSource.Remove(dotIndex.Value) : SqlConnection.DataSource;
     }
 
-
     /// <summary>
     ///   Queries the database instance for the default file locations.
     /// </summary>
@@ -104,32 +103,30 @@ namespace AgDatabaseMove.SmoFacade
     {
       var restore = new Restore();
       var defaultFileLocations = DefaultFileLocations();
+      if(defaultFileLocations != null) {
+        restore.RelocateFiles.Clear();
+        foreach(var file in restore.ReadFileList(_server).AsEnumerable()) {
+          var physicalName = (string)file["PhysicalName"];
+          var fileName = Path.GetFileName(physicalName) ??
+                         throw new InvalidBackupException($"Physical name in backup is incomplete: {physicalName}");
+
+          if(fileRelocation != null)
+            fileName = fileRelocation(fileName);
+
+          var path = (string)file["Type"] == "L" ? defaultFileLocations?.Log : defaultFileLocations?.Data;
+          path = path ?? Path.GetFullPath(physicalName);
+
+          var newFilePath = Path.Combine(path, fileName);
+
+          restore.RelocateFiles.Add(new RelocateFile((string)file["LogicalName"], newFilePath));
+        }
+      }
+
       foreach(var backup in backupOrder) {
-        var backupDeviceItem = new BackupDeviceItem(backup.PhysicalDeviceName, DeviceType.File);
+        var backupDeviceItem = new BackupDeviceItem(backup.PhysicalDeviceName, backup.Device);
         restore.Devices.Add(backupDeviceItem);
         restore.Database = databaseName;
         restore.NoRecovery = true;
-
-        if(defaultFileLocations != null) {
-          restore.RelocateFiles.Clear();
-          foreach(var file in restore.ReadFileList(_server).AsEnumerable()) {
-            var physicalName = (string)file["PhysicalName"];
-            var fileName = Path.GetFileName(physicalName) ??
-                           throw new InvalidBackupException($"Physical name in backup is incomplete: {physicalName}");
-
-            if(fileRelocation != null)
-              fileName = fileRelocation(fileName);
-
-            var path = (string)file["Type"] == "L" ? defaultFileLocations?.Log : defaultFileLocations?.Data;
-
-            path = path ?? Path.GetFullPath(physicalName);
-
-            var newFilePath = Path.Combine(path, fileName);
-
-            restore.RelocateFiles.Add(new RelocateFile((string)file["LogicalName"], newFilePath));
-          }
-        }
-
         restore.SqlRestore(_server);
         restore.Devices.Remove(backupDeviceItem);
       }
@@ -139,28 +136,18 @@ namespace AgDatabaseMove.SmoFacade
     ///   Generate a log backup, truncating the transaction log, and storing it in the default backup destination.
     ///   TODO: we should support a backup path somehow with configuration
     /// </summary>
+    /// <param name="databaseName"></param>
     /// <param name="backupPathTemplate">
     ///   A template string for backup location:
     ///   {0} databaseName
     ///   {1} time
     /// </param>
-    public void LogBackup(string databaseName, string backupPathTemplate)
+    public void LogBackup(string databaseName, string backupPathTemplate = null)
     {
-      backupPathTemplate = backupPathTemplate ?? DefaultBackupPathTemplate(".trn");
-      Backup(databaseName, backupPathTemplate, BackupActionType.Log, BackupTruncateLogType.Truncate);
-    }
-
-    private void Backup(string databaseName, string backupPathTemplate, BackupActionType backupActionType,
-      BackupTruncateLogType truncateType)
-    {
-      var backup = new Backup { Action = backupActionType, Database = databaseName, LogTruncation = truncateType };
-      var bdi = new BackupDeviceItem(string.Format(backupPathTemplate,
-                                                   databaseName,
-                                                   DateTime.Now.ToString("yyyy_MM_dd_hhmmss_fff")),
-                                     DeviceType.File);
-
-      backup.Devices.Add(bdi);
-      backup.SqlBackup(_server);
+      backupPathTemplate = backupPathTemplate ?? DefaultBackupPathTemplate(FileTools.BackupType.Log);
+      var backup = new Backup
+        { Action = BackupActionType.Log, Database = databaseName, LogTruncation = BackupTruncateLogType.Truncate };
+      Backup(backup, backupPathTemplate);
     }
 
     /// <summary>
@@ -173,19 +160,36 @@ namespace AgDatabaseMove.SmoFacade
     ///   {0} databaseName
     ///   {1} time
     /// </param>
-    public void FullBackup(string databaseName, string backupPathTemplate)
+    public void FullBackup(string databaseName, string backupPathTemplate = null)
     {
-      backupPathTemplate = backupPathTemplate ?? DefaultBackupPathTemplate(".bak");
-      Backup(databaseName, backupPathTemplate, BackupActionType.Database, BackupTruncateLogType.NoTruncate);
+      backupPathTemplate = backupPathTemplate ?? DefaultBackupPathTemplate(FileTools.BackupType.Full);
+      var backup = new Backup {
+        Action = BackupActionType.Database, Database = databaseName, LogTruncation = BackupTruncateLogType.NoTruncate
+      };
+      Backup(backup, backupPathTemplate);
     }
+
+    private void Backup(Backup backup, string backupPathTemplate)
+    {
+      var filePath = string.Format(backupPathTemplate,
+                                   backup.Database,
+                                   DateTime.Now.ToString("yyyy_MM_dd_hhmmss_fff"));
+      var deviceType = FileTools.IsUrl(filePath) ? DeviceType.Url : DeviceType.File;
+
+      var bdi = new BackupDeviceItem(filePath, deviceType);
+
+      backup.Devices.Add(bdi);
+      backup.SqlBackup(_server);
+    }
+
 
     /// <summary>
     ///   Builds a backup path template from the server's default backup directory.
     ///   If this path is not valid on the destination instance the restore process will fail.
     /// </summary>
-    private string DefaultBackupPathTemplate(string extension)
+    private string DefaultBackupPathTemplate(FileTools.BackupType type)
     {
-      return _server.BackupDirectory + "\\{0}_backup_{1}" + extension;
+      return _server.BackupDirectory + "\\{0}_backup_{1}." + FileTools.BackupTypeToExtension(type);
     }
 
     public void EnsureLogins(IEnumerable<LoginProperties> newLogins)

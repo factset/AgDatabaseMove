@@ -4,13 +4,13 @@ namespace AgDatabaseMove
   using System.Collections.Generic;
   using System.IO;
   using System.Linq;
-  using Exceptions;
-  using SmoFacade;
+  using Microsoft.SqlServer.Management.Smo;
+  using Database = global::AgDatabaseMove.SmoFacade.Database;
 
 
   public interface IBackupChain
   {
-    IEnumerable<BackupMetadata> RestoreOrder { get; }
+    IEnumerable<BackupMetadata> OrderedBackups { get; }
   }
 
   /// <summary>
@@ -26,25 +26,20 @@ namespace AgDatabaseMove
         .Where(b => IsValidFilePath(b)) // A third party application caused invalid path strings to be inserted into backupmediafamily
         .ToList();
 
-      var lastFullBackup = LastFullBackup(recentBackups);
-      _orderedBackups = new List<BackupMetadata> { lastFullBackup };
+      var mostRecentFullBackup = MostRecentFullBackup(recentBackups);
+      _orderedBackups = new List<BackupMetadata> { mostRecentFullBackup };
 
-      var differentialBackup = NextDifferentialBackup(backups, lastFullBackup);
-
+      var differentialBackup = MostRecentDifferentialBackup(backups, mostRecentFullBackup);
       if(differentialBackup != null)
         _orderedBackups.Add(differentialBackup);
 
-      decimal? nextLogLsn = _orderedBackups.Last().LastLsn;
-      while(nextLogLsn != null) {
-        var logBackup = NextLogBackup(backups, nextLogLsn);
+      var mostRecentBackup = _orderedBackups.Last();
+      while(mostRecentBackup != null) {
+        mostRecentBackup = NextLogBackup(backups, mostRecentBackup);
 
-        if(logBackup != null)
-          _orderedBackups.Add(logBackup);
-        nextLogLsn = logBackup?.LastLsn;
+        if(mostRecentBackup != null)
+          _orderedBackups.Add(mostRecentBackup);
       }
-
-      if(_orderedBackups.Last().LastLsn != backups.Max(b => b.LastLsn))
-        throw new BackupChainException("Backup chain does not include the latest log backup");
     }
 
     /// <summary>
@@ -60,39 +55,43 @@ namespace AgDatabaseMove
     /// <summary>
     ///   Backups ordered to have a full restore chain.
     /// </summary>
-    public IEnumerable<BackupMetadata> RestoreOrder => _orderedBackups;
+    public IEnumerable<BackupMetadata> OrderedBackups => _orderedBackups;
 
-    private BackupMetadata LastFullBackup(IList<BackupMetadata> backups)
+    private BackupMetadata MostRecentFullBackup(IList<BackupMetadata> backups)
     {
-      return backups.Where(b => b.BackupType == "D").OrderByDescending(d => d.CheckpointLsn).First();
+      return backups.Where(b => b.BackupType == FileTools.BackupType.Full).OrderByDescending(d => d.CheckpointLsn)
+        .First();
     }
 
-    private BackupMetadata NextDifferentialBackup(IList<BackupMetadata> backups, BackupMetadata lastFullBackup)
+    private BackupMetadata MostRecentDifferentialBackup(IList<BackupMetadata> backups, BackupMetadata lastFullBackup)
     {
-      return backups.Where(b => b.BackupType == "I" && b.DatabaseBackupLsn == lastFullBackup.CheckpointLsn)
+      return backups.Where(b => b.BackupType == FileTools.BackupType.Diff &&
+                                b.DatabaseBackupLsn == lastFullBackup.CheckpointLsn)
         .OrderByDescending(b => b.LastLsn).FirstOrDefault();
     }
 
-    private BackupMetadata NextLogBackup(IList<BackupMetadata> backups, decimal? nextLogLsn)
+    private BackupMetadata NextLogBackup(IList<BackupMetadata> backups, BackupMetadata prevBackup)
     {
-      return backups.Where(b => b.BackupType == "L")
-        .SingleOrDefault(d => nextLogLsn >= d.FirstLsn && nextLogLsn + 1 < d.LastLsn);
+      return backups.Where(b => b.BackupType == FileTools.BackupType.Log)
+        .SingleOrDefault(d => prevBackup.LastLsn >= d.FirstLsn && prevBackup.LastLsn + 1 < d.LastLsn);
     }
 
     private bool IsValidFilePath(BackupMetadata meta)
     {
-      var path = meta.PhysicalDeviceName;
+      if(meta.Device == DeviceType.Url)
+        return true;
+
       // A quick check before leaning on exceptions
-      if(Path.GetInvalidPathChars().Any(path.Contains))
+      if(Path.GetInvalidPathChars().Any(meta.PhysicalDeviceName.Contains))
         return false;
 
       try {
         // This will throw an argument exception if the path is invalid
-        Path.GetFullPath(path);
+        Path.GetFullPath(meta.PhysicalDeviceName);
         // A relative path won't help us much if the destination is another server. It needs to be rooted.
-        return Path.IsPathRooted(path);
+        return Path.IsPathRooted(meta.PhysicalDeviceName);
       }
-      catch(ArgumentException) {
+      catch(Exception) {
         return false;
       }
     }
