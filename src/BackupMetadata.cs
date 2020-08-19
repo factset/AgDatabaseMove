@@ -17,7 +17,7 @@ namespace AgDatabaseMove
 
     public static bool IsUrl(string path)
     {
-      return Regex.IsMatch(path, @"(https:\/)(\/[a-z0-9\.\-]+)+\.(bak|trn|full|diff)");
+      return Regex.IsMatch(path, @"(http(|s):\/)(\/[a-z0-9\.\-]+)+\.([a-zA-Z]+)$");
     }
 
     public static string BackupTypeToExtension(BackupType type)

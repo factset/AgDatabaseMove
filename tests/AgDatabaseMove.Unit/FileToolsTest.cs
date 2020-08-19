@@ -12,15 +12,16 @@ namespace AgDatabaseMove.Unit
       new object[] { "https://storage-account.blob.core.windows.net/container/file.trn" },
       new object[] { "https://hello/a.diff" },
       new object[] { "https://a.diff" },
-      new object[] { "https://1/2/3/4/5/a.diff" }
+      new object[] { "https://1/2/3/4/5/a.diff" },
+      new object[] { "https://storage-account.blob.core.windows.net/container/file.bad" },
+      new object[] { "http://hello/a.bak" },
     };
 
     public static IEnumerable<object[]> NonUrlFileExamples => new List<object[]> {
       new object[] { @"c:\hello\a.bak" },
       new object[] { @"\\abc\hello/a.bak" },
-      new object[] { "http://hello/a.bak" },
       new object[] { "https://storage-account.blob.core.windows.net/container" },
-      new object[] { "https://storage-account.blob.core.windows.net/container/file.bad" }
+      new object[] { "http://storage-account.blob.core.windows.net/container" },
     };
 
     [Theory]
