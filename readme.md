@@ -5,10 +5,10 @@ We hope that the native handling of availability groups will be helpful to other
 ## Getting started
 
 ### Prerequisites
-* SQL Server Availability Group 
+* SQL Server Availability Group
 * Availability database
 * A backup location accessible by each SQL Server instance
-* dotnet core 2.0
+* dotnet core 3.0
 
 ### Installing
 The intention is to make this available via NuGet so it can be installed to your solution as a library or PowerShell as the CLI.
@@ -23,11 +23,11 @@ You can currently use the CLI to create a copy of a database from one AG to anot
 then restore from the existing backup chain to the new database. If a database exists in the destination AG
 it will delete it and proceed with the copy.
 ```
-AgDatabaseMove.Cli --From:ConnectionString="Server=SourceDatabaseListener.domain.com; Integrated Security=true; MultiSubnetFailover=true;" 
-    --From:DatabaseName=sourceDbName 
-    --From:BackupPathTemplate="\\NetworkShare\{0}_backup_{1}.trn" 
-    --To:ConnectionString="Server=DestinationDatabaseListener.domain.com; Integrated Security=true; MultiSubnetFailover=true;" 
-    --To:DatabaseName=DestinationDbName 
+AgDatabaseMove.Cli --From:ConnectionString="Server=SourceDatabaseListener.domain.com; Integrated Security=true; MultiSubnetFailover=true;"
+    --From:DatabaseName=sourceDbName
+    --From:BackupPathTemplate="\\NetworkShare\{0}_backup_{1}.trn"
+    --To:ConnectionString="Server=DestinationDatabaseListener.domain.com; Integrated Security=true; MultiSubnetFailover=true;"
+    --To:DatabaseName=DestinationDbName
     --Overwrite=true
 ```
 

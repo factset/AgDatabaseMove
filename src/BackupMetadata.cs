@@ -82,7 +82,7 @@ namespace AgDatabaseMove
   public class BackupMetadata
   {
     public decimal CheckpointLsn { get; set; }
-    public decimal? DatabaseBackupLsn { get; set; }
+    public decimal DatabaseBackupLsn { get; set; }
     public string DatabaseName { get; set; }
     public decimal FirstLsn { get; set; }
     public decimal LastLsn { get; set; }
