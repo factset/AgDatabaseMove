@@ -2,52 +2,7 @@ namespace AgDatabaseMove
 {
   using System;
   using System.Collections.Generic;
-  using System.Text.RegularExpressions;
-  using Microsoft.SqlServer.Management.Smo;
-
-
-  public static class FileTools
-  {
-    public enum BackupType
-    {
-      Full, // bak  / D
-      Diff, // diff / I
-      Log // trn  / L
-    }
-
-    public static bool IsUrl(string path)
-    {
-      return Regex.IsMatch(path, @"(http(|s):\/)(\/[a-z0-9\.\-]+)+\.([a-zA-Z]+)$");
-    }
-
-    public static string BackupTypeToExtension(BackupType type)
-    {
-      switch(type) {
-        case BackupType.Full:
-          return "bak";
-        case BackupType.Diff:
-          return "diff";
-        case BackupType.Log:
-          return "trn";
-        default:
-          throw new ArgumentException("Invalid enum type");
-      }
-    }
-
-    public static BackupType BackupTypeAbbrevToType(string type)
-    {
-      switch(type) {
-        case "D":
-          return BackupType.Full;
-        case "I":
-          return BackupType.Diff;
-        case "L":
-          return BackupType.Log;
-        default:
-          throw new ArgumentException("Invalid backup type");
-      }
-    }
-  }
+  using SmoFacade;
 
 
   /// <summary>
@@ -69,7 +24,8 @@ namespace AgDatabaseMove
     {
       var hashCode = -1277603921;
       hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(obj.DatabaseName);
-      hashCode = hashCode * -1521134295 + EqualityComparer<FileTools.BackupType>.Default.GetHashCode(obj.BackupType);
+      hashCode = hashCode * -1521134295 +
+                 EqualityComparer<BackupFileTools.BackupType>.Default.GetHashCode(obj.BackupType);
       hashCode = hashCode * -1521134295 + obj.FirstLsn.GetHashCode();
       hashCode = hashCode * -1521134295 + obj.LastLsn.GetHashCode();
       return hashCode;
@@ -95,8 +51,6 @@ namespace AgDatabaseMove
     ///   D = Database, I = Differential database, L = Log
     ///   https://docs.microsoft.com/en-us/sql/relational-databases/system-tables/backupset-transact-sql?view=sql-server-2017
     /// </summary>
-    public FileTools.BackupType BackupType { get; set; }
-
-    public DeviceType Device => FileTools.IsUrl(PhysicalDeviceName) ? DeviceType.Url : DeviceType.File;
+    public BackupFileTools.BackupType BackupType { get; set; }
   }
 }

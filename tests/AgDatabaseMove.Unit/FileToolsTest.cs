@@ -1,10 +1,11 @@
 namespace AgDatabaseMove.Unit
 {
   using System.Collections.Generic;
+  using SmoFacade;
   using Xunit;
 
 
-  public class FileToolsTest
+  public class BackupFileToolsTest
   {
     public static IEnumerable<object[]> UrlFileExamples => new List<object[]> {
       new object[] { "https://hello/a.bak" },
@@ -14,46 +15,46 @@ namespace AgDatabaseMove.Unit
       new object[] { "https://a.diff" },
       new object[] { "https://1/2/3/4/5/a.diff" },
       new object[] { "https://storage-account.blob.core.windows.net/container/file.bad" },
-      new object[] { "http://hello/a.bak" },
+      new object[] { "http://hello/a.bak" }
     };
 
     public static IEnumerable<object[]> NonUrlFileExamples => new List<object[]> {
       new object[] { @"c:\hello\a.bak" },
       new object[] { @"\\abc\hello/a.bak" },
       new object[] { "https://storage-account.blob.core.windows.net/container" },
-      new object[] { "http://storage-account.blob.core.windows.net/container" },
+      new object[] { "http://storage-account.blob.core.windows.net/container" }
     };
 
     [Theory]
     [MemberData(nameof(UrlFileExamples))]
     public void UrlFilesAreUrl(string file)
     {
-      Assert.True(FileTools.IsUrl(file));
+      Assert.True(BackupFileTools.IsUrl(file));
     }
 
     [Theory]
     [MemberData(nameof(NonUrlFileExamples))]
     public void NonUrlFilesAreNotUrl(string file)
     {
-      Assert.False(FileTools.IsUrl(file));
+      Assert.False(BackupFileTools.IsUrl(file));
     }
 
     [Theory]
-    [InlineData(FileTools.BackupType.Log, "trn")]
-    [InlineData(FileTools.BackupType.Diff, "diff")]
-    [InlineData(FileTools.BackupType.Full, "bak")]
-    public void BackupTypeToExtensionTest(FileTools.BackupType type, string ext)
+    [InlineData(BackupFileTools.BackupType.Log, "trn")]
+    [InlineData(BackupFileTools.BackupType.Diff, "diff")]
+    [InlineData(BackupFileTools.BackupType.Full, "bak")]
+    public void BackupTypeToExtensionTest(BackupFileTools.BackupType type, string ext)
     {
-      Assert.Equal(ext, FileTools.BackupTypeToExtension(type));
+      Assert.Equal(ext, BackupFileTools.BackupTypeToExtension(type));
     }
 
     [Theory]
-    [InlineData("L", FileTools.BackupType.Log)]
-    [InlineData("I", FileTools.BackupType.Diff)]
-    [InlineData("D", FileTools.BackupType.Full)]
-    public void BackupTypeAbbrevToType(string abbrev, FileTools.BackupType type)
+    [InlineData("L", BackupFileTools.BackupType.Log)]
+    [InlineData("I", BackupFileTools.BackupType.Diff)]
+    [InlineData("D", BackupFileTools.BackupType.Full)]
+    public void BackupTypeAbbrevToType(string abbrev, BackupFileTools.BackupType type)
     {
-      Assert.Equal(type, FileTools.BackupTypeAbbrevToType(abbrev));
+      Assert.Equal(type, BackupFileTools.BackupTypeAbbrevToType(abbrev));
     }
   }
 }

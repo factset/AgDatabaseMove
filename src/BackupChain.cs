@@ -4,8 +4,7 @@ namespace AgDatabaseMove
   using System.Collections.Generic;
   using System.IO;
   using System.Linq;
-  using Microsoft.SqlServer.Management.Smo;
-  using Database = SmoFacade.Database;
+  using SmoFacade;
 
 
   public interface IBackupChain
@@ -59,26 +58,26 @@ namespace AgDatabaseMove
 
     private BackupMetadata MostRecentFullBackup(IList<BackupMetadata> backups)
     {
-      return backups.Where(b => b.BackupType == FileTools.BackupType.Full).OrderByDescending(d => d.CheckpointLsn)
+      return backups.Where(b => b.BackupType == BackupFileTools.BackupType.Full).OrderByDescending(d => d.CheckpointLsn)
         .First();
     }
 
     private BackupMetadata MostRecentDifferentialBackup(IList<BackupMetadata> backups, BackupMetadata lastFullBackup)
     {
-      return backups.Where(b => b.BackupType == FileTools.BackupType.Diff &&
+      return backups.Where(b => b.BackupType == BackupFileTools.BackupType.Diff &&
                                 b.DatabaseBackupLsn == lastFullBackup.CheckpointLsn)
         .OrderByDescending(b => b.LastLsn).FirstOrDefault();
     }
 
     private BackupMetadata NextLogBackup(IList<BackupMetadata> backups, BackupMetadata prevBackup)
     {
-      return backups.Where(b => b.BackupType == FileTools.BackupType.Log)
+      return backups.Where(b => b.BackupType == BackupFileTools.BackupType.Log)
         .SingleOrDefault(d => prevBackup.LastLsn >= d.FirstLsn && prevBackup.LastLsn + 1 < d.LastLsn);
     }
 
     private bool IsValidFilePath(BackupMetadata meta)
     {
-      if(meta.Device == DeviceType.Url)
+      if(BackupFileTools.IsUrl(meta.PhysicalDeviceName))
         return true;
 
       // A quick check before leaning on exceptions

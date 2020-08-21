@@ -5,6 +5,7 @@ namespace AgDatabaseMove.Unit
   using System.Collections.Generic;
   using System.Linq;
   using Moq;
+  using SmoFacade;
   using Xunit;
 
 
@@ -21,7 +22,7 @@ namespace AgDatabaseMove.Unit
     {
       return new List<BackupMetadata> {
         new BackupMetadata {
-          BackupType = FileTools.BackupType.Log,
+          BackupType = BackupFileTools.BackupType.Log,
           DatabaseBackupLsn = 126000000943800037,
           CheckpointLsn = 126000000953600034,
           FirstLsn = 126000000955500001,
@@ -32,7 +33,7 @@ namespace AgDatabaseMove.Unit
           StartTime = DateTime.Parse("2018-10-29 03:00:06.000")
         },
         new BackupMetadata {
-          BackupType = FileTools.BackupType.Full,
+          BackupType = BackupFileTools.BackupType.Full,
           DatabaseBackupLsn = 126000000882000037,
           CheckpointLsn = 126000000943800037,
           FirstLsn = 126000000936100001,
@@ -43,7 +44,7 @@ namespace AgDatabaseMove.Unit
           StartTime = DateTime.Parse("2018-10-28 00:02:28.000")
         },
         new BackupMetadata {
-          BackupType = FileTools.BackupType.Diff,
+          BackupType = BackupFileTools.BackupType.Diff,
           DatabaseBackupLsn = 126000000943800037,
           CheckpointLsn = 126000000953600034,
           FirstLsn = 126000000943800037,
@@ -54,7 +55,7 @@ namespace AgDatabaseMove.Unit
           StartTime = DateTime.Parse("2018-10-29 00:03:39.000")
         },
         new BackupMetadata {
-          BackupType = FileTools.BackupType.Log,
+          BackupType = BackupFileTools.BackupType.Log,
           DatabaseBackupLsn = 126000000882000037,
           CheckpointLsn = 126000000953600034,
           FirstLsn = 126000000955200001,
