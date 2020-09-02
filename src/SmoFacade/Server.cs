@@ -87,9 +87,7 @@ namespace AgDatabaseMove.SmoFacade
       // The database collection is cached and not invalidated on database creation (with a second server object).
       _server.Databases.Refresh();
       var database = _server.Databases[dbName];
-      if(database != null)
-        return new Database(_server.Databases[dbName], this);
-      return null;
+      return database == null ? null : new Database(database, this);
     }
 
     /// <summary>
@@ -98,26 +96,26 @@ namespace AgDatabaseMove.SmoFacade
     /// <param name="backupOrder">An ordered list of backups to apply.</param>
     /// <param name="databaseName">Database to restore to.</param>
     /// <param name="fileRelocation">Option for renaming files during the restore.</param>
-    public void Restore(IEnumerable<BackupMetadata> backupOrder, string databaseName,
-      Func<string, string> fileRelocation = null)
+    public void Restore(IList<BackupMetadata> backupOrder, string databaseName, Func<string, string> fileRelocation = null)
     {
-      var restore = new Restore();
-
-
+      var restore = new Restore() { Database = databaseName, NoRecovery = true };
+      
       foreach(var backup in backupOrder) {
         var device = BackupFileTools.IsUrl(backup.PhysicalDeviceName) ? DeviceType.Url : DeviceType.File;
         var backupDeviceItem = new BackupDeviceItem(backup.PhysicalDeviceName, device);
         restore.Devices.Add(backupDeviceItem);
 
         var defaultFileLocations = DefaultFileLocations();
-        if(defaultFileLocations != null) {
+        if (defaultFileLocations != null)
+        {
           restore.RelocateFiles.Clear();
-          foreach(var file in restore.ReadFileList(_server).AsEnumerable()) {
+          foreach (var file in restore.ReadFileList(_server).AsEnumerable())
+          {
             var physicalName = (string)file["PhysicalName"];
             var fileName = Path.GetFileName(physicalName) ??
                            throw new InvalidBackupException($"Physical name in backup is incomplete: {physicalName}");
 
-            if(fileRelocation != null)
+            if (fileRelocation != null)
               fileName = fileRelocation(fileName);
 
             var path = (string)file["Type"] == "L" ? defaultFileLocations?.Log : defaultFileLocations?.Data;
@@ -129,8 +127,6 @@ namespace AgDatabaseMove.SmoFacade
           }
         }
 
-        restore.Database = databaseName;
-        restore.NoRecovery = true;
         restore.SqlRestore(_server);
         restore.Devices.Remove(backupDeviceItem);
       }
