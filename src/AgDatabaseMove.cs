@@ -11,6 +11,7 @@ namespace AgDatabaseMove
   using Exceptions;
   using SmoFacade;
 
+
   public class MoveOptions
   {
     public IAgDatabase Source { get; set; }
@@ -53,10 +54,11 @@ namespace AgDatabaseMove
       if(!_options.Overwrite && _options.Destination.Exists() && !_options.Destination.Restoring)
         throw new ArgumentException("Database exists and overwrite option is not set");
 
-      if (lastLsn == null && _options.Destination.Restoring)
-        throw new ArgumentException("lastLsn parameter can only be used if the Destination database is in a restoring state");
+      if(lastLsn == null && _options.Destination.Restoring)
+        throw new
+          ArgumentException("lastLsn parameter can only be used if the Destination database is in a restoring state");
 
-      if (_options.Overwrite)
+      if(_options.Overwrite)
         _options.Destination.Delete();
 
       // TODO: consider making Source DB Single User Mode??
@@ -74,16 +76,15 @@ namespace AgDatabaseMove
 
       _options.Destination.Restore(backupList, _options.FileRelocator);
 
-      if (_options.CopyLogins)
+      if(_options.CopyLogins)
         _options.Destination.CopyLogins(_options.Source.AssociatedLogins().Select(UpdateDefaultDb).ToList());
 
-      if (_options.Finalize)
+      if(_options.Finalize)
         _options.Destination.JoinAg();
-        
+
       _options.Source.Delete();
 
       return backupList.Max(bl => bl.LastLsn);
     }
   }
 }
-

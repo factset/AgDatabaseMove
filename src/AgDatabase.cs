@@ -25,7 +25,7 @@ namespace AgDatabaseMove
     List<BackupMetadata> RecentBackups();
     void JoinAg();
 
-    void Restore(IList<BackupMetadata> backupOrder, Func<string, string> fileRelocation = null);
+    void Restore(IEnumerable<BackupMetadata> backupOrder, Func<string, string> fileRelocation = null);
 
     void CopyLogins(IEnumerable<LoginProperties> logins);
     IEnumerable<LoginProperties> AssociatedLogins();
@@ -88,7 +88,6 @@ namespace AgDatabaseMove
     /// </summary>
     public void LogBackup()
     {
-      // TODO: consider allowing a SQL query for _backupPathTemplate?
       _listener.Primary.LogBackup(Name, _backupPathTemplate);
     }
 
@@ -98,7 +97,7 @@ namespace AgDatabaseMove
     /// </summary>
     /// <param name="backupOrder">An ordered list of backups to restore.</param>
     /// <param name="fileRelocation">A method to generate the new file location when moving the database.</param>
-    public void Restore(IList<BackupMetadata> backupOrder, Func<string, string> fileRelocation = null)
+    public void Restore(IEnumerable<BackupMetadata> backupOrder, Func<string, string> fileRelocation = null)
     {
       _listener.ForEachAgInstance(s => s.Restore(backupOrder, Name, fileRelocation));
     }

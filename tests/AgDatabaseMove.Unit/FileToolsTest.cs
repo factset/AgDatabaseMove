@@ -15,7 +15,8 @@ namespace AgDatabaseMove.Unit
       new object[] { "https://a.diff" },
       new object[] { "https://1/2/3/4/5/a.diff" },
       new object[] { "https://storage-account.blob.core.windows.net/container/file.bad" },
-      new object[] { "https://storage-account.blob.core.windows.net/container/sql/db_name/backup_2020_09_02_170003_697.trn" },
+      new object[]
+        { "https://storage-account.blob.core.windows.net/container/sql/db_name/backup_2020_09_02_170003_697.trn" },
       new object[] { "http://hello/a.bak" }
     };
 
