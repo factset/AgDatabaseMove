@@ -143,7 +143,6 @@ namespace AgDatabaseMove.SmoFacade
     /// </param>
     public void LogBackup(string databaseName, string backupDirectoryPath = null)
     {
-      backupDirectoryPath = backupDirectoryPath ?? _server.BackupDirectory;
       var backup = new Backup
         { Action = BackupActionType.Log, Database = databaseName, LogTruncation = BackupTruncateLogType.Truncate };
       Backup(backup, backupDirectoryPath, databaseName, BackupFileTools.BackupType.Log);
@@ -161,7 +160,6 @@ namespace AgDatabaseMove.SmoFacade
     /// </param>
     public void FullBackup(string databaseName, string backupDirectoryPath = null)
     {
-      backupDirectoryPath = backupDirectoryPath ?? _server.BackupDirectory;
       var backup = new Backup {
         Action = BackupActionType.Database, Database = databaseName, LogTruncation = BackupTruncateLogType.NoTruncate
       };
@@ -170,6 +168,7 @@ namespace AgDatabaseMove.SmoFacade
 
     private void Backup(Backup backup, string backupDirectoryPath, string databaseName, BackupFileTools.BackupType type)
     {
+      backupDirectoryPath = backupDirectoryPath ?? _server.BackupDirectory;
       if(backupDirectoryPath.EndsWith("\\") || backupDirectoryPath.EndsWith("/"))
         backupDirectoryPath = backupDirectoryPath.Substring(0, backupDirectoryPath.Length - 1);
 
