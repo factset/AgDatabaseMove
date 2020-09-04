@@ -50,7 +50,17 @@ namespace AgDatabaseMove
     {
       Name = dbConfig.DatabaseName;
       _listener = new Listener(new SqlConnectionStringBuilder(dbConfig.ConnectionString) { InitialCatalog = "master" });
-      _backupPathTemplate = dbConfig.BackupPathTemplate;
+
+      if(!string.IsNullOrWhiteSpace(dbConfig.BackupPathSqlQuery)) {
+        using (var cmd = _listener.Primary.SqlConnection.CreateCommand())
+        {
+          cmd.CommandText = dbConfig.BackupPathSqlQuery;
+          using (var reader = cmd.ExecuteReader()) {
+            if(reader.Read())
+              _backupPathTemplate = (string)reader[0];
+          }
+        }
+      }
     }
 
     /// <summary>

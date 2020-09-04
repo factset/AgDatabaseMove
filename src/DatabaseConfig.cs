@@ -19,9 +19,11 @@
     public string DatabaseName { get; set; }
 
     /// <summary>
-    ///   If this isn't supplied we build one from the database default backup path.
-    ///   See <see cref="Server.DefaultBackupPathTemplate" />
+    ///   SQL query text to retrieve the desired backup path location. If none is provided, Server.DefaultBackupPathTemplate is
+    ///   used.   See <see cref="Server.DefaultBackupPathTemplate" />
+    /// <example> SELECT '\\my\backup\location\'</example>
+    /// <example> SELECT Backup_path FROM [msdb].[dbo].[_Sys_Backup_config]</example>
     /// </summary>
-    public string BackupPathTemplate { get; set; }
+    public string BackupPathSqlQuery { get; set; } = "SELECT Backup_path FROM [msdb].[dbo].[_Sys_Backup_config]";
   }
 }

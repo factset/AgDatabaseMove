@@ -136,17 +136,17 @@ namespace AgDatabaseMove.SmoFacade
     ///   TODO: we should support a backup path somehow with configuration
     /// </summary>
     /// <param name="databaseName"></param>
-    /// <param name="backupPathTemplate">
+    /// <param name="backupDirectoryPath">
     ///   A template string for backup location:
     ///   {0} databaseName
     ///   {1} time
     /// </param>
-    public void LogBackup(string databaseName, string backupPathTemplate = null)
+    public void LogBackup(string databaseName, string backupDirectoryPath = null)
     {
-      backupPathTemplate = backupPathTemplate ?? DefaultBackupPathTemplate(BackupFileTools.BackupType.Log);
+      backupDirectoryPath = backupDirectoryPath ?? DefaultBackupDirectoryPath();
       var backup = new Backup
         { Action = BackupActionType.Log, Database = databaseName, LogTruncation = BackupTruncateLogType.Truncate };
-      Backup(backup, backupPathTemplate);
+      Backup(backup, backupDirectoryPath, databaseName, BackupFileTools.BackupType.Log);
     }
 
     /// <summary>
@@ -154,41 +154,40 @@ namespace AgDatabaseMove.SmoFacade
     ///   TODO: we should support a backup path somehow with configuration
     /// </summary>
     /// <param name="databaseName">name of the database to backup</param>
-    /// <param name="backupPathTemplate">
+    /// <param name="backupDirectoryPath">
     ///   A template string for backup location:
     ///   {0} databaseName
     ///   {1} time
     /// </param>
-    public void FullBackup(string databaseName, string backupPathTemplate = null)
+    public void FullBackup(string databaseName, string backupDirectoryPath = null)
     {
-      backupPathTemplate = backupPathTemplate ?? DefaultBackupPathTemplate(BackupFileTools.BackupType.Full);
+      backupDirectoryPath = backupDirectoryPath ?? DefaultBackupDirectoryPath();
       var backup = new Backup {
         Action = BackupActionType.Database, Database = databaseName, LogTruncation = BackupTruncateLogType.NoTruncate
       };
-      Backup(backup, backupPathTemplate);
+      Backup(backup, backupDirectoryPath, databaseName, BackupFileTools.BackupType.Full);
     }
 
-    private void Backup(Backup backup, string backupPathTemplate)
+    private void Backup(Backup backup, string backupDirectoryPath, string databaseName, BackupFileTools.BackupType type)
     {
-      var filePath = string.Format(backupPathTemplate,
-                                   backup.Database,
-                                   DateTime.Now.ToString("yyyy_MM_dd_hhmmss_fff"));
+      if(backupDirectoryPath.EndsWith("\\") || backupDirectoryPath.EndsWith("/"))
+        backupDirectoryPath = backupDirectoryPath.Substring(0, backupDirectoryPath.Length - 1);
+
+      var filePath = $"{backupDirectoryPath}/{databaseName}/{databaseName}_backup_{DateTime.Now.ToString("yyyy_MM_dd_hhmmss_fff")}.{BackupFileTools.BackupTypeToExtension(type)}";
       var deviceType = BackupFileTools.IsUrl(filePath) ? DeviceType.Url : DeviceType.File;
 
       var bdi = new BackupDeviceItem(filePath, deviceType);
-
       backup.Devices.Add(bdi);
       backup.SqlBackup(_server);
     }
-
-
+    
     /// <summary>
     ///   Builds a backup path template from the server's default backup directory.
     ///   If this path is not valid on the destination instance the restore process will fail.
     /// </summary>
-    private string DefaultBackupPathTemplate(BackupFileTools.BackupType type)
+    private string DefaultBackupDirectoryPath()
     {
-      return _server.BackupDirectory + "\\{0}_backup_{1}." + BackupFileTools.BackupTypeToExtension(type);
+      return _server.BackupDirectory;
     }
 
     public void EnsureLogins(IEnumerable<LoginProperties> newLogins)
