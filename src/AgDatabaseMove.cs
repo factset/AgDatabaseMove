@@ -61,7 +61,7 @@ namespace AgDatabaseMove
 
       if(_options.Overwrite)
         _options.Destination.Delete();
-        
+
       _options.Source.LogBackup();
 
       var backupChain = new BackupChain(_options.Source);
