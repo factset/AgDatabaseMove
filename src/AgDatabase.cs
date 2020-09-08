@@ -39,7 +39,7 @@ namespace AgDatabaseMove
   /// </summary>
   public class AgDatabase : IDisposable, IAgDatabase
   {
-    private readonly string _backupPathTemplate;
+    private readonly string _backupPathSqlQuery;
     internal readonly IListener _listener;
 
     /// <summary>
@@ -49,16 +49,8 @@ namespace AgDatabaseMove
     public AgDatabase(DatabaseConfig dbConfig)
     {
       Name = dbConfig.DatabaseName;
+      _backupPathSqlQuery = dbConfig.BackupPathSqlQuery;
       _listener = new Listener(new SqlConnectionStringBuilder(dbConfig.ConnectionString) { InitialCatalog = "master" });
-
-      if(!string.IsNullOrWhiteSpace(dbConfig.BackupPathSqlQuery))
-        using(var cmd = _listener.Primary.SqlConnection.CreateCommand()) {
-          cmd.CommandText = dbConfig.BackupPathSqlQuery;
-          using(var reader = cmd.ExecuteReader()) {
-            if(reader.Read())
-              _backupPathTemplate = (string)reader[0];
-          }
-        }
     }
 
     /// <summary>
@@ -96,7 +88,7 @@ namespace AgDatabaseMove
     /// </summary>
     public void LogBackup()
     {
-      _listener.Primary.LogBackup(Name, _backupPathTemplate);
+      _listener.Primary.LogBackup(Name, _backupPathSqlQuery);
     }
 
     /// <summary>
@@ -156,7 +148,7 @@ namespace AgDatabaseMove
 
     public void FullBackup()
     {
-      _listener.Primary.FullBackup(Name, _backupPathTemplate);
+      _listener.Primary.FullBackup(Name, _backupPathSqlQuery);
     }
 
     private void WaitForInitialization(Server server, AvailabilityGroup availabilityGroup)

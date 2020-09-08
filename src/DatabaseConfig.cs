@@ -24,6 +24,6 @@
     ///   <example> SELECT '\\my\backup\location\'</example>
     ///   <example> SELECT Backup_path FROM [msdb].[dbo].[_Sys_Backup_config]</example>
     /// </summary>
-    public string BackupPathSqlQuery { get; set; } = "SELECT Backup_path FROM [msdb].[dbo].[_Sys_Backup_config]";
+    public string BackupPathSqlQuery { get; set; }
   }
 }

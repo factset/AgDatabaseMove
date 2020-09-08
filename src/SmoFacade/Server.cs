@@ -82,6 +82,35 @@ namespace AgDatabaseMove.SmoFacade
       }
     }
 
+    /// <summary>
+    /// Runs SQL query to obtain backup location
+    /// If query is null or empty _server.BackupDirectory is used
+    /// </summary>
+    /// <param name="backupDirectoryQuery"></param>
+    /// <returns></returns>
+    private string BackupDirectoryOrDefault(string backupDirectoryQuery)
+    {
+      string result = null;
+      if(!string.IsNullOrWhiteSpace(backupDirectoryQuery))
+      {
+        using (var cmd = SqlConnection.CreateCommand())
+        {
+          cmd.CommandText = backupDirectoryQuery;
+          using (var reader = cmd.ExecuteReader())
+          {
+            if (reader.Read())
+              result = (string)reader[0];
+          }
+        }
+      }
+      
+      result = result ?? _server.BackupDirectory;
+      if (result.EndsWith("\\") || result.EndsWith("/"))
+        result = result.Substring(0, result.Length - 1);
+
+      return result;
+    }
+
     public Database Database(string dbName)
     {
       // The database collection is cached and not invalidated on database creation (with a second server object).
@@ -136,16 +165,16 @@ namespace AgDatabaseMove.SmoFacade
     ///   TODO: we should support a backup path somehow with configuration
     /// </summary>
     /// <param name="databaseName"></param>
-    /// <param name="backupDirectoryPath">
+    /// <param name="backupDirectoryPathQuery">
     ///   A template string for backup location:
     ///   {0} databaseName
     ///   {1} time
     /// </param>
-    public void LogBackup(string databaseName, string backupDirectoryPath = null)
+    public void LogBackup(string databaseName, string backupDirectoryPathQuery = null)
     {
       var backup = new Backup
         { Action = BackupActionType.Log, Database = databaseName, LogTruncation = BackupTruncateLogType.Truncate };
-      Backup(backup, backupDirectoryPath, databaseName, BackupFileTools.BackupType.Log);
+      Backup(backup, backupDirectoryPathQuery, databaseName, BackupFileTools.BackupType.Log);
     }
 
     /// <summary>
@@ -153,27 +182,24 @@ namespace AgDatabaseMove.SmoFacade
     ///   TODO: we should support a backup path somehow with configuration
     /// </summary>
     /// <param name="databaseName">name of the database to backup</param>
-    /// <param name="backupDirectoryPath">
+    /// <param name="backupDirectoryPathQuery">
     ///   A template string for backup location:
     ///   {0} databaseName
     ///   {1} time
     /// </param>
-    public void FullBackup(string databaseName, string backupDirectoryPath = null)
+    public void FullBackup(string databaseName, string backupDirectoryPathQuery = null)
     {
       var backup = new Backup {
         Action = BackupActionType.Database, Database = databaseName, LogTruncation = BackupTruncateLogType.NoTruncate
       };
-      Backup(backup, backupDirectoryPath, databaseName, BackupFileTools.BackupType.Full);
+      Backup(backup, backupDirectoryPathQuery, databaseName, BackupFileTools.BackupType.Full);
     }
 
-    private void Backup(Backup backup, string backupDirectoryPath, string databaseName, BackupFileTools.BackupType type)
+    private void Backup(Backup backup, string backupDirectoryPathQuery, string databaseName, BackupFileTools.BackupType type)
     {
-      backupDirectoryPath = backupDirectoryPath ?? _server.BackupDirectory;
-      if(backupDirectoryPath.EndsWith("\\") || backupDirectoryPath.EndsWith("/"))
-        backupDirectoryPath = backupDirectoryPath.Substring(0, backupDirectoryPath.Length - 1);
-
+      var backupDirectory = BackupDirectoryOrDefault(backupDirectoryPathQuery);
       var filePath =
-        $"{backupDirectoryPath}/{databaseName}/{databaseName}_backup_{DateTime.Now.ToString("yyyy_MM_dd_hhmmss_fff")}.{BackupFileTools.BackupTypeToExtension(type)}";
+        $"{backupDirectory}/{databaseName}_backup_{DateTime.Now.ToString("yyyy_MM_dd_hhmmss_fff")}.{BackupFileTools.BackupTypeToExtension(type)}";
       var deviceType = BackupFileTools.IsUrl(filePath) ? DeviceType.Url : DeviceType.File;
 
       var bdi = new BackupDeviceItem(filePath, deviceType);
