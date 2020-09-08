@@ -17,6 +17,7 @@ namespace AgDatabaseMove
     public IAgDatabase Source { get; set; }
     public IAgDatabase Destination { get; set; }
     public bool Overwrite { get; set; }
+    public bool DeleteSource { get; set; } = true;
     public bool Finalize { get; set; }
     public bool CopyLogins { get; set; }
     public Func<string, string> FileRelocator { get; set; }
@@ -61,8 +62,6 @@ namespace AgDatabaseMove
       if(_options.Overwrite)
         _options.Destination.Delete();
 
-      // TODO: consider making Source DB Single User Mode??
-
       _options.Source.LogBackup();
 
       var backupChain = new BackupChain(_options.Source);
@@ -82,7 +81,8 @@ namespace AgDatabaseMove
       if(_options.Finalize)
         _options.Destination.JoinAg();
 
-      _options.Source.Delete();
+      if(_options.DeleteSource)
+        _options.Source.Delete();
 
       return backupList.Max(bl => bl.LastLsn);
     }
