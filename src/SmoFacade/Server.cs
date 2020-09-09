@@ -83,8 +83,8 @@ namespace AgDatabaseMove.SmoFacade
     }
 
     /// <summary>
-    /// Runs SQL query to obtain backup location
-    /// If query is null or empty _server.BackupDirectory is used
+    ///   Runs SQL query to obtain backup location
+    ///   If query is null or empty _server.BackupDirectory is used
     /// </summary>
     /// <param name="backupDirectoryQuery"></param>
     /// <returns></returns>
@@ -92,20 +92,16 @@ namespace AgDatabaseMove.SmoFacade
     {
       string result = null;
       if(!string.IsNullOrWhiteSpace(backupDirectoryQuery))
-      {
-        using (var cmd = SqlConnection.CreateCommand())
-        {
+        using(var cmd = SqlConnection.CreateCommand()) {
           cmd.CommandText = backupDirectoryQuery;
-          using (var reader = cmd.ExecuteReader())
-          {
-            if (reader.Read())
+          using(var reader = cmd.ExecuteReader()) {
+            if(reader.Read())
               result = (string)reader[0];
           }
         }
-      }
-      
+
       result = result ?? _server.BackupDirectory;
-      if (result.EndsWith("\\") || result.EndsWith("/"))
+      if(result.EndsWith("\\") || result.EndsWith("/"))
         result = result.Substring(0, result.Length - 1);
 
       return result;
@@ -195,7 +191,8 @@ namespace AgDatabaseMove.SmoFacade
       Backup(backup, backupDirectoryPathQuery, databaseName, BackupFileTools.BackupType.Full);
     }
 
-    private void Backup(Backup backup, string backupDirectoryPathQuery, string databaseName, BackupFileTools.BackupType type)
+    private void Backup(Backup backup, string backupDirectoryPathQuery, string databaseName,
+      BackupFileTools.BackupType type)
     {
       var backupDirectory = BackupDirectoryOrDefault(backupDirectoryPathQuery);
       var filePath =
