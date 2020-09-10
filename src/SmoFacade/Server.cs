@@ -83,7 +83,7 @@ namespace AgDatabaseMove.SmoFacade
     }
 
     /// <summary>
-    ///   Runs SQL query to obtain backup location
+    ///   Runs SQL query to obtain backup location 
     ///   If query is null or empty _server.BackupDirectory is used
     /// </summary>
     /// <param name="backupDirectoryQuery"></param>
