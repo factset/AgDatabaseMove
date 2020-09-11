@@ -100,20 +100,17 @@ namespace AgDatabaseMove.Integration
       // Write sufficient data to the primary
       var connectionStringBuilder = new SqlConnectionStringBuilder(_testRestoreFixture._config.To.ConnectionString);
       connectionStringBuilder.InitialCatalog = Test.Name;
-      using(var connection = new SqlConnection(connectionStringBuilder.ToString())) {
-        connection.Open();
-        var createTableSql =
-          "CREATE TABLE TestSync (Id INT IDENTITY(1,1) NOT NULL PRIMARY KEY, script VARCHAR(MAX) NULL)";
-        using(var createTable = new SqlCommand(createTableSql, connection)) {
-          createTable.ExecuteNonQuery();
-        }
+      using var connection = new SqlConnection(connectionStringBuilder.ToString());
+      connection.Open();
+      var createTableSql =
+        "CREATE TABLE TestSync (Id INT IDENTITY(1,1) NOT NULL PRIMARY KEY, script VARCHAR(MAX) NULL)";
+      using var createTable = new SqlCommand(createTableSql, connection);
+      createTable.ExecuteNonQuery();
 
-        var fillTableSql =
-          "INSERT INTO TestSync (script) (SELECT TOP 100000 sm.[definition] FROM sys.all_sql_modules AS sm CROSS JOIN sys.all_sql_modules AS asm)";
-        using(var fillTable = new SqlCommand(fillTableSql, connection)) {
-          fillTable.ExecuteNonQuery();
-        }
-      }
+      var fillTableSql =
+        "INSERT INTO TestSync (script) (SELECT TOP 100000 sm.[definition] FROM sys.all_sql_modules AS sm CROSS JOIN sys.all_sql_modules AS asm)";
+      using var fillTable = new SqlCommand(fillTableSql, connection);
+      fillTable.ExecuteNonQuery();
 
       Test.JoinAg();
 

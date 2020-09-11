@@ -70,16 +70,14 @@ namespace AgDatabaseMove.SmoFacade
       var query =
         "SELECT SERVERPROPERTY('InstanceDefaultDataPath') AS InstanceDefaultDataPath, SERVERPROPERTY('InstanceDefaultLogPath') AS InstanceDefaultLogPath";
 
-      using(var cmd = SqlConnection.CreateCommand()) {
-        cmd.CommandText = query;
-        using(var reader = cmd.ExecuteReader()) {
-          if(!reader.Read())
-            return null;
+      using var cmd = SqlConnection.CreateCommand();
+      using var reader = cmd.ExecuteReader();
+      cmd.CommandText = query;
+      if(!reader.Read())
+        return null;
 
-          return new DefaultFileLocations
-            { Log = (string)reader["InstanceDefaultLogPath"], Data = (string)reader["InstanceDefaultDataPath"] };
-        }
-      }
+      return new DefaultFileLocations
+        { Log = (string)reader["InstanceDefaultLogPath"], Data = (string)reader["InstanceDefaultDataPath"] };
     }
 
     public Database Database(string dbName)

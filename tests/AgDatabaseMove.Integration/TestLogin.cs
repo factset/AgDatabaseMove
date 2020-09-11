@@ -39,12 +39,10 @@ namespace AgDatabaseMove.Integration
     /// <param name="login"></param>
     private void TestLoginExists(FacadeLogin login)
     {
-      using(var testServer = _testLoginFixture.ConstructServer()) {
-        var existingLogin =
-          testServer.Logins.SingleOrDefault(l => l.Name.Equals(login.Name,
-                                                               StringComparison.InvariantCultureIgnoreCase));
-        Assert.NotNull(existingLogin);
-      }
+      using var testServer = _testLoginFixture.ConstructServer();
+      var existingLogin =
+        testServer.Logins.SingleOrDefault(l => l.Name.Equals(login.Name, StringComparison.InvariantCultureIgnoreCase));
+      Assert.NotNull(existingLogin);
     }
 
     private FacadeLogin CreateTestLogin(LoginProperties loginProperties)

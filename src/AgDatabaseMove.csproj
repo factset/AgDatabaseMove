@@ -12,6 +12,7 @@
     <Description>Tool to move a SQL Server database that's part of an availability group.</Description>
     <Copyright>Copyright 2019 FactSet Research Systems Inc.</Copyright>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>

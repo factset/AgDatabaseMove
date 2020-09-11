@@ -62,11 +62,10 @@ namespace AgDatabaseMove.SmoFacade
       dbName.Value = Name;
       cmd.Parameters.Add(dbName);
 
-      using(var reader = cmd.ExecuteReader()) {
-        if(!reader.Read() || reader.IsDBNull(reader.GetOrdinal("passwordHash")))
-          return null;
-        return HashString((byte[])reader["passwordHash"]);
-      }
+      using var reader = cmd.ExecuteReader();
+      if(!reader.Read() || reader.IsDBNull(reader.GetOrdinal("passwordHash")))
+        return null;
+      return HashString((byte[])reader["passwordHash"]);
     }
 
     private string HashString(byte[] passwordHash)
