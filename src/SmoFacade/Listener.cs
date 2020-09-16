@@ -57,25 +57,24 @@ namespace AgDatabaseMove.SmoFacade
 
       connectionStringBuilder.InitialCatalog = "master";
 
-      using(var server = new Server(connectionStringBuilder.ToString())) {
-        // Find the AG associated with the listener
-        var availabilityGroup =
-          server.AvailabilityGroups.Single(ag =>
-                                             ag.Listeners.Contains(AgListenerName(connectionStringBuilder.DataSource),
-                                                                   StringComparer.InvariantCultureIgnoreCase));
+      using var server = new Server(connectionStringBuilder.ToString());
+      // Find the AG associated with the listener
+      var availabilityGroup =
+        server.AvailabilityGroups.Single(ag =>
+                                           ag.Listeners.Contains(AgListenerName(connectionStringBuilder.DataSource),
+                                                                 StringComparer.InvariantCultureIgnoreCase));
 
-        // List out the servers in the AG
-        var primaryName = availabilityGroup.PrimaryInstance;
-        var secondaryNames = availabilityGroup.Replicas.Where(l => l != primaryName);
+      // List out the servers in the AG
+      var primaryName = availabilityGroup.PrimaryInstance;
+      var secondaryNames = availabilityGroup.Replicas.Where(l => l != primaryName);
 
-        // Connect to each server instance
-        Primary = AgListenerNameToServer(ref connectionStringBuilder, primaryName);
-        AvailabilityGroup = Primary.AvailabilityGroups.Single(ag => ag.Name == availabilityGroup.Name);
+      // Connect to each server instance
+      Primary = AgListenerNameToServer(ref connectionStringBuilder, primaryName);
+      AvailabilityGroup = Primary.AvailabilityGroups.Single(ag => ag.Name == availabilityGroup.Name);
 
-        _secondaries = new List<Server>();
-        foreach(var secondaryName in secondaryNames)
-          _secondaries.Add(AgListenerNameToServer(ref connectionStringBuilder, secondaryName));
-      }
+      _secondaries = new List<Server>();
+      foreach(var secondaryName in secondaryNames)
+        _secondaries.Add(AgListenerNameToServer(ref connectionStringBuilder, secondaryName));
     }
 
     public IEnumerable<Server> ReplicaInstances => Secondaries.Union(new[] { Primary });
