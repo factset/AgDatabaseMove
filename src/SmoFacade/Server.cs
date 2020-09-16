@@ -89,14 +89,13 @@ namespace AgDatabaseMove.SmoFacade
     private string BackupDirectoryOrDefault(string backupDirectoryQuery)
     {
       string result = null;
-      if(!string.IsNullOrWhiteSpace(backupDirectoryQuery))
-        using(var cmd = SqlConnection.CreateCommand()) {
-          cmd.CommandText = backupDirectoryQuery;
-          using(var reader = cmd.ExecuteReader()) {
-            if(reader.Read())
-              result = (string)reader[0];
-          }
-        }
+      if(!string.IsNullOrWhiteSpace(backupDirectoryQuery)) {
+        using var cmd = SqlConnection.CreateCommand();
+        cmd.CommandText = backupDirectoryQuery;
+        using var reader = cmd.ExecuteReader();
+        if(reader.Read())
+          result = (string)reader[0];
+      }
 
       result = result ?? _server.BackupDirectory;
       if(result.EndsWith("\\") || result.EndsWith("/"))
