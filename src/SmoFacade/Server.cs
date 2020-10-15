@@ -73,7 +73,7 @@ namespace AgDatabaseMove.SmoFacade
       using var cmd = SqlConnection.CreateCommand();
       cmd.CommandText = query;
       using var reader = cmd.ExecuteReader();
-      
+
       if(!reader.Read())
         return null;
 

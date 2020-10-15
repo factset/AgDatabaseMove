@@ -12,6 +12,7 @@ namespace AgDatabaseMove.Cli
     public bool Overwrite { get; set; } = false;
     public bool Finalize { get; set; } = true;
     public bool CopyLogins { get; set; } = true;
+    public bool DeleteSource { get; set; } = false;
   }
 
   internal class Program
@@ -29,6 +30,7 @@ namespace AgDatabaseMove.Cli
         Overwrite = arguments.Overwrite,
         Finalize = arguments.Finalize,
         CopyLogins = arguments.CopyLogins,
+        DeleteSource = arguments.DeleteSource,
         FileRelocator = filename =>
           RestoreFileRelocator(arguments.From.DatabaseName, arguments.To.DatabaseName, filename)
       });
