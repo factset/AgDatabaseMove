@@ -67,12 +67,13 @@ namespace AgDatabaseMove.SmoFacade
     /// <returns>A DefaultFileLocations object which contains default log and data directories.</returns>
     private DefaultFileLocations DefaultFileLocations()
     {
-      var query =
+      const string query =
         "SELECT SERVERPROPERTY('InstanceDefaultDataPath') AS InstanceDefaultDataPath, SERVERPROPERTY('InstanceDefaultLogPath') AS InstanceDefaultLogPath";
 
       using var cmd = SqlConnection.CreateCommand();
-      using var reader = cmd.ExecuteReader();
       cmd.CommandText = query;
+      using var reader = cmd.ExecuteReader();
+      
       if(!reader.Read())
         return null;
 

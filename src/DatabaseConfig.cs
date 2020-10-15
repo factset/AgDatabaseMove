@@ -25,5 +25,11 @@
     ///   <example> SELECT Backup_path FROM [msdb].[dbo].[_Sys_Backup_config]</example>
     /// </summary>
     public string BackupPathSqlQuery { get; set; }
+
+    public override string ToString()
+    {
+      return $"{ConnectionString}\n{DatabaseName}\n{BackupPathSqlQuery}\n";
+    }
   }
 }
+ 

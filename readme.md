@@ -22,13 +22,15 @@ will be accomplished is in the integration test method [ProgressiveRestore](test
 You can currently use the CLI to create a copy of a database from one AG to another. It will take a log backup,
 then restore from the existing backup chain to the new database. If a database exists in the destination AG
 it will delete it and proceed with the copy.
+
 ```
-AgDatabaseMove.Cli --From:ConnectionString="Server=SourceDatabaseListener.domain.com; Integrated Security=true; MultiSubnetFailover=true;"
-    --From:DatabaseName=sourceDbName
-    --From:BackupPathTemplate="\\NetworkShare\{0}_backup_{1}.trn"
-    --To:ConnectionString="Server=DestinationDatabaseListener.domain.com; Integrated Security=true; MultiSubnetFailover=true;"
-    --To:DatabaseName=DestinationDbName
-    --Overwrite=true
+AgDatabaseMove.Cli.exe 
+--From:ConnectionString "Server=SourceDatabaseListener.domain.com; Integrated Security=true; MultiSubnetFailover=true;" --From:DatabaseName test --From:BackupPathSqlQuery "SELECT '\\NetworkShare\path\here'"
+--To:ConnectionString "Server=SourceDatabaseListener.domain.com; Integrated Security=true; MultiSubnetFailover=true;" --To:DatabaseName test 
+--Overwrite true
+--Finalize true
+--CopyLogins true
+--DeleteSource false
 ```
 
 ## Contributing
