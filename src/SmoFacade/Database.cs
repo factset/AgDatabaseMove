@@ -4,7 +4,6 @@ namespace AgDatabaseMove.SmoFacade
   using System.Collections.Generic;
   using System.Linq;
   using Microsoft.SqlServer.Management.Smo;
-  using Polly;
 
 
   /// <summary>
@@ -42,13 +41,14 @@ namespace AgDatabaseMove.SmoFacade
     {
       Policy
         .Handle<TimeoutException>()
-        .WaitAndRetry(6, 
+        .WaitAndRetry(6,
                       retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(1000, retryAttempt)),
-                      (exception, timeSpan, context) =>
-                      {
+                      (exception, timeSpan, context) => {
                         if(!string.IsNullOrEmpty(_database.AvailabilityGroupName) ||
-                           _database.AvailabilityDatabaseSynchronizationState > AvailabilityDatabaseSynchronizationState.NotSynchronizing)
-                          throw new TimeoutException($"Cannot kill the database {Name} until it has been removed from the AvailabilityGroup.");
+                           _database.AvailabilityDatabaseSynchronizationState >
+                           AvailabilityDatabaseSynchronizationState.NotSynchronizing)
+                          throw new
+                            TimeoutException($"Cannot kill the database {Name} until it has been removed from the AvailabilityGroup.");
                       }
                      );
 

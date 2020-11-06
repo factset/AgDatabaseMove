@@ -12,7 +12,6 @@ namespace AgDatabaseMove
   using System.Data.SqlClient;
   using System.Linq;
   using System.Threading;
-  using Polly;
   using SmoFacade;
 
 
@@ -158,18 +157,14 @@ namespace AgDatabaseMove
         .Handle<TimeoutException>()
         .WaitAndRetry(6,
                       retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(1000, retryAttempt)),
-                      (exception, timeSpan, context) =>
-                      {
-                        if (availabilityGroup.Databases.Contains(Name))
+                      (exception, timeSpan, context) => {
+                        if(availabilityGroup.Databases.Contains(Name))
                           throw new TimeoutException($"{server.Name} hasn't dropped {Name} yet. Wait period expired.");
                       }
                      );
     }
 
-    private void WaitForAgDrop(Server server, AvailabilityGroup availabilityGroup)
-    {
-      
-    }
+    private void WaitForAgDrop(Server server, AvailabilityGroup availabilityGroup) { }
 
     public void FinalizePrimary()
     {
