@@ -122,7 +122,7 @@ namespace AgDatabaseMove.SmoFacade
     public void Restore(IEnumerable<BackupMetadata> backupOrder, string databaseName,
       Func<string, string> fileRelocation = null)
     {
-      var restore = new Restore { Database = databaseName, NoRecovery = true };
+      var restore = new Restore { Database = databaseName, NoRecovery = true, RetryFailedQueries = true};
 
       foreach(var backup in backupOrder) {
         var device = BackupFileTools.IsUrl(backup.PhysicalDeviceName) ? DeviceType.Url : DeviceType.File;
@@ -148,6 +148,8 @@ namespace AgDatabaseMove.SmoFacade
             restore.RelocateFiles.Add(new RelocateFile((string)file["LogicalName"], newFilePath));
           }
         }
+
+        _server.ConnectionContext.StatementTimeout = 14400; // 60 * 60 * 4 = 4 hours
 
         restore.SqlRestore(_server);
         restore.Devices.Remove(backupDeviceItem);
