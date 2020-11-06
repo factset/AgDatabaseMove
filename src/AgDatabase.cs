@@ -12,6 +12,7 @@ namespace AgDatabaseMove
   using System.Data.SqlClient;
   using System.Linq;
   using System.Threading;
+  using Polly;
   using SmoFacade;
 
 
@@ -153,16 +154,21 @@ namespace AgDatabaseMove
 
     private void WaitForInitialization(Server server, AvailabilityGroup availabilityGroup)
     {
-      var wait = 100;
-      var maxWait = 60000;
-      var multiplier = 2;
+      Policy
+        .Handle<TimeoutException>()
+        .WaitAndRetry(6,
+                      retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(1000, retryAttempt)),
+                      (exception, timeSpan, context) =>
+                      {
+                        if (availabilityGroup.Databases.Contains(Name))
+                          throw new TimeoutException($"{server.Name} hasn't dropped {Name} yet. Wait period expired.");
+                      }
+                     );
+    }
 
-      while(availabilityGroup.IsInitializing(Name)) {
-        if(wait > maxWait)
-          throw new TimeoutException($"{server.Name} is initializing. Wait period expired.");
-        Thread.Sleep(wait);
-        wait *= multiplier;
-      }
+    private void WaitForAgDrop(Server server, AvailabilityGroup availabilityGroup)
+    {
+      
     }
 
     public void FinalizePrimary()
