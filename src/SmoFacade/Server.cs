@@ -122,7 +122,7 @@ namespace AgDatabaseMove.SmoFacade
     public void Restore(IEnumerable<BackupMetadata> backupOrder, string databaseName,
       Func<string, string> fileRelocation = null)
     {
-      var restore = new Restore { Database = databaseName, NoRecovery = true, RetryFailedQueries = true};
+      var restore = new Restore { Database = databaseName, NoRecovery = true, RetryFailedQueries = true };
 
       foreach(var backup in backupOrder) {
         var device = BackupFileTools.IsUrl(backup.PhysicalDeviceName) ? DeviceType.Url : DeviceType.File;
