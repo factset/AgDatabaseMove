@@ -166,11 +166,6 @@ namespace AgDatabaseMove
                      );
     }
 
-    private void WaitForAgDrop(Server server, AvailabilityGroup availabilityGroup)
-    {
-      
-    }
-
     public void FinalizePrimary()
     {
       _listener.ForEachAgInstance(FinalizePrimary);
