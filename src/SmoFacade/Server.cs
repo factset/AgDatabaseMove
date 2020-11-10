@@ -149,6 +149,8 @@ namespace AgDatabaseMove.SmoFacade
           }
         }
 
+        _server.ConnectionContext.StatementTimeout = 86400; // 60 * 60 * 24 = 24 hours
+
         restore.SqlRestore(_server);
         restore.Devices.Remove(backupDeviceItem);
       }
