@@ -36,8 +36,6 @@ namespace AgDatabaseMove.SmoFacade
     public IEnumerable<Database> Databases => _server.Databases.Cast<Microsoft.SqlServer.Management.Smo.Database>()
       .Select(d => new Database(d, this));
 
-
-
     private AvailabilityGroup AvailabilityGroup =>
       AvailabilityGroups.Single(ag => ag.Listeners.Contains(AgName(), StringComparer.InvariantCultureIgnoreCase));
 
