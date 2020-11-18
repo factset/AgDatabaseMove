@@ -43,7 +43,7 @@ namespace AgDatabaseMove.SmoFacade
       var policy = Policy
         .Handle<FailedOperationException>()
         .Or<TimeoutException>()
-        .WaitAndRetry(6, retryAttempt => TimeSpan.FromMilliseconds(500 * retryAttempt));
+        .WaitAndRetry(6, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(10, retryAttempt)));
 
       // ensure database is not in AvailabilityGroup, WaitAndRetry loop for each instance to sync
       policy.Execute(() => {
@@ -57,7 +57,6 @@ namespace AgDatabaseMove.SmoFacade
 
       policy.Execute(() => { _database.Parent.KillDatabase(_database.Name); });
     }
-
 
     /// <summary>
     ///   Queries msdb on the instance for backups of this database.

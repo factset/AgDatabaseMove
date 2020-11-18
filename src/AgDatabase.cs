@@ -156,7 +156,7 @@ namespace AgDatabaseMove
     {
       var policy = Policy
         .Handle<TimeoutException>()
-        .WaitAndRetry(6, retryAttempt => TimeSpan.FromMilliseconds(500 * retryAttempt));
+        .WaitAndRetry(6, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(10, retryAttempt)));
 
       policy.Execute(() => {
         if(availabilityGroup.IsInitializing(Name))
