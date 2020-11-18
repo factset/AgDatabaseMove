@@ -40,21 +40,24 @@ namespace AgDatabaseMove.SmoFacade
     /// </summary>
     public void Drop()
     {
-      Policy
-        .Handle<TimeoutException>()
-        .WaitAndRetry(6,
-                      retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(1000, retryAttempt)),
-                      (exception, timeSpan, context) => {
-                        if(!string.IsNullOrEmpty(_database.AvailabilityGroupName) ||
-                           _database.AvailabilityDatabaseSynchronizationState >
-                           AvailabilityDatabaseSynchronizationState.NotSynchronizing)
-                          throw new
-                            TimeoutException($"Cannot kill the database {Name} until it has been removed from the AvailabilityGroup.");
-                      }
-                     );
+      var policy = Policy
+        .Handle<FailedOperationException>()
+        .Or<TimeoutException>()
+        .WaitAndRetry(6, retryAttempt => TimeSpan.FromMilliseconds(500 * retryAttempt));
 
-      _database.Parent.KillDatabase(_database.Name);
+      // ensure database is not in AvailabilityGroup, WaitAndRetry loop for each instance to sync
+      policy.Execute(() => {
+        if(string.IsNullOrEmpty(_database.AvailabilityGroupName))
+          return;
+        if(_database.AvailabilityDatabaseSynchronizationState >
+           AvailabilityDatabaseSynchronizationState.NotSynchronizing)
+          throw new
+            TimeoutException($"Cannot kill the database {Name} until it has been removed from the AvailabilityGroup.");
+      });
+
+      policy.Execute(() => { _database.Parent.KillDatabase(_database.Name); });
     }
+
 
     /// <summary>
     ///   Queries msdb on the instance for backups of this database.
@@ -93,6 +96,12 @@ namespace AgDatabaseMove.SmoFacade
         });
 
       return backups;
+    }
+
+    public void SingleUserMode()
+    {
+      _database.DatabaseOptions.UserAccess = DatabaseUserAccess.Single;
+      _database.Alter(TerminationClause.RollbackTransactionsImmediately);
     }
 
     public void RestrictedUserMode()

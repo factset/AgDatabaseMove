@@ -35,7 +35,17 @@ namespace AgDatabaseMove.Cli
           RestoreFileRelocator(arguments.From.DatabaseName, arguments.To.DatabaseName, filename)
       });
 
-      mover.Move();
+      try {
+        mover.Move();
+      }
+      catch(Exception e) {
+        Console.WriteLine(e.Message);
+        Console.WriteLine(e.StackTrace);
+
+        Console.WriteLine(e.InnerException?.Message);
+        Console.WriteLine(e.InnerException?.StackTrace);
+        throw;
+      }
     }
 
     private static string RestoreFileRelocator(string fromName, string toName, string fileName)

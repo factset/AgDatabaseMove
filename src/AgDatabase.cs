@@ -154,15 +154,14 @@ namespace AgDatabaseMove
 
     private void WaitForInitialization(Server server, AvailabilityGroup availabilityGroup)
     {
-      Policy
+      var policy = Policy
         .Handle<TimeoutException>()
-        .WaitAndRetry(6,
-                      retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(1000, retryAttempt)),
-                      (exception, timeSpan, context) => {
-                        if(availabilityGroup.Databases.Contains(Name))
-                          throw new TimeoutException($"{server.Name} hasn't dropped {Name} yet. Wait period expired.");
-                      }
-                     );
+        .WaitAndRetry(6, retryAttempt => TimeSpan.FromMilliseconds(500 * retryAttempt));
+
+      policy.Execute(() => {
+        if(availabilityGroup.IsInitializing(Name))
+          throw new TimeoutException($"{server.Name} is initializing. Wait period expired.");
+      });
     }
 
     public void FinalizePrimary()
