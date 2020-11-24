@@ -128,7 +128,8 @@ namespace AgDatabaseMove.SmoFacade
       return dotIndex >= 0 ? dataSource.Remove(dotIndex) : dataSource;
     }
 
-    private static Server AgListenerNameToServer(ref SqlConnectionStringBuilder connBuilder, string agInstanceName, string credentailName)
+    private static Server AgListenerNameToServer(ref SqlConnectionStringBuilder connBuilder, string agInstanceName,
+      string credentailName)
     {
       connBuilder.DataSource = Dns.GetHostEntry(agInstanceName).HostName;
       return new Server(connBuilder.ToString(), credentailName);

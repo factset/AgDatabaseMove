@@ -27,7 +27,7 @@
     public string BackupPathSqlQuery { get; set; }
 
     /// <summary>
-    /// Server credential used for backup and restore operations. Necessary for SqlServer 2012 and older
+    ///   Server credential used for backup and restore operations. Necessary for SqlServer 2012 and older
     /// </summary>
     public string CredentialName { get; set; }
 

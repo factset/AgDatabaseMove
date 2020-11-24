@@ -16,8 +16,8 @@ namespace AgDatabaseMove.SmoFacade
   /// </summary>
   public class Server : IDisposable
   {
-    internal readonly Microsoft.SqlServer.Management.Smo.Server _server;
     internal readonly string _credentialName;
+    internal readonly Microsoft.SqlServer.Management.Smo.Server _server;
 
     public Server(string connectionString, string credentialName = null)
     {
@@ -205,7 +205,7 @@ namespace AgDatabaseMove.SmoFacade
       var deviceType = BackupFileTools.IsUrl(filePath) ? DeviceType.Url : DeviceType.File;
 
       var bdi = new BackupDeviceItem(filePath, deviceType);
-      if (_credentialName != null && deviceType == DeviceType.Url)
+      if(_credentialName != null && deviceType == DeviceType.Url)
         bdi.CredentialName = _credentialName;
 
       backup.Devices.Add(bdi);
