@@ -69,12 +69,13 @@ namespace AgDatabaseMove.SmoFacade
       var secondaryNames = availabilityGroup.Replicas.Where(l => l != primaryName);
 
       // Connect to each server instance
-      Primary = AgListenerNameToServer(ref connectionStringBuilder, primaryName, credentailName);
+      Primary = AgListenerNameToServer(ref connectionStringBuilder, primaryName); //Primary = new Server(primaryName);
       AvailabilityGroup = Primary.AvailabilityGroups.Single(ag => ag.Name == availabilityGroup.Name);
 
       _secondaries = new List<Server>();
       foreach(var secondaryName in secondaryNames)
-        _secondaries.Add(AgListenerNameToServer(ref connectionStringBuilder, secondaryName, credentailName));
+        _secondaries.Add(AgListenerNameToServer(ref connectionStringBuilder,
+                                                secondaryName)); //_secondaries.Add(new Server(secondaryName));
     }
 
     public IEnumerable<Server> ReplicaInstances => Secondaries.Union(new[] { Primary });
@@ -128,11 +129,21 @@ namespace AgDatabaseMove.SmoFacade
       return dotIndex >= 0 ? dataSource.Remove(dotIndex) : dataSource;
     }
 
-    private static Server AgListenerNameToServer(ref SqlConnectionStringBuilder connBuilder, string agInstanceName,
-      string credentailName)
+    private static Server AgListenerNameToServer(ref SqlConnectionStringBuilder connBuilder, string agInstanceName)
     {
-      connBuilder.DataSource = Dns.GetHostEntry(agInstanceName).HostName;
-      return new Server(connBuilder.ToString(), credentailName);
+      try {
+        connBuilder.DataSource = Dns.GetHostEntry(agInstanceName).HostName;
+      }
+      catch(Exception) {
+        // NamedInstances: chop instance name, resolve DNS, slap instance name back on!
+        var parts = agInstanceName.Split('\\');
+        if(parts.Length != 2)
+          throw;
+
+        connBuilder.DataSource = $"{Dns.GetHostEntry(parts[0]).HostName}\\{parts[1]}";
+      }
+
+      return new Server(connBuilder.ToString());
     }
   }
 }
