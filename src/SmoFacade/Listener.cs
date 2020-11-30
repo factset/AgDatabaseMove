@@ -131,17 +131,14 @@ namespace AgDatabaseMove.SmoFacade
 
     private static Server AgListenerNameToServer(ref SqlConnectionStringBuilder connBuilder, string agInstanceName)
     {
-      try {
+      var parts = agInstanceName.Split('\\');
+      if(parts.Length == 1)
         connBuilder.DataSource = Dns.GetHostEntry(agInstanceName).HostName;
-      }
-      catch(Exception) {
+      if(parts.Length == 2)
         // NamedInstances: chop instance name, resolve DNS, slap instance name back on!
-        var parts = agInstanceName.Split('\\');
-        if(parts.Length != 2)
-          throw;
-
         connBuilder.DataSource = $"{Dns.GetHostEntry(parts[0]).HostName}\\{parts[1]}";
-      }
+      else
+        throw new ArgumentException($"agInstanceName param {agInstanceName} cannot be resolved by DNS");
 
       return new Server(connBuilder.ToString());
     }
