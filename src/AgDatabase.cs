@@ -51,7 +51,8 @@ namespace AgDatabaseMove
     {
       Name = dbConfig.DatabaseName;
       _backupPathSqlQuery = dbConfig.BackupPathSqlQuery;
-      _listener = new Listener(new SqlConnectionStringBuilder(dbConfig.ConnectionString) { InitialCatalog = "master" });
+      _listener = new Listener(new SqlConnectionStringBuilder(dbConfig.ConnectionString) { InitialCatalog = "master" },
+                               dbConfig.CredentialName);
     }
 
     /// <summary>

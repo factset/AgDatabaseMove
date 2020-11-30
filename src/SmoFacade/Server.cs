@@ -16,12 +16,14 @@ namespace AgDatabaseMove.SmoFacade
   /// </summary>
   public class Server : IDisposable
   {
+    internal readonly string _credentialName;
     internal readonly Microsoft.SqlServer.Management.Smo.Server _server;
 
-    public Server(string connectionString)
+    public Server(string connectionString, string credentialName = null)
     {
       SqlConnection = new SqlConnection(connectionString);
       _server = new Microsoft.SqlServer.Management.Smo.Server(new ServerConnection(SqlConnection));
+      _credentialName = credentialName;
     }
 
     public Server(SqlConnectionStringBuilder connectionStringBuilder) :
@@ -127,6 +129,9 @@ namespace AgDatabaseMove.SmoFacade
       foreach(var backup in backupOrder) {
         var device = BackupFileTools.IsUrl(backup.PhysicalDeviceName) ? DeviceType.Url : DeviceType.File;
         var backupDeviceItem = new BackupDeviceItem(backup.PhysicalDeviceName, device);
+        if(_credentialName != null && device == DeviceType.Url)
+          backupDeviceItem.CredentialName = _credentialName;
+
         restore.Devices.Add(backupDeviceItem);
 
         var defaultFileLocations = DefaultFileLocations();
@@ -200,6 +205,9 @@ namespace AgDatabaseMove.SmoFacade
       var deviceType = BackupFileTools.IsUrl(filePath) ? DeviceType.Url : DeviceType.File;
 
       var bdi = new BackupDeviceItem(filePath, deviceType);
+      if(_credentialName != null && deviceType == DeviceType.Url)
+        bdi.CredentialName = _credentialName;
+
       backup.Devices.Add(bdi);
       backup.SqlBackup(_server);
     }

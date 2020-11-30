@@ -50,7 +50,7 @@ namespace AgDatabaseMove.SmoFacade
      * connection to find those server names though is done through the listener and that instance is thrown away in this
      * constructor so it won't be used again.
      */
-    public Listener(SqlConnectionStringBuilder connectionStringBuilder)
+    public Listener(SqlConnectionStringBuilder connectionStringBuilder, string credentailName = null)
     {
       if(connectionStringBuilder.DataSource == null)
         throw new ArgumentException("DataSource not supplied in connection string");
@@ -69,12 +69,12 @@ namespace AgDatabaseMove.SmoFacade
       var secondaryNames = availabilityGroup.Replicas.Where(l => l != primaryName);
 
       // Connect to each server instance
-      Primary = new Server(primaryName);
+      Primary = AgListenerNameToServer(ref connectionStringBuilder, primaryName, credentailName);
       AvailabilityGroup = Primary.AvailabilityGroups.Single(ag => ag.Name == availabilityGroup.Name);
 
       _secondaries = new List<Server>();
       foreach(var secondaryName in secondaryNames)
-        _secondaries.Add(new Server(secondaryName));
+        _secondaries.Add(AgListenerNameToServer(ref connectionStringBuilder, secondaryName, credentailName));
     }
 
     public IEnumerable<Server> ReplicaInstances => Secondaries.Union(new[] { Primary });
@@ -128,5 +128,10 @@ namespace AgDatabaseMove.SmoFacade
       return dotIndex >= 0 ? dataSource.Remove(dotIndex) : dataSource;
     }
 
+    private static Server AgListenerNameToServer(ref SqlConnectionStringBuilder connBuilder, string agInstanceName, string credentailName)
+    {
+      connBuilder.DataSource = Dns.GetHostEntry(agInstanceName).HostName;
+      return new Server(connBuilder.ToString(), credentailName);
+    }
   }
 }
