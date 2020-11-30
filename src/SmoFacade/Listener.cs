@@ -69,13 +69,13 @@ namespace AgDatabaseMove.SmoFacade
       var secondaryNames = availabilityGroup.Replicas.Where(l => l != primaryName);
 
       // Connect to each server instance
-      Primary = AgListenerNameToServer(ref connectionStringBuilder, primaryName); //Primary = new Server(primaryName);
+      Primary = AgListenerNameToServer(ref connectionStringBuilder, primaryName);
       AvailabilityGroup = Primary.AvailabilityGroups.Single(ag => ag.Name == availabilityGroup.Name);
 
       _secondaries = new List<Server>();
       foreach(var secondaryName in secondaryNames)
         _secondaries.Add(AgListenerNameToServer(ref connectionStringBuilder,
-                                                secondaryName)); //_secondaries.Add(new Server(secondaryName));
+                                                secondaryName));
     }
 
     public IEnumerable<Server> ReplicaInstances => Secondaries.Union(new[] { Primary });
