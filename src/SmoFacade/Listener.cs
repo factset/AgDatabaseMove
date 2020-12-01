@@ -75,7 +75,8 @@ namespace AgDatabaseMove.SmoFacade
       _secondaries = new List<Server>();
       foreach(var secondaryName in secondaryNames)
         _secondaries.Add(AgListenerNameToServer(ref connectionStringBuilder,
-                                                secondaryName, credentialName));
+                                                secondaryName,
+                                                credentialName));
     }
 
     public IEnumerable<Server> ReplicaInstances => Secondaries.Union(new[] { Primary });
@@ -129,7 +130,8 @@ namespace AgDatabaseMove.SmoFacade
       return dotIndex >= 0 ? dataSource.Remove(dotIndex) : dataSource;
     }
 
-    private static Server AgListenerNameToServer(ref SqlConnectionStringBuilder connBuilder, string agInstanceName, string credentialName)
+    private static Server AgListenerNameToServer(ref SqlConnectionStringBuilder connBuilder, string agInstanceName,
+      string credentialName)
     {
       var parts = agInstanceName.Split('\\');
       if(parts.Length == 1)
