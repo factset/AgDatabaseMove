@@ -50,7 +50,7 @@ namespace AgDatabaseMove.SmoFacade
      * connection to find those server names though is done through the listener and that instance is thrown away in this
      * constructor so it won't be used again.
      */
-    public Listener(SqlConnectionStringBuilder connectionStringBuilder, string credentailName = null)
+    public Listener(SqlConnectionStringBuilder connectionStringBuilder, string credentialName = null)
     {
       if(connectionStringBuilder.DataSource == null)
         throw new ArgumentException("DataSource not supplied in connection string");
@@ -69,13 +69,13 @@ namespace AgDatabaseMove.SmoFacade
       var secondaryNames = availabilityGroup.Replicas.Where(l => l != primaryName);
 
       // Connect to each server instance
-      Primary = AgListenerNameToServer(ref connectionStringBuilder, primaryName);
+      Primary = AgListenerNameToServer(ref connectionStringBuilder, primaryName, credentialName);
       AvailabilityGroup = Primary.AvailabilityGroups.Single(ag => ag.Name == availabilityGroup.Name);
 
       _secondaries = new List<Server>();
       foreach(var secondaryName in secondaryNames)
         _secondaries.Add(AgListenerNameToServer(ref connectionStringBuilder,
-                                                secondaryName));
+                                                secondaryName, credentialName));
     }
 
     public IEnumerable<Server> ReplicaInstances => Secondaries.Union(new[] { Primary });
@@ -129,7 +129,7 @@ namespace AgDatabaseMove.SmoFacade
       return dotIndex >= 0 ? dataSource.Remove(dotIndex) : dataSource;
     }
 
-    private static Server AgListenerNameToServer(ref SqlConnectionStringBuilder connBuilder, string agInstanceName)
+    private static Server AgListenerNameToServer(ref SqlConnectionStringBuilder connBuilder, string agInstanceName, string credentialName)
     {
       var parts = agInstanceName.Split('\\');
       if(parts.Length == 1)
@@ -140,7 +140,7 @@ namespace AgDatabaseMove.SmoFacade
       else
         throw new ArgumentException($"agInstanceName param {agInstanceName} cannot be resolved by DNS");
 
-      return new Server(connBuilder.ToString());
+      return new Server(connBuilder.ToString(), credentialName);
     }
   }
 }
