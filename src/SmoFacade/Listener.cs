@@ -136,7 +136,7 @@ namespace AgDatabaseMove.SmoFacade
       var parts = agInstanceName.Split('\\');
       if(parts.Length == 1)
         connBuilder.DataSource = Dns.GetHostEntry(agInstanceName).HostName;
-      if(parts.Length == 2)
+      else if(parts.Length == 2)
         // NamedInstances: chop instance name, resolve DNS, slap instance name back on!
         connBuilder.DataSource = $"{Dns.GetHostEntry(parts[0]).HostName}\\{parts[1]}";
       else
