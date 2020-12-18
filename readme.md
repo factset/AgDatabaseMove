@@ -25,12 +25,14 @@ it will delete it and proceed with the copy.
 
 ```
 AgDatabaseMove.Cli.exe 
---From:ConnectionString "Server=SourceDatabaseListener.domain.com; Integrated Security=true; MultiSubnetFailover=true;" --From:DatabaseName test --From:BackupPathSqlQuery "SELECT '\\NetworkShare\path\here'"
---To:ConnectionString "Server=SourceDatabaseListener.domain.com; Integrated Security=true; MultiSubnetFailover=true;" --To:DatabaseName test 
---Overwrite true
---Finalize true
---CopyLogins true
+--From:ConnectionString="Server=crds-dev-12a.prod.factset.com; Integrated Security=true; MultiSubnetFailover=true;"
+--From:BackupPathSqlQuery "SELECT Backup_path from msdb._Sys_backup_config" 
+--From:DatabaseName=test 
+--To:ConnectionString="Server=crds-dev-13a.prod.factset.com; Integrated Security=true; MultiSubnetFailover=true;" 
+--To:DatabaseName test_airion
+--To:DatabaseFileDirectory="D:\\MSSQL13.MSSQLSERVER\\MSSQL\\DATA\\"
 --DeleteSource false
+--Overwrite true
 ```
 
 ## Contributing
