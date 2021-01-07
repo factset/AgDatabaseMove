@@ -140,6 +140,11 @@ namespace AgDatabaseMove
       return _listener.Primary.Database(Name).Users.Where(u => u.Login != null).Select(u => u.Login.Properties());
     }
 
+    public void DropLogin(LoginProperties login)
+    {
+      _listener.ForEachAgInstance(server => server.DropLogin(login));
+    }
+
     /// <summary>
     ///   IDisposable implemented for our connection to the primary AG database server.
     /// </summary>
