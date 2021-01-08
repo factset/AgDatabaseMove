@@ -30,6 +30,8 @@ namespace AgDatabaseMove
 
     void CopyLogins(IEnumerable<LoginProperties> logins);
     IEnumerable<LoginProperties> AssociatedLogins();
+    void DropLogin(LoginProperties login);
+    void DropAllLogins();
   }
 
 
@@ -143,6 +145,13 @@ namespace AgDatabaseMove
     public void DropLogin(LoginProperties login)
     {
       _listener.ForEachAgInstance(server => server.DropLogin(login));
+    }
+
+    public void DropAllLogins()
+    {
+      foreach(var loginProp in AssociatedLogins()) {
+        DropLogin(loginProp);
+      }
     }
 
     /// <summary>

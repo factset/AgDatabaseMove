@@ -46,14 +46,14 @@ namespace AgDatabaseMove.SmoFacade
     public IEnumerable<Login> Logins => _server.Logins.Cast<Microsoft.SqlServer.Management.Smo.Login>()
       .Select(l => new Login(l, this));
 
-    public void DropLogin(LoginProperties login)
-    {
-      _server.Logins[login.Name].DropIfExists();
-    }
-
     public void Dispose()
     {
       SqlConnection?.Dispose();
+    }
+
+    public void DropLogin(LoginProperties login)
+    {
+      _server.Logins[login.Name].DropIfExists();
     }
 
     /// <summary>
