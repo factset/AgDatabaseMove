@@ -139,7 +139,7 @@ namespace AgDatabaseMove
 
     public IEnumerable<LoginProperties> AssociatedLogins()
     {
-      return _listener.Primary.Database(Name).Users.Where(u => u.Login != null && u.Login.Name != "sa")
+      return _listener.Primary.Database(Name)?.Users?.Where(u => u.Login != null && u.Login.Name != "sa")
         .Select(u => u.Login.Properties());
     }
 
@@ -170,7 +170,7 @@ namespace AgDatabaseMove
     {
       var policy = Policy
         .Handle<TimeoutException>()
-        .WaitAndRetry(6, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(10, retryAttempt)));
+        .WaitAndRetry(4, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(10, retryAttempt)));
 
       policy.Execute(() => {
         if(availabilityGroup.IsInitializing(Name))
@@ -207,7 +207,7 @@ namespace AgDatabaseMove
 
     public void RestrictedUserMode()
     {
-      _listener.Primary.Database(Name).RestrictedUserMode();
+      _listener.Primary.Database(Name)?.RestrictedUserMode();
     }
 
     public void MultiUserMode()

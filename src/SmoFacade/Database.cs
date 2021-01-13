@@ -43,7 +43,7 @@ namespace AgDatabaseMove.SmoFacade
       var policy = Policy
         .Handle<FailedOperationException>()
         .Or<TimeoutException>()
-        .WaitAndRetry(6, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(10, retryAttempt)));
+        .WaitAndRetry(4, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(10, retryAttempt)));
 
       // ensure database is not in AvailabilityGroup, WaitAndRetry loop for each instance to sync
       policy.Execute(() => {
@@ -55,7 +55,12 @@ namespace AgDatabaseMove.SmoFacade
             TimeoutException($"Cannot kill the database {Name} until it has been removed from the AvailabilityGroup.");
       });
 
-      policy.Execute(() => { _database.Parent.KillDatabase(_database.Name); });
+      try {
+        policy.Execute(() => { _database.Parent.KillDatabase(_database.Name); });
+      }
+      catch(Exception e) {
+        Console.WriteLine(e);
+      }
     }
 
     /// <summary>
