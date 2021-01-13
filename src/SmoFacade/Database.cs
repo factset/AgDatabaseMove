@@ -55,12 +55,7 @@ namespace AgDatabaseMove.SmoFacade
             TimeoutException($"Cannot kill the database {Name} until it has been removed from the AvailabilityGroup.");
       });
 
-      try {
-        policy.Execute(() => { _database.Parent.KillDatabase(_database.Name); });
-      }
-      catch(Exception e) {
-        Console.WriteLine(e);
-      }
+      policy.Execute(() => { _database.Parent.KillDatabase(_database.Name); });
     }
 
     /// <summary>
