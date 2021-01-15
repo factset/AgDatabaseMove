@@ -139,7 +139,7 @@ namespace AgDatabaseMove
 
     public IEnumerable<LoginProperties> AssociatedLogins()
     {
-      return _listener.Primary.Database(Name)?.Users?.Where(u => u.Login != null && u.Login.Name != "sa")
+      return _listener.Primary.Database(Name).Users.Where(u => u.Login != null && u.Login.Name != "sa")
         .Select(u => u.Login.Properties());
     }
 
@@ -207,7 +207,7 @@ namespace AgDatabaseMove
 
     public void RestrictedUserMode()
     {
-      _listener.Primary.Database(Name)?.RestrictedUserMode();
+      _listener.Primary.Database(Name).RestrictedUserMode();
     }
 
     public void MultiUserMode()
