@@ -15,7 +15,7 @@ namespace AgDatabaseMove.SmoFacade
     private readonly Microsoft.SqlServer.Management.Smo.Database _database;
     private readonly Server _server;
 
-    internal Database(Microsoft.SqlServer.Management.Smo.Database database, Server server)
+    public Database(Microsoft.SqlServer.Management.Smo.Database database, Server server)
     {
       _database = database;
       _server = server;
