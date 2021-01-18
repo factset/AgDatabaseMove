@@ -93,6 +93,7 @@ namespace AgDatabaseMove.SmoFacade
       dbName.Value = _database.Name;
       cmd.Parameters.Add(dbName);
 
+      cmd.Connection.Open();
       using var reader = cmd.ExecuteReader();
       while(reader.Read())
         backups.Add(new BackupMetadata {
@@ -107,7 +108,8 @@ namespace AgDatabaseMove.SmoFacade
           BackupType = BackupFileTools.BackupTypeAbbrevToType((string)reader["backup_type"])
         });
 
-      return backups;
+        cmd.Connection.Close();
+        return backups;
     }
 
     public void SingleUserMode()
