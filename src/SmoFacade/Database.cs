@@ -26,12 +26,24 @@ namespace AgDatabaseMove.SmoFacade
         _database = new Microsoft.SqlServer.Management.Smo.Database(sqlSmoServer, dbName); 
 
         _server = new Server(connectionString);
+        RefreshAndOpenSqlConnection();
     }
 
     internal Database(Microsoft.SqlServer.Management.Smo.Database database, Server server)
     {
       _database = database;
       _server = server;
+      RefreshAndOpenSqlConnection();
+    }
+
+    ~Database()
+    {
+      _server.SqlConnection.Close();
+    }
+    private void RefreshAndOpenSqlConnection()
+    {
+      _server.SqlConnection.Close();
+      _server.SqlConnection.Open();
     }
 
     public IEnumerable<User> Users => _database.Users.Cast<Microsoft.SqlServer.Management.Smo.User>()
@@ -93,7 +105,6 @@ namespace AgDatabaseMove.SmoFacade
       dbName.Value = _database.Name;
       cmd.Parameters.Add(dbName);
 
-      cmd.Connection.Open();
       using var reader = cmd.ExecuteReader();
       while(reader.Read())
         backups.Add(new BackupMetadata {
@@ -108,7 +119,6 @@ namespace AgDatabaseMove.SmoFacade
           BackupType = BackupFileTools.BackupTypeAbbrevToType((string)reader["backup_type"])
         });
 
-        cmd.Connection.Close();
         return backups;
     }
 
