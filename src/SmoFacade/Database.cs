@@ -17,33 +17,14 @@ namespace AgDatabaseMove.SmoFacade
 
     public Database(DatabaseConfig databaseConfig)
     { 
-        string connectionString = databaseConfig.ConnectionString;
-        string dbName = databaseConfig.DatabaseName;
-
-        var sqlConnection = new System.Data.SqlClient.SqlConnection(connectionString);
-        var sqlServerConnection = new Microsoft.SqlServer.Management.Common.ServerConnection(sqlConnection);
-        var sqlSmoServer = new Microsoft.SqlServer.Management.Smo.Server(sqlServerConnection);
-        _database = new Microsoft.SqlServer.Management.Smo.Database(sqlSmoServer, dbName); 
-
-        _server = new Server(connectionString);
-        RefreshAndOpenSqlConnection();
+      _server = new Server(databaseConfig.ConnectionString);
+      _database =  _server.Database(databaseConfig.DatabaseName)._database;
     }
 
     internal Database(Microsoft.SqlServer.Management.Smo.Database database, Server server)
     {
       _database = database;
       _server = server;
-      RefreshAndOpenSqlConnection();
-    }
-
-    ~Database()
-    {
-      _server.SqlConnection.Close();
-    }
-    private void RefreshAndOpenSqlConnection()
-    {
-      _server.SqlConnection.Close();
-      _server.SqlConnection.Open();
     }
 
     public IEnumerable<User> Users => _database.Users.Cast<Microsoft.SqlServer.Management.Smo.User>()
