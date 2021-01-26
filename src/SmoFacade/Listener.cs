@@ -5,7 +5,8 @@ namespace AgDatabaseMove.SmoFacade
   using System.Data.SqlClient;
   using System.Linq;
   using System.Net;
-  using System.Threading.Tasks;
+    using System.Runtime.InteropServices;
+    using System.Threading.Tasks;
 
 
   internal interface IListener : IDisposable
@@ -134,15 +135,27 @@ namespace AgDatabaseMove.SmoFacade
       string credentialName)
     {
       var parts = agInstanceName.Split('\\');
-      if(parts.Length == 1)
-        connBuilder.DataSource = Dns.GetHostEntry(agInstanceName).HostName;
-      else if(parts.Length == 2)
-        // NamedInstances: chop instance name, resolve DNS, slap instance name back on!
-        connBuilder.DataSource = $"{Dns.GetHostEntry(parts[0]).HostName}\\{parts[1]}";
-      else
-        throw new ArgumentException($"agInstanceName param {agInstanceName} cannot be resolved by DNS");
+            if (parts.Length == 1)
+                connBuilder.DataSource = ResolveDnsAndGetHostName(connBuilder.DataSource, agInstanceName);
+            else if (parts.Length == 2)
+                // NamedInstances: chop instance name, resolve DNS, slap instance name back on!
+                connBuilder.DataSource = $"{ResolveDnsAndGetHostName(connBuilder.DataSource, parts[0])}\\{parts[1]}";
+            else
+                throw new ArgumentException($"agInstanceName param {agInstanceName} cannot be resolved by DNS");
 
       return new Server(connBuilder.ToString(), credentialName);
+    }
+
+    private static string ResolveDnsAndGetHostName(string hostUrl, string instance)
+    {
+      if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && !instance.Contains('.'))
+      {
+        string[] urlFragments = hostUrl.Split('.');
+        urlFragments[0] = "";
+        instance += string.Join(".", urlFragments);
+      }
+      var res = Dns.GetHostEntry(instance).HostName;
+      return res;
     }
   }
 }
