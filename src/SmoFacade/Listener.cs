@@ -5,8 +5,7 @@ namespace AgDatabaseMove.SmoFacade
   using System.Data.SqlClient;
   using System.Linq;
   using System.Net;
-    using System.Runtime.InteropServices;
-    using System.Threading.Tasks;
+  using System.Threading.Tasks;
 
 
   internal interface IListener : IDisposable
@@ -146,16 +145,23 @@ namespace AgDatabaseMove.SmoFacade
       return new Server(connBuilder.ToString(), credentialName);
     }
 
-    private static string ResolveDnsAndGetHostName(string hostUrl, string instance)
+    /// <summary>
+    ///   Resolves "instanceName" to a FQDNS name
+    ///   However on Unix OS, "instanceName" should be a complete domain - "{sub domain}.{second level domain}.{...}.{top level domain}" (eg: "xyz.abc.def.com")
+    ///   Therefore, append from the {second-level} -> {top-level} domains from the "hostDomain" to the "instanceName" to make it a complete domain if it is not already
+    /// </summary>
+    /// <param name="hostDomain">The complete domain for the SQL server</param>
+    /// <param name="instanceName">The specific name of an instance within the server</param>
+    private static string ResolveDnsAndGetHostName(string hostDomain, string instanceName)
     {
-      if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && !instance.Contains('.'))
+      if (Environment.OSVersion.Platform == PlatformID.Unix && !instanceName.Contains('.'))
       {
-        string[] urlFragments = hostUrl.Split('.');
-        urlFragments[0] = "";
-        instance += string.Join(".", urlFragments);
+        string[] domainFragments = hostDomain.Split('.');
+        domainFragments[0] = "";
+        instanceName += string.Join(".", domainFragments);
       }
-      var res = Dns.GetHostEntry(instance).HostName;
-      return res;
+      return Dns.GetHostEntry(instanceName).HostName;
+
     }
   }
 }
