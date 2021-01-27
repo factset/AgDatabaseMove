@@ -134,13 +134,13 @@ namespace AgDatabaseMove.SmoFacade
       string credentialName)
     {
       var parts = agInstanceName.Split('\\');
-        if(parts.Length == 1)
-          connBuilder.DataSource = ResolveDnsAndGetHostName(connBuilder.DataSource, agInstanceName);
-        else if(parts.Length == 2)
-          // NamedInstances: chop instance name, resolve DNS, slap instance name back on!
-          connBuilder.DataSource = $"{ResolveDnsAndGetHostName(connBuilder.DataSource, parts[0])}\\{parts[1]}";
-        else
-          throw new ArgumentException($"agInstanceName param {agInstanceName} cannot be resolved by DNS");
+      if(parts.Length == 1)
+        connBuilder.DataSource = ResolveDnsAndGetHostName(connBuilder.DataSource, agInstanceName);
+      else if(parts.Length == 2)
+        // NamedInstances: chop instance name, resolve DNS, slap instance name back on!
+        connBuilder.DataSource = $"{ResolveDnsAndGetHostName(connBuilder.DataSource, parts[0])}\\{parts[1]}";
+      else
+        throw new ArgumentException($"agInstanceName param {agInstanceName} cannot be resolved by DNS");
 
       return new Server(connBuilder.ToString(), credentialName);
     }
