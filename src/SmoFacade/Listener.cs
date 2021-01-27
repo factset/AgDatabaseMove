@@ -154,14 +154,33 @@ namespace AgDatabaseMove.SmoFacade
     /// <param name="instanceName">The specific name of an instance within the server</param>
     private static string ResolveDnsAndGetHostName(string hostDomain, string instanceName)
     {
+      Tuple<string, string> domain_port = SplitDomainPort(hostDomain);
       if (Environment.OSVersion.Platform == PlatformID.Unix && !instanceName.Contains('.'))
       {
-        string[] domainFragments = hostDomain.Split('.');
+        string[] domainFragments = domain_port.Item1.Split('.');
         domainFragments[0] = "";
         instanceName += string.Join(".", domainFragments);
       }
-      return Dns.GetHostEntry(instanceName).HostName;
+      return Dns.GetHostEntry(instanceName).HostName+domain_port.Item2;
 
+    }
+    private static Tuple<string,string> SplitDomainPort(string hostDomain)
+    {
+      string domian = hostDomain;
+      string port = "";
+      if (hostDomain.Contains(','))
+      {
+        string[] fragments = hostDomain.Split(new char[] {','}, 2);
+        domian = fragments[0];
+        port = ","+fragments[1];
+      }
+      else if (hostDomain.Contains('\\'))
+      {
+        string[] fragments = hostDomain.Split(new char[] {'\\'}, 2);
+        domian = fragments[0];
+        port = "\\"+fragments[1];
+      }
+      return new Tuple<string, string>(domian, port);
     }
   }
 }
