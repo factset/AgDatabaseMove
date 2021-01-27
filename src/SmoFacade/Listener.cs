@@ -146,37 +146,37 @@ namespace AgDatabaseMove.SmoFacade
     }
 
     /// <summary>
-    ///   Resolves "instanceName" to a FQDNS name
-    ///   However on Unix OS, "instanceName" should be a complete domain - "{sub domain}.{second level domain}.{...}.{top level domain}" (eg: "xyz.abc.def.com")
-    ///   Therefore, append from the {second-level} -> {top-level} domains from the "hostDomain" to the "instanceName" to make it a complete domain if it is not already
+    ///   Resolves "agReplicaInstanceName" to a FQDNS name
+    ///   However on Unix OS, "agReplicaInstanceName" should be a complete domain - "{sub domain}.{second level domain}.{...}.{top level domain}" (eg: "xyz.abc.def.com")
+    ///   Therefore, we use {second-level} -> {top-level} part of the domain from "agListenerDomain" and append it to "agReplicaInstanceName"
     /// </summary>
-    /// <param name="hostDomain">The complete domain for the SQL server</param>
-    /// <param name="instanceName">The specific name of an instance within the server</param>
-    private static string ResolveDnsAndGetHostName(string hostDomain, string instanceName)
+    /// <param name="agListenerDomain">The complete domain for the SQL server AG listener</param>
+    /// <param name="agReplicaInstanceName">The specific name of a replica instance within the AG</param>
+    private static string ResolveDnsAndGetHostName(string agListenerDomain, string agReplicaInstanceName)
     {
-      Tuple<string, string> domain_port = SplitDomainPort(hostDomain);
-      if (Environment.OSVersion.Platform == PlatformID.Unix && !instanceName.Contains('.'))
+      Tuple<string, string> domain_port = SplitDomainPort(agListenerDomain);
+      if (Environment.OSVersion.Platform == PlatformID.Unix)
       {
         string[] domainFragments = domain_port.Item1.Split('.');
         domainFragments[0] = "";
-        instanceName += string.Join(".", domainFragments);
+        agReplicaInstanceName += string.Join(".", domainFragments);
       }
-      return Dns.GetHostEntry(instanceName).HostName+domain_port.Item2;
+      return Dns.GetHostEntry(agReplicaInstanceName).HostName+domain_port.Item2;
 
     }
-    private static Tuple<string,string> SplitDomainPort(string hostDomain)
+    private static Tuple<string,string> SplitDomainPort(string domainAndPort)
     {
-      string domian = hostDomain;
+      string domian = domainAndPort;
       string port = "";
-      if (hostDomain.Contains(','))
+      if (domainAndPort.Contains(','))
       {
-        string[] fragments = hostDomain.Split(new char[] {','}, 2);
+        string[] fragments = domainAndPort.Split(new char[] {','}, 2);
         domian = fragments[0];
         port = ","+fragments[1];
       }
-      else if (hostDomain.Contains('\\'))
+      else if (domainAndPort.Contains('\\'))
       {
-        string[] fragments = hostDomain.Split(new char[] {'\\'}, 2);
+        string[] fragments = domainAndPort.Split(new char[] {'\\'}, 2);
         domian = fragments[0];
         port = "\\"+fragments[1];
       }
