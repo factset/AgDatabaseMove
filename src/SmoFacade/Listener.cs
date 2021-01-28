@@ -133,16 +133,15 @@ namespace AgDatabaseMove.SmoFacade
     private static Server AgListenerNameToServer(ref SqlConnectionStringBuilder connBuilder, string agInstanceName,
       string credentialName)
     {
-      var parts = agInstanceName.Split('\\');
-      if(parts.Length == 1)
+      try 
+      {
         connBuilder.DataSource = ResolveDnsAndGetHostName(connBuilder.DataSource, agInstanceName);
-      else if(parts.Length == 2)
-        // NamedInstances: chop instance name, resolve DNS, slap instance name back on!
-        connBuilder.DataSource = $"{ResolveDnsAndGetHostName(connBuilder.DataSource, parts[0])}\\{parts[1]}";
-      else
-        throw new ArgumentException($"agInstanceName param {agInstanceName} cannot be resolved by DNS");
-
-      return new Server(connBuilder.ToString(), credentialName);
+        return new Server(connBuilder.ToString(), credentialName);
+      }
+      catch (Exception e)
+      {
+        throw new ArgumentException($"agInstanceName param {agInstanceName} cannot be resolved by DNS", e);
+      }
     }
 
     /// <summary>
@@ -154,33 +153,47 @@ namespace AgDatabaseMove.SmoFacade
     /// <param name="agReplicaInstanceName">The specific name of a replica instance within the AG</param>
     private static string ResolveDnsAndGetHostName(string agListenerDomain, string agReplicaInstanceName)
     {
-      Tuple<string, string> domain_port = SplitDomainPort(agListenerDomain);
-      if (Environment.OSVersion.Platform == PlatformID.Unix)
+      // sometimes instances/listners have ports and named instances. Therefore, we strip them off before calling DNS.GetHostEntry() and then add them back to the result 
+      (string listenerDomain, string listenerPort) = SplitDomainPort(agListenerDomain);
+      (string instanceDomain, string instancePort) = SplitDomainPort(agReplicaInstanceName);
+      // we want to add back instancePort if it exists, otherwise the server port
+      string portToUse = instancePort ?? listenerPort;
+      try
       {
-        string[] domainFragments = domain_port.Item1.Split('.');
-        domainFragments[0] = "";
-        agReplicaInstanceName += string.Join(".", domainFragments);
+        return $"{Dns.GetHostEntry(instanceDomain).HostName}{portToUse}";
       }
-      return Dns.GetHostEntry(agReplicaInstanceName).HostName+domain_port.Item2;
+      catch (System.Net.Sockets.SocketException e)
+      {
+        Console.WriteLine($"Unable to get dns for instance '{instanceDomain}'\n{e}");
 
+        // Re-try with full domain appended to the instanceDomain by stripping off domain from listner and appending to instance
+        // eg: if listner is "abc.def.ghi" we want to append ".def.ghi" to the instance
+        string[] domainFragments = listenerDomain.Split('.');
+        domainFragments[0] = "";
+        string instanceDomainFull = $"{instanceDomain}{string.Join(".", domainFragments)}";
+
+        Console.WriteLine($"Retrying with full domain '{instanceDomainFull}");
+        return $"{Dns.GetHostEntry(instanceDomainFull).HostName}{portToUse}";
+      }
     }
-    private static Tuple<string,string> SplitDomainPort(string domainAndPort)
+
+    private static (string domain, string port) SplitDomainPort(string domainAndPort)
     {
-      string domian = domainAndPort;
-      string port = "";
+      string domain = domainAndPort;
+      string port = null;
       if (domainAndPort.Contains(','))
       {
         string[] fragments = domainAndPort.Split(new char[] {','}, 2);
-        domian = fragments[0];
-        port = ","+fragments[1];
+        domain = fragments[0];
+        port = $",{fragments[1]}";
       }
-      else if (domainAndPort.Contains('\\'))
+      else if (domainAndPort.Contains('\\')) // handling named instances the same way as ports
       {
         string[] fragments = domainAndPort.Split(new char[] {'\\'}, 2);
-        domian = fragments[0];
-        port = "\\"+fragments[1];
+        domain = fragments[0];
+        port = $"\\{fragments[1]}";
       }
-      return new Tuple<string, string>(domian, port);
+      return (domain, port);
     }
   }
 }
