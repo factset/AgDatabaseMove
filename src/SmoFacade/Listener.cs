@@ -69,12 +69,12 @@ namespace AgDatabaseMove.SmoFacade
       var secondaryNames = availabilityGroup.Replicas.Where(l => l != primaryName);
 
       // Connect to each server instance
-      Primary = AgListenerNameToServer(ref connectionStringBuilder, primaryName, credentialName);
+      Primary = AgInstanceNameToServer(ref connectionStringBuilder, primaryName, credentialName);
       AvailabilityGroup = Primary.AvailabilityGroups.Single(ag => ag.Name == availabilityGroup.Name);
 
       _secondaries = new List<Server>();
       foreach(var secondaryName in secondaryNames)
-        _secondaries.Add(AgListenerNameToServer(ref connectionStringBuilder,
+        _secondaries.Add(AgInstanceNameToServer(ref connectionStringBuilder,
                                                 secondaryName,
                                                 credentialName));
     }
@@ -130,12 +130,12 @@ namespace AgDatabaseMove.SmoFacade
       return dotIndex >= 0 ? dataSource.Remove(dotIndex) : dataSource;
     }
 
-    private static Server AgListenerNameToServer(ref SqlConnectionStringBuilder connBuilder, string agInstanceName,
+    private static Server AgInstanceNameToServer(ref SqlConnectionStringBuilder connBuilder, string agInstanceName,
       string credentialName)
     {
       try 
       {
-        connBuilder.DataSource = ResolveDnsAndGetHostName(connBuilder.DataSource, agInstanceName);
+        connBuilder.DataSource = ResolveDnsHostNameForInstance(agInstanceName, connBuilder.DataSource);
         return new Server(connBuilder.ToString(), credentialName);
       }
       catch (Exception e)
@@ -145,55 +145,55 @@ namespace AgDatabaseMove.SmoFacade
     }
 
     /// <summary>
-    ///   Resolves "agReplicaInstanceName" to a FQDNS name
-    ///   However on Unix OS, "agReplicaInstanceName" should be a complete domain - "{sub domain}.{second level domain}.{...}.{top level domain}" (eg: "xyz.abc.def.com")
-    ///   Therefore, we use {second-level} -> {top-level} part of the domain from "agListenerDomain" and append it to "agReplicaInstanceName"
+    ///   Resolves 'agReplicaInstanceName' to a FQDN
+    ///   However on Unix OS, when 'val' in 'Dns.GetHostEntry(val)' is not a complete domain (i.e is just "abc", instead of "abc.def.com"), it fails intermittently
+    ///   Therefore, if dns lookup on just the instance name fails, we retry after appending the domain fragments from the listener to the instance name
     /// </summary>
-    /// <param name="agListenerDomain">The complete domain for the SQL server AG listener</param>
-    /// <param name="agReplicaInstanceName">The specific name of a replica instance within the AG</param>
-    private static string ResolveDnsAndGetHostName(string agListenerDomain, string agReplicaInstanceName)
+    /// <param name="agReplicaInstanceName"> The name for an instance within the AG (for which we are trying to get the FQDN)</param>
+    /// <param name="agListenerDomain"> The complete domain for the AG listener</param>
+    private static string ResolveDnsHostNameForInstance(string agReplicaInstanceName, string agListenerDomain)
     {
-      // sometimes instances/listners have ports and named instances. Therefore, we strip them off before calling DNS.GetHostEntry() and then add them back to the result 
-      (string listenerDomain, string listenerPort) = SplitDomainPort(agListenerDomain);
-      (string instanceDomain, string instancePort) = SplitDomainPort(agReplicaInstanceName);
-      // we want to add back instancePort if it exists, otherwise the server port
-      string portToUse = instancePort ?? listenerPort;
+      // Sometimes instances and listeners have ports(or "named instances")
+      // Therefore, we strip them off before calling DNS.GetHostEntry() and then add them back to the result 
+      var (listenerDomain, listenerPort) = SplitDomainAndPort(agListenerDomain);
+      var (instanceName, instancePort) = SplitDomainAndPort(agReplicaInstanceName);
+      // preference is to add back 'instancePort' over 'listenerPort' (in almost all cases they should be identical)
+      var port = instancePort ?? listenerPort;
+
       try
       {
-        return $"{Dns.GetHostEntry(instanceDomain).HostName}{portToUse}";
+        return $"{Dns.GetHostEntry(instanceName).HostName}{port}";
       }
-      catch (System.Net.Sockets.SocketException e)
+      catch (System.Net.Sockets.SocketException)
       {
-        Console.WriteLine($"Unable to get dns for instance '{instanceDomain}'\n{e}");
+        // Re-try by appending the domain fragments from listener to the instance name 
+        // However, we don't need the listener's "host name" (first fragment), so we need to strip that off
+        // eg: if listener is "abc.def.ghi" we want to append only ".def.ghi" to the instance name
+        var listenerDomainFragments = listenerDomain.Split('.');
+        listenerDomainFragments[0] = null;
+        var instanceDomain = $"{instanceName}{string.Join(".", listenerDomainFragments)}";
 
-        // Re-try with full domain appended to the instanceDomain by stripping off domain from listner and appending to instance
-        // eg: if listner is "abc.def.ghi" we want to append ".def.ghi" to the instance
-        string[] domainFragments = listenerDomain.Split('.');
-        domainFragments[0] = "";
-        string instanceDomainFull = $"{instanceDomain}{string.Join(".", domainFragments)}";
-
-        Console.WriteLine($"Retrying with full domain '{instanceDomainFull}");
-        return $"{Dns.GetHostEntry(instanceDomainFull).HostName}{portToUse}";
+        return $"{Dns.GetHostEntry(instanceDomain).HostName}{port}";
       }
     }
 
-    private static (string domain, string port) SplitDomainPort(string domainAndPort)
+    // This function handles named instances ("<domain>\<named instance>") in the same way as ports
+    private static (string, string) SplitDomainAndPort(string domainAndPort)
     {
-      string domain = domainAndPort;
-      string port = null;
-      if (domainAndPort.Contains(','))
+      var domain = domainAndPort;
+      var splitValue = domainAndPort.Contains(',') ? "," : domainAndPort.Contains('\\') ? "\\" : null;
+
+      if(splitValue == null)
       {
-        string[] fragments = domainAndPort.Split(new char[] {','}, 2);
-        domain = fragments[0];
-        port = $",{fragments[1]}";
+        return (domain, null);
       }
-      else if (domainAndPort.Contains('\\')) // handling named instances the same way as ports
-      {
-        string[] fragments = domainAndPort.Split(new char[] {'\\'}, 2);
-        domain = fragments[0];
-        port = $"\\{fragments[1]}";
-      }
+
+      var fragments = domainAndPort.Split(splitValue.ToCharArray(), 2);
+      domain = fragments[0];
+      var port = $"{splitValue}{fragments[1]}";
+
       return (domain, port);
     }
+
   }
 }
