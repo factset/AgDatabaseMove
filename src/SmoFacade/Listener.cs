@@ -1,14 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.Linq;
-using System.Net;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
-
-[assembly: InternalsVisibleTo("AgDatabaseMove.Unit")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("AgDatabaseMove.Unit")]
 namespace AgDatabaseMove.SmoFacade
 {
+  using System;
+  using System.Collections.Generic;
+  using System.Data.SqlClient;
+  using System.Linq;
+  using System.Net;
+  using System.Threading.Tasks;
+
   internal interface IListener : IDisposable
   {
     /// <summary>
