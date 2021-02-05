@@ -8,6 +8,7 @@ namespace AgDatabaseMove.SmoFacade
   using System.Net;
   using System.Threading.Tasks;
 
+
   internal interface IListener : IDisposable
   {
     /// <summary>
@@ -157,8 +158,7 @@ namespace AgDatabaseMove.SmoFacade
       // Therefore, we strip them off before calling DNS.GetHostEntry() and then add them back to the result 
       var (listenerDomain, listenerPort) = SplitDomainAndPort(agListenerDomain);
       var (instanceName, instancePort) = SplitDomainAndPort(agReplicaInstanceName);
-      // preference is to add back 'instancePort' over 'listenerPort' (in almost all cases they should be identical)
-      var port = instancePort ?? listenerPort;
+      var port = GetPreferredPort(instancePort, listenerPort);
 
       try
       {
@@ -177,8 +177,24 @@ namespace AgDatabaseMove.SmoFacade
       }
     }
 
+    // first preference is to add back port over named instances 
+    // (port is TCP/IP standard while named instance is only SQL Server standard)
+    // If both are same, prioritise 'instancePort' over 'listenerPort' (in almost all cases they should be identical)
+    internal static string GetPreferredPort(string instancePort, string listenerPort)
+    {
+      if (string.IsNullOrEmpty(instancePort) || string.IsNullOrEmpty(listenerPort))
+      {
+        return (instancePort ?? listenerPort);
+      }
+      if (instancePort.StartsWith("\\"))
+      {
+        return (listenerPort.StartsWith(",")? listenerPort: instancePort);
+      }
+      return instancePort;
+    }
+
     // This function handles named instances ("<domain>\<named instance>") in the same way as ports
-    internal static (string, string) SplitDomainAndPort(string domainAndPort)
+    internal static (string domain, string port) SplitDomainAndPort(string domainAndPort)
     {
       var domain = domainAndPort;
       var splitValue = domainAndPort.Contains(',') ? "," : domainAndPort.Contains('\\') ? "\\" : null;
