@@ -154,15 +154,15 @@ namespace AgDatabaseMove.SmoFacade
     /// <param name="agListenerDomain"> The complete domain for the AG listener</param>
     private static string ResolveDnsHostNameForInstance(string agReplicaInstanceName, string agListenerDomain)
     {
-      // Sometimes instances and listeners have ports(or "named instances")
+      // Sometimes instances and listeners have ports or "named instances" (NI)
       // Therefore, we strip them off before calling DNS.GetHostEntry() and then add them back to the result 
-      var (listenerDomain, listenerPort) = SplitDomainAndPort(agListenerDomain);
-      var (instanceName, instancePort) = SplitDomainAndPort(agReplicaInstanceName);
-      var port = GetPreferredPort(instancePort, listenerPort);
+      var (listenerDomain, listenerPortOrNi) = SplitDomainAndPort(agListenerDomain);
+      var (instanceName, instancePortOrNi) = SplitDomainAndPort(agReplicaInstanceName);
+      var portOrNi = GetPreferredPort(instancePortOrNi, listenerPortOrNi);
 
       try
       {
-        return $"{Dns.GetHostEntry(instanceName).HostName}{port}";
+        return $"{Dns.GetHostEntry(instanceName).HostName}{portOrNi}";
       }
       catch (System.Net.Sockets.SocketException)
       {
@@ -173,24 +173,24 @@ namespace AgDatabaseMove.SmoFacade
         listenerDomainFragments[0] = null;
         var instanceDomain = $"{instanceName}{string.Join(".", listenerDomainFragments)}";
 
-        return $"{Dns.GetHostEntry(instanceDomain).HostName}{port}";
+        return $"{Dns.GetHostEntry(instanceDomain).HostName}{portOrNi}";
       }
     }
 
-    // first preference is to add back port over named instances 
+    // first preference is to add back port over named instance (NI) 
     // (port is TCP/IP standard while named instance is only SQL Server standard)
-    // If both are same, prioritise 'instancePort' over 'listenerPort' (in almost all cases they should be identical)
-    internal static string GetPreferredPort(string instancePort, string listenerPort)
+    // If both are same, prioritize 'instancePortOrNi' over 'listenerPortOrNi' (in almost all cases they should be identical)
+    internal static string GetPreferredPort(string instancePortOrNi, string listenerPortOrNi)
     {
-      if (string.IsNullOrEmpty(instancePort) || string.IsNullOrEmpty(listenerPort))
+      if (string.IsNullOrEmpty(instancePortOrNi) || string.IsNullOrEmpty(listenerPortOrNi))
       {
-        return (instancePort ?? listenerPort);
+        return (instancePortOrNi ?? listenerPortOrNi);
       }
-      if (instancePort.StartsWith("\\"))
+      if (instancePortOrNi.StartsWith("\\"))
       {
-        return (listenerPort.StartsWith(",")? listenerPort: instancePort);
+        return (listenerPortOrNi.StartsWith(",") ? listenerPortOrNi : instancePortOrNi);
       }
-      return instancePort;
+      return instancePortOrNi;
     }
 
     // This function handles named instances ("<domain>\<named instance>") in the same way as ports
