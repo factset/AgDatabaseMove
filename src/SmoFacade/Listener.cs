@@ -1,13 +1,14 @@
+using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Linq;
+using System.Net;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
+
+[assembly: InternalsVisibleTo("AgDatabaseMove.Unit")]
 namespace AgDatabaseMove.SmoFacade
 {
-  using System;
-  using System.Collections.Generic;
-  using System.Data.SqlClient;
-  using System.Linq;
-  using System.Net;
-  using System.Threading.Tasks;
-
-
   internal interface IListener : IDisposable
   {
     /// <summary>
@@ -178,7 +179,7 @@ namespace AgDatabaseMove.SmoFacade
     }
 
     // This function handles named instances ("<domain>\<named instance>") in the same way as ports
-    private static (string, string) SplitDomainAndPort(string domainAndPort)
+    internal static (string, string) SplitDomainAndPort(string domainAndPort)
     {
       var domain = domainAndPort;
       var splitValue = domainAndPort.Contains(',') ? "," : domainAndPort.Contains('\\') ? "\\" : null;
