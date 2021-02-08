@@ -177,20 +177,16 @@ namespace AgDatabaseMove.SmoFacade
       }
     }
 
-    // first preference is to add back port over named instance (NI) 
+    // First preference is to add back a port over a named instance (NI) 
     // (port is TCP/IP standard while named instance is only SQL Server standard)
-    // If both are same, prioritize 'instancePortOrNi' over 'listenerPortOrNi' (in almost all cases they should be identical)
+    // If both are same type, then prioritize instance over listener (in almost all cases they should be identical)
     internal static string GetPreferredPort(string instancePortOrNi, string listenerPortOrNi)
     {
       if (string.IsNullOrEmpty(instancePortOrNi) || string.IsNullOrEmpty(listenerPortOrNi))
       {
         return (instancePortOrNi ?? listenerPortOrNi);
       }
-      if (instancePortOrNi.StartsWith("\\"))
-      {
-        return (listenerPortOrNi.StartsWith(",") ? listenerPortOrNi : instancePortOrNi);
-      }
-      return instancePortOrNi;
+      return instancePortOrNi.StartsWith("\\") && listenerPortOrNi.StartsWith(",") ? listenerPortOrNi : instancePortOrNi;
     }
 
     // This function handles named instances ("<domain>\<named instance>") in the same way as ports
