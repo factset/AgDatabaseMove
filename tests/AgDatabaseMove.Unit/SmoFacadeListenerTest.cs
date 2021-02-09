@@ -12,38 +12,40 @@ namespace AgDatabaseMove.Unit
 
     private const string DOMAIN = "abc.def.ghi";
     private const string HOST = "abc";
+    private const string PORT = ",123";
+    private const string NAMED_INSTANCE = "\\SQL";
+    private const string BAD_PORT = ":123";
+    private const string BAD_NAMED_INSTANCE = "SQL";
 
     // {input, expectedDomain, expectedPort (can be null)}
     public static IEnumerable<object[]> ValidPorts => new List<object[]> {
-      new object[] { $"{DOMAIN}", DOMAIN },
-      new object[] { $"{DOMAIN},123", DOMAIN, ",123" },
-      new object[] { $"{DOMAIN}\\SQL", DOMAIN, "\\SQL" },
+      new object[] { DOMAIN, DOMAIN, null },
+      new object[] { $"{DOMAIN}{PORT}", DOMAIN, PORT },
+      new object[] { $"{DOMAIN}{NAMED_INSTANCE}", DOMAIN, NAMED_INSTANCE },
 
-      new object[] { $"{HOST}", HOST },
-      new object[] { $"{HOST},123", HOST, ",123" },
-      new object[] { $"{HOST}\\SQL", HOST, "\\SQL" }
+      new object[] { HOST, HOST, null },
+      new object[] { $"{HOST}{PORT}", HOST, PORT },
+      new object[] { $"{HOST}{NAMED_INSTANCE}", HOST, NAMED_INSTANCE }
     };
 
-    [Theory]
-    [MemberData(nameof(ValidPorts))]
+    [Theory, MemberData(nameof(ValidPorts))]
     public void ValidPortTests(string input, string expectedDomain, string expectedPort=null)
     {
       var (domain, port) = SmoFacade.Listener.SplitDomainAndPort(input);
       Assert.Equal(domain, expectedDomain);
       Assert.Equal(port, expectedPort);
     }
-
+    
     // {input, expectedDomain, expectedPort (can be null)}
     public static IEnumerable<object[]> InvalidPorts => new List<object[]> {
-      new object[] { $"{DOMAIN}:123", $"{DOMAIN}:123" },
-      new object[] { $"{DOMAIN}:SQL", $"{DOMAIN}:SQL" },
+      new object[] { $"{DOMAIN}{BAD_PORT}", $"{DOMAIN}{BAD_PORT}", null },
+      new object[] { $"{DOMAIN}{BAD_NAMED_INSTANCE}", $"{DOMAIN}{BAD_NAMED_INSTANCE}", null },
 
-      new object[] { $"{HOST}:123", $"{HOST}:123" },
-      new object[] { $"{HOST}:SQL", $"{HOST}:SQL" },
+      new object[] { $"{HOST}{BAD_PORT}", $"{HOST}{BAD_PORT}", null },
+      new object[] { $"{HOST}{BAD_NAMED_INSTANCE}", $"{HOST}{BAD_NAMED_INSTANCE}", null },
     };
 
-    [Theory]
-    [MemberData(nameof(InvalidPorts))]
+    [Theory, MemberData(nameof(InvalidPorts))]
     public void InvalidPortTests(string input, string expectedDomain, string expectedPort=null)
     {
       var (domain, port) = SmoFacade.Listener.SplitDomainAndPort(input);
@@ -61,25 +63,21 @@ namespace AgDatabaseMove.Unit
 
     private const string LPort = ",321";
     private const string LNamed = "\\LQS";
-    // { instancePort,  listenerPort,  preferredPort}
-    public static IEnumerable<object[]> PortPreferences => new List<object[]> {
-      new object[] { null   , null   , null},
-      new object[] { null   , LPort  , LPort},
-      new object[] { null   , LNamed , LNamed},
-      new object[] { IPort  , null   , IPort},
-      new object[] { IPort  , LPort  , IPort},
-      new object[] { IPort  , LNamed , IPort},
-      new object[] { INamed , null   , INamed},
-      new object[] { INamed , LPort  , LPort},
-      new object[] { INamed , LNamed , INamed},
-    };
-
+   
     [Theory]
-    [MemberData(nameof(PortPreferences))]
-    public void PortPreferenceTests(string instancePort=null, string listenerPort=null, string preferredPort=null)
+    [InlineData(null, null, null)]
+    [InlineData(null, LPort, LPort)]
+    [InlineData(null, LNamed, LNamed)]
+    [InlineData(IPort, null, IPort)]
+    [InlineData(IPort, LPort, IPort)]
+    [InlineData(IPort, LNamed, IPort)]
+    [InlineData(INamed, null, INamed)]
+    [InlineData(INamed, LPort, LPort)]
+    [InlineData(INamed, LNamed, INamed)]
+    public void PortPreferenceTests(string instancePortOrNamedInstance, string listenerPortOrNamedInstance, string expectedResult)
     {
-      var port = SmoFacade.Listener.GetPreferredPort(instancePort, listenerPort);
-      Assert.Equal(port, preferredPort);
+      var preferredPortOrNamedInstance = SmoFacade.Listener.GetPreferredPort(instancePortOrNamedInstance, listenerPortOrNamedInstance);
+      Assert.Equal(preferredPortOrNamedInstance, expectedResult);
     }
 
   }
