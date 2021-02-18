@@ -61,6 +61,11 @@ namespace AgDatabaseMove.SmoFacade
     /// <summary>
     ///   Queries msdb on the instance for backups of this database.
     /// </summary>
+    /// <param name="ignoreCopyOnlyBackups">
+    ///   Setting this to `true` will ignore copy_only backups
+    ///   These are temp backups made for a specific use case and should not be part of the backup-chain for general restore processes
+    ///   For more info: https://docs.microsoft.com/sql/relational-databases/backup-restore/copy-only-backups-sql-server
+    /// </param>
     /// <returns>A list of backups known by msdb</returns>
     public List<BackupMetadata> RecentBackups(bool ignoreCopyOnlyBackups=false)
     {
