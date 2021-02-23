@@ -23,7 +23,7 @@ namespace AgDatabaseMove
     bool Exists();
     void Delete();
     void LogBackup();
-    List<BackupMetadata> RecentBackups(bool ignoreCopyOnlyBackups=false);
+    List<BackupMetadata> RecentBackups();
     void JoinAg();
 
     void Restore(IEnumerable<BackupMetadata> backupOrder, Func<string, string> fileRelocation = null);
@@ -109,10 +109,10 @@ namespace AgDatabaseMove
     /// <summary>
     ///   Builds a list of recent backups from msdb on each AG instance.
     /// </summary>
-    public List<BackupMetadata> RecentBackups(bool ignoreCopyOnlyBackups=false)
+    public List<BackupMetadata> RecentBackups()
     {
       var bag = new ConcurrentBag<BackupMetadata>();
-      _listener.ForEachAgInstance(s => s.Database(Name).RecentBackups(ignoreCopyOnlyBackups).ForEach(backup => bag.Add(backup)));
+      _listener.ForEachAgInstance(s => s.Database(Name).RecentBackups().ForEach(backup => bag.Add(backup)));
       return bag.ToList();
     }
 

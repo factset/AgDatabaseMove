@@ -61,13 +61,8 @@ namespace AgDatabaseMove.SmoFacade
     /// <summary>
     ///   Queries msdb on the instance for backups of this database.
     /// </summary>
-    /// <param name="ignoreCopyOnlyBackups">
-    ///   Setting this to `true` will ignore copy_only backups
-    ///   These are temp backups made for a specific use case and should not be part of the backup-chain for general restore processes
-    ///   For more info: https://docs.microsoft.com/sql/relational-databases/backup-restore/copy-only-backups-sql-server
-    /// </param>
     /// <returns>A list of backups known by msdb</returns>
-    public List<BackupMetadata> RecentBackups(bool ignoreCopyOnlyBackups=false)
+    public List<BackupMetadata> RecentBackups()
     {
       var backups = new List<BackupMetadata>();
 
@@ -79,10 +74,10 @@ namespace AgDatabaseMove.SmoFacade
                     "SELECT MAX(last_lsn) FROM msdb.dbo.backupset " +
                     "WHERE [type] = 'D' " +
                     "AND database_name = @dbName " +
-                    $"{(ignoreCopyOnlyBackups ? "AND is_copy_only = 0" : "")}" +
+                    "AND is_copy_only = 0" +
                   ") " +
                   "AND s.database_name = @dbName " +
-                  $"{(ignoreCopyOnlyBackups ? "AND is_copy_only = 0" : "")}" +
+                  "AND is_copy_only = 0" +
                   "ORDER BY s.backup_start_date DESC, backup_finish_date";
 
       using var cmd = _server.SqlConnection.CreateCommand();

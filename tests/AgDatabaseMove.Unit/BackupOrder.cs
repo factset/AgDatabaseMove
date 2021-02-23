@@ -72,7 +72,7 @@ namespace AgDatabaseMove.Unit
     public void BackupChainOrdered()
     {
       var agDatabase = new Mock<IAgDatabase>();
-      agDatabase.Setup(agd => agd.RecentBackups(false)).Returns(_listBackups);
+      agDatabase.Setup(agd => agd.RecentBackups()).Returns(_listBackups);
       var backupChain = new BackupChain(agDatabase.Object);
 
       var expected = _listBackups.OrderBy(bu => bu.FirstLsn);
@@ -85,7 +85,7 @@ namespace AgDatabaseMove.Unit
     {
       var backups = ListBackups().Where(b => b.FirstLsn != 126000000955200001).ToList();
       var agDatabase = new Mock<IAgDatabase>();
-      agDatabase.Setup(agd => agd.RecentBackups(false)).Returns(backups);
+      agDatabase.Setup(agd => agd.RecentBackups()).Returns(backups);
 
       var chain = new BackupChain(agDatabase.Object).OrderedBackups;
       Assert.NotEqual(chain.Last().LastLsn, ListBackups().Max(b => b.LastLsn));
