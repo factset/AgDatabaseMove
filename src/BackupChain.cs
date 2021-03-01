@@ -76,7 +76,9 @@ namespace AgDatabaseMove
         .Where(b => b.BackupType == BackupFileTools.BackupType.Diff &&
                     b.DatabaseBackupLsn == lastFullBackup.CheckpointLsn)
         .OrderByDescending(b => b.LastLsn).ToList();
-
+      if (!diffBackupsOrdered.Any()) {
+        return new List<BackupMetadata>();
+      }
       var targetLastLsn = diffBackupsOrdered.First().LastLsn;
       // get all the stripes of this backup
       return diffBackupsOrdered.Where(diffBackup => diffBackup.LastLsn == targetLastLsn); 
