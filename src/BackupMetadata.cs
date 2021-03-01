@@ -17,13 +17,15 @@ namespace AgDatabaseMove
       return x.LastLsn == y.LastLsn &&
              x.FirstLsn == y.FirstLsn &&
              x.BackupType == y.BackupType &&
-             x.DatabaseName == y.DatabaseName;
+             x.DatabaseName == y.DatabaseName &&
+             x.PhysicalDeviceName == y.PhysicalDeviceName;
     }
 
     public int GetHashCode(BackupMetadata obj)
     {
       var hashCode = -1277603921;
       hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(obj.DatabaseName);
+      hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(obj.PhysicalDeviceName);
       hashCode = hashCode * -1521134295 +
                  EqualityComparer<BackupFileTools.BackupType>.Default.GetHashCode(obj.BackupType);
       hashCode = hashCode * -1521134295 + obj.FirstLsn.GetHashCode();

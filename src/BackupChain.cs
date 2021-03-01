@@ -4,6 +4,7 @@ namespace AgDatabaseMove
   using System.Collections.Generic;
   using System.IO;
   using System.Linq;
+  using Exceptions;
   using SmoFacade;
 
 
@@ -19,26 +20,33 @@ namespace AgDatabaseMove
   {
     private readonly IList<BackupMetadata> _orderedBackups;
 
+    /// <summary>
+    /// Chain needs to be 1 full backup, 1 diff and then the logs in the order they were taken
+    /// Sometimes backups can be striped (i.e. split into multiple files) - so we need to handle these cases too
+    /// https://www.sqlservercentral.com/articles/getting-a-list-of-the-striped-backup-files
+    /// </summary>
+    /// <param name="recentBackups"></param>
     private BackupChain(IList<BackupMetadata> recentBackups)
     {
       var backups = recentBackups.Distinct(new BackupMetadataEqualityComparer())
-        .Where(b => IsValidFilePath(b)) // A third party application caused invalid path strings to be inserted into backupmediafamily
+        .Where(IsValidFilePath) // A third party application caused invalid path strings to be inserted into backupmediafamily
         .ToList();
 
-      var mostRecentFullBackup = MostRecentFullBackup(recentBackups);
-      _orderedBackups = new List<BackupMetadata> { mostRecentFullBackup };
+      var mostRecentFullBackups = MostRecentFullBackups(recentBackups).ToList();
+      
+      var differentialBackups = MostRecentDifferentialBackups(backups, mostRecentFullBackups.First());
+      // differentialBackups can be null
+      
+      var orderedBackups = mostRecentFullBackups.Concat(differentialBackups).ToList();
 
-      var differentialBackup = MostRecentDifferentialBackup(backups, mostRecentFullBackup);
-      if(differentialBackup != null)
-        _orderedBackups.Add(differentialBackup);
-
-      var mostRecentBackup = _orderedBackups.Last();
-      while(mostRecentBackup != null) {
-        mostRecentBackup = NextLogBackup(backups, mostRecentBackup);
-
-        if(mostRecentBackup != null)
-          _orderedBackups.Add(mostRecentBackup);
+      var prevBackup = orderedBackups.Last();
+      IEnumerable<BackupMetadata> nextLogBackups;
+      while((nextLogBackups = NextLogBackups(backups, prevBackup)).Any()) {
+        orderedBackups.AddRange(nextLogBackups);
+        prevBackup = orderedBackups.Last();
       }
+
+      _orderedBackups = orderedBackups;
     }
 
     /// <summary>
@@ -56,26 +64,40 @@ namespace AgDatabaseMove
     /// </summary>
     public IEnumerable<BackupMetadata> OrderedBackups => _orderedBackups;
 
-    private BackupMetadata MostRecentFullBackup(IList<BackupMetadata> backups)
+    private static IEnumerable<BackupMetadata> MostRecentFullBackups(IEnumerable<BackupMetadata> backups)
     {
-      return backups.Where(b => b.BackupType == BackupFileTools.BackupType.Full).OrderByDescending(d => d.CheckpointLsn)
-        .First();
+      var fullBackupsOrdered = backups
+        .Where(b => b.BackupType == BackupFileTools.BackupType.Full)
+        .OrderByDescending(d => d.CheckpointLsn).ToList();
+      if(!fullBackupsOrdered.Any()) {
+        throw new BackupChainException("Could not find any full backups");
+      }
+
+      var targetCheckpointLsn = fullBackupsOrdered.First().CheckpointLsn;
+      // get all the stripes of the most recent full backup (i.e. has the same CheckpointLsn)
+      return fullBackupsOrdered.Where(fullBackup => fullBackup.CheckpointLsn == targetCheckpointLsn); 
     }
 
-    private BackupMetadata MostRecentDifferentialBackup(IList<BackupMetadata> backups, BackupMetadata lastFullBackup)
+    private static IEnumerable<BackupMetadata> MostRecentDifferentialBackups(IEnumerable<BackupMetadata> backups, BackupMetadata lastFullBackup)
     {
-      return backups.Where(b => b.BackupType == BackupFileTools.BackupType.Diff &&
-                                b.DatabaseBackupLsn == lastFullBackup.CheckpointLsn)
-        .OrderByDescending(b => b.LastLsn).FirstOrDefault();
+      var diffBackupsOrdered = backups
+        .Where(b => b.BackupType == BackupFileTools.BackupType.Diff &&
+                    b.DatabaseBackupLsn == lastFullBackup.CheckpointLsn)
+        .OrderByDescending(b => b.LastLsn).ToList();
+
+      var targetLastLsn = diffBackupsOrdered.First().LastLsn;
+      // get all the stripes of the most recent diff backup (i.e. has the same LastLsn)
+      return diffBackupsOrdered.Where(diffBackup => diffBackup.LastLsn == targetLastLsn); 
     }
 
-    private BackupMetadata NextLogBackup(IList<BackupMetadata> backups, BackupMetadata prevBackup)
+    private static IEnumerable<BackupMetadata> NextLogBackups(IEnumerable<BackupMetadata> backups, BackupMetadata prevBackup)
     {
-      return backups.Where(b => b.BackupType == BackupFileTools.BackupType.Log)
-        .SingleOrDefault(d => prevBackup.LastLsn >= d.FirstLsn && prevBackup.LastLsn + 1 < d.LastLsn);
+      // get all the stripes of the next log backup
+      return backups.Where(b => b.BackupType == BackupFileTools.BackupType.Log && 
+                                prevBackup.LastLsn >= b.FirstLsn && prevBackup.LastLsn + 1 < b.LastLsn);
     }
 
-    private bool IsValidFilePath(BackupMetadata meta)
+    private static bool IsValidFilePath(BackupMetadata meta)
     {
       if(BackupFileTools.IsUrl(meta.PhysicalDeviceName))
         return true;
