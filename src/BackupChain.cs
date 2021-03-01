@@ -32,7 +32,7 @@ namespace AgDatabaseMove
         .Where(IsValidFilePath) // A third party application caused invalid path strings to be inserted into backupmediafamily
         .ToList();
 
-      var mostRecentFullBackups = MostRecentFullBackups(recentBackups).ToList();
+      var mostRecentFullBackups = MostRecentFullBackups(backups).ToList();
       
       var differentialBackups = MostRecentDifferentialBackups(backups, mostRecentFullBackups.First());
       // differentialBackups can be null

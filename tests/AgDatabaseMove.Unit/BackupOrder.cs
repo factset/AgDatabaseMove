@@ -12,10 +12,12 @@ namespace AgDatabaseMove.Unit
   public class BackupOrder
   {
     private readonly List<BackupMetadata> _listBackups;
+    private readonly List<BackupMetadata> _listBackupsWithStripes;
 
     public BackupOrder()
     {
       _listBackups = ListBackups();
+      _listBackupsWithStripes = ListBackupsWithStripes();
     }
 
     private static List<BackupMetadata> ListBackups()
@@ -68,6 +70,89 @@ namespace AgDatabaseMove.Unit
       };
     }
 
+    private static List<BackupMetadata> ListBackupsWithStripes()
+    {
+      return new List<BackupMetadata> {
+        new BackupMetadata {
+          BackupType = BackupFileTools.BackupType.Log,
+          DatabaseBackupLsn = 126000000882000037,
+          CheckpointLsn = 126000000953600034,
+          FirstLsn = 126000000955200001,
+          LastLsn = 126000000955500001,
+          DatabaseName = "TestDb",
+          ServerName = "ServerA",
+          PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\LogBackup_2_stripe_2.trn",
+          StartTime = DateTime.Parse("2018-10-29 02:00:07.000")
+        },
+        new BackupMetadata {
+          BackupType = BackupFileTools.BackupType.Log,
+          DatabaseBackupLsn = 126000000943800037,
+          CheckpointLsn = 126000000953600034,
+          FirstLsn = 126000000955500001,
+          LastLsn = 126000000955800001,
+          DatabaseName = "TestDb",
+          ServerName = "ServerB",
+          PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\LogBackup_1_noStripes.trn",
+          StartTime = DateTime.Parse("2018-10-29 03:00:06.000")
+        },
+        new BackupMetadata {
+          BackupType = BackupFileTools.BackupType.Full,
+          DatabaseBackupLsn = 126000000882000037,
+          CheckpointLsn = 126000000943800037,
+          FirstLsn = 126000000936100001,
+          LastLsn = 126000000945500001,
+          DatabaseName = "TestDb",
+          ServerName = "ServerA",
+          PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\FullBackup_stripe_1.full",
+          StartTime = DateTime.Parse("2018-10-28 00:02:28.000")
+        },
+        new BackupMetadata {
+          BackupType = BackupFileTools.BackupType.Diff,
+          DatabaseBackupLsn = 126000000943800037,
+          CheckpointLsn = 126000000953600034,
+          FirstLsn = 126000000943800037,
+          LastLsn = 126000000955200001,
+          DatabaseName = "TestDb",
+          ServerName = "ServerA",
+          PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\DiffBackup_stripe_1.diff",
+          StartTime = DateTime.Parse("2018-10-29 00:03:39.000")
+        },
+        new BackupMetadata {
+          BackupType = BackupFileTools.BackupType.Log,
+          DatabaseBackupLsn = 126000000882000037,
+          CheckpointLsn = 126000000953600034,
+          FirstLsn = 126000000955200001,
+          LastLsn = 126000000955500001,
+          DatabaseName = "TestDb",
+          ServerName = "ServerA",
+          PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\LogBackup_2_stripe_1.trn",
+          StartTime = DateTime.Parse("2018-10-29 02:00:07.000")
+        },
+        new BackupMetadata {
+          BackupType = BackupFileTools.BackupType.Full,
+          DatabaseBackupLsn = 126000000882000037,
+          CheckpointLsn = 126000000943800037,
+          FirstLsn = 126000000936100001,
+          LastLsn = 126000000945500001,
+          DatabaseName = "TestDb",
+          ServerName = "ServerA",
+          PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\FullBackup_stripe_2.full",
+          StartTime = DateTime.Parse("2018-10-28 00:02:28.000")
+        },
+        new BackupMetadata {
+          BackupType = BackupFileTools.BackupType.Diff,
+          DatabaseBackupLsn = 126000000943800037,
+          CheckpointLsn = 126000000953600034,
+          FirstLsn = 126000000943800037,
+          LastLsn = 126000000955200001,
+          DatabaseName = "TestDb",
+          ServerName = "ServerA",
+          PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\DiffBackup_stripe_2.diff",
+          StartTime = DateTime.Parse("2018-10-29 00:03:39.000")
+        }
+      };
+    }
+
     [Fact]
     public void BackupChainOrdered()
     {
@@ -91,6 +176,18 @@ namespace AgDatabaseMove.Unit
       Assert.NotEqual(chain.Last().LastLsn, ListBackups().Max(b => b.LastLsn));
     }
 
+    [Fact]
+    public void BackupChainWithStripesOrdered()
+    {
+      var agDatabase = new Mock<IAgDatabase>();
+      agDatabase.Setup(agd => agd.RecentBackups()).Returns(_listBackupsWithStripes);
+      var backupChain = new BackupChain(agDatabase.Object);
+
+      var expected = _listBackupsWithStripes.OrderBy(bu => bu.FirstLsn);
+
+      Assert.Equal<IEnumerable>(backupChain.OrderedBackups, expected);
+    }
+    
     // TODO: test skipping of logs if diff last LSN and log last LSN matches
     // TODO: test skipping of logs between diffs
     // TODO: test only keep last diff
