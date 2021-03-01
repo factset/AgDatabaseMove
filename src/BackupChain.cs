@@ -20,28 +20,19 @@ namespace AgDatabaseMove
   {
     private readonly IList<BackupMetadata> _orderedBackups;
 
-    /// <summary>
-    /// Chain needs to be 1 full backup, 1 diff and then the logs in the order they were taken
-    /// Sometimes backups can be striped (i.e. split into multiple files) - so we need to handle these cases too
-    /// https://www.sqlservercentral.com/articles/getting-a-list-of-the-striped-backup-files
-    /// </summary>
-    /// <param name="recentBackups"></param>
+    // This also handles any striped backups
     private BackupChain(IList<BackupMetadata> recentBackups)
     {
       var backups = recentBackups.Distinct(new BackupMetadataEqualityComparer())
         .Where(IsValidFilePath) // A third party application caused invalid path strings to be inserted into backupmediafamily
         .ToList();
 
-      var mostRecentFullBackups = MostRecentFullBackups(backups).ToList();
-      
-      var differentialBackups = MostRecentDifferentialBackups(backups, mostRecentFullBackups.First());
-      // differentialBackups can be null
-      
-      var orderedBackups = mostRecentFullBackups.Concat(differentialBackups).ToList();
+      var orderedBackups = MostRecentFullBackup(backups).ToList();
+      orderedBackups.AddRange(MostRecentDiffBackup(backups, orderedBackups.First()));
 
       var prevBackup = orderedBackups.Last();
       IEnumerable<BackupMetadata> nextLogBackups;
-      while((nextLogBackups = NextLogBackups(backups, prevBackup)).Any()) {
+      while((nextLogBackups = NextLogBackup(backups, prevBackup)).Any()) {
         orderedBackups.AddRange(nextLogBackups);
         prevBackup = orderedBackups.Last();
       }
@@ -64,21 +55,22 @@ namespace AgDatabaseMove
     /// </summary>
     public IEnumerable<BackupMetadata> OrderedBackups => _orderedBackups;
 
-    private static IEnumerable<BackupMetadata> MostRecentFullBackups(IEnumerable<BackupMetadata> backups)
+    private static IEnumerable<BackupMetadata> MostRecentFullBackup(IEnumerable<BackupMetadata> backups)
     {
       var fullBackupsOrdered = backups
         .Where(b => b.BackupType == BackupFileTools.BackupType.Full)
         .OrderByDescending(d => d.CheckpointLsn).ToList();
+      
       if(!fullBackupsOrdered.Any()) {
         throw new BackupChainException("Could not find any full backups");
       }
 
       var targetCheckpointLsn = fullBackupsOrdered.First().CheckpointLsn;
-      // get all the stripes of the most recent full backup (i.e. has the same CheckpointLsn)
+      // get all the stripes of this backup
       return fullBackupsOrdered.Where(fullBackup => fullBackup.CheckpointLsn == targetCheckpointLsn); 
     }
 
-    private static IEnumerable<BackupMetadata> MostRecentDifferentialBackups(IEnumerable<BackupMetadata> backups, BackupMetadata lastFullBackup)
+    private static IEnumerable<BackupMetadata> MostRecentDiffBackup(IEnumerable<BackupMetadata> backups, BackupMetadata lastFullBackup)
     {
       var diffBackupsOrdered = backups
         .Where(b => b.BackupType == BackupFileTools.BackupType.Diff &&
@@ -86,13 +78,13 @@ namespace AgDatabaseMove
         .OrderByDescending(b => b.LastLsn).ToList();
 
       var targetLastLsn = diffBackupsOrdered.First().LastLsn;
-      // get all the stripes of the most recent diff backup (i.e. has the same LastLsn)
+      // get all the stripes of this backup
       return diffBackupsOrdered.Where(diffBackup => diffBackup.LastLsn == targetLastLsn); 
     }
 
-    private static IEnumerable<BackupMetadata> NextLogBackups(IEnumerable<BackupMetadata> backups, BackupMetadata prevBackup)
+    private static IEnumerable<BackupMetadata> NextLogBackup(IEnumerable<BackupMetadata> backups, BackupMetadata prevBackup)
     {
-      // get all the stripes of the next log backup
+      // also gets all the stripes of the next backup
       return backups.Where(b => b.BackupType == BackupFileTools.BackupType.Log && 
                                 prevBackup.LastLsn >= b.FirstLsn && prevBackup.LastLsn + 1 < b.LastLsn);
     }
