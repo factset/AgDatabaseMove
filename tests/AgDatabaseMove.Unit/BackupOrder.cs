@@ -4,6 +4,7 @@ namespace AgDatabaseMove.Unit
   using System.Collections;
   using System.Collections.Generic;
   using System.Linq;
+  using Exceptions;
   using Moq;
   using SmoFacade;
   using Xunit;
@@ -117,7 +118,12 @@ namespace AgDatabaseMove.Unit
       return listWithStripes;
     }
 
-
+    private static List<BackupMetadata> GetBackupListWithoutFull()
+    {
+      var list = GetBackupList();
+      list.RemoveAll(b => b.BackupType == BackupFileTools.BackupType.Full);
+      return list;
+    }
 
     private static void VerifyListIsAValidBackupChain(IEnumerable<BackupMetadata> backupChain)
     {
@@ -174,6 +180,7 @@ namespace AgDatabaseMove.Unit
 
     }
 
+
     public static IEnumerable<object[]> PositiveTestData => new List<object[]> {
       new object[] { GetBackupList() },
       new object[] { GetBackupListWithStripes() },
@@ -190,6 +197,21 @@ namespace AgDatabaseMove.Unit
       agDatabase.Setup(agd => agd.RecentBackups()).Returns(backupList);
       var backupChain = new BackupChain(agDatabase.Object);
       VerifyListIsAValidBackupChain(backupChain.OrderedBackups);
+    }
+
+
+    public static IEnumerable<object[]> NegativeTestData => new List<object[]> {
+      new object[] { GetBackupListWithoutFull() },
+      new object[] { new List<BackupMetadata>() }
+    };
+
+    [Theory]
+    [MemberData(nameof(NegativeTestData))]
+    public void CanDetectBackupChainIsWrong(List<BackupMetadata> backupList)
+    {
+      var agDatabase = new Mock<IAgDatabase>();
+      agDatabase.Setup(agd => agd.RecentBackups()).Returns(backupList);
+      Assert.Throws<BackupChainException>(() => new BackupChain(agDatabase.Object));
     }
 
     // TODO: test skipping of logs if diff last LSN and log last LSN matches
