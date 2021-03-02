@@ -37,7 +37,7 @@ namespace AgDatabaseMove
   /// <summary>
   ///   Metadata about backups from msdb.dbo.backupset and msdb.dbo.backupmediafamily
   /// </summary>
-  public class BackupMetadata
+  public class BackupMetadata : ICloneable
   {
     public decimal CheckpointLsn { get; set; }
     public decimal DatabaseBackupLsn { get; set; }
@@ -54,5 +54,11 @@ namespace AgDatabaseMove
     ///   https://docs.microsoft.com/en-us/sql/relational-databases/system-tables/backupset-transact-sql?view=sql-server-2017
     /// </summary>
     public BackupFileTools.BackupType BackupType { get; set; }
+
+    // used during testing
+    public object Clone()
+    {
+      return MemberwiseClone();
+    }
   }
 }

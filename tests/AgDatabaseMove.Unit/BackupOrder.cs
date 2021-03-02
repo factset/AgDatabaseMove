@@ -11,27 +11,40 @@ namespace AgDatabaseMove.Unit
 
   public class BackupOrder
   {
-    private readonly List<BackupMetadata> _listBackups;
-    private readonly List<BackupMetadata> _listBackupsWithStripes;
 
-    public BackupOrder()
+    private static IEnumerable<BackupMetadata> CloneBackupMetaDataList(List<BackupMetadata> baseList)
     {
-      _listBackups = ListBackups();
-      _listBackupsWithStripes = ListBackupsWithStripes();
+      var result = new List<BackupMetadata>();
+      baseList.ForEach(b => {
+        result.Add((BackupMetadata)b.Clone());
+      });
+      result.Reverse();
+      return result;
     }
 
-    private static List<BackupMetadata> ListBackups()
+    private static List<BackupMetadata> GetBackupList()
     {
       return new List<BackupMetadata> {
         new BackupMetadata {
           BackupType = BackupFileTools.BackupType.Log,
           DatabaseBackupLsn = 126000000943800037,
           CheckpointLsn = 126000000953600034,
-          FirstLsn = 126000000955500001,
-          LastLsn = 126000000955800001,
+          FirstLsn = 126000000955200001,
+          LastLsn = 126000000955500001,
+          DatabaseName = "TestDb",
+          ServerName = "ServerA",
+          PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\Testdb_backup_2018_10_29_020007_343.trn",
+          StartTime = DateTime.Parse("2018-10-29 02:00:07.000")
+        },
+        new BackupMetadata {
+          BackupType = BackupFileTools.BackupType.Log,
+          DatabaseBackupLsn = 126000000943800037,
+          CheckpointLsn = 126000000953600034,
+          FirstLsn = 126000000955800001,
+          LastLsn = 126000000965800001,
           DatabaseName = "TestDb",
           ServerName = "ServerB",
-          PhysicalDeviceName = @"\\DFS\BACKUP\ServerB\testDb\Testdb_backup_2018_10_29_030006_660.trn",
+          PhysicalDeviceName = @"\\DFS\BACKUP\ServerB\testDb\Testdb_backup_2018_10_29_040005_900.trn",
           StartTime = DateTime.Parse("2018-10-29 03:00:06.000")
         },
         new BackupMetadata {
@@ -46,45 +59,6 @@ namespace AgDatabaseMove.Unit
           StartTime = DateTime.Parse("2018-10-28 00:02:28.000")
         },
         new BackupMetadata {
-          BackupType = BackupFileTools.BackupType.Diff,
-          DatabaseBackupLsn = 126000000943800037,
-          CheckpointLsn = 126000000953600034,
-          FirstLsn = 126000000943800037,
-          LastLsn = 126000000955200001,
-          DatabaseName = "TestDb",
-          ServerName = "ServerA",
-          PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\Testdb_backup_2018_10_29_000339_780.diff",
-          StartTime = DateTime.Parse("2018-10-29 00:03:39.000")
-        },
-        new BackupMetadata {
-          BackupType = BackupFileTools.BackupType.Log,
-          DatabaseBackupLsn = 126000000882000037,
-          CheckpointLsn = 126000000953600034,
-          FirstLsn = 126000000955200001,
-          LastLsn = 126000000955500001,
-          DatabaseName = "TestDb",
-          ServerName = "ServerA",
-          PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\Testdb_backup_2018_10_29_020007_343.trn",
-          StartTime = DateTime.Parse("2018-10-29 02:00:07.000")
-        }
-      };
-    }
-
-    private static List<BackupMetadata> ListBackupsWithStripes()
-    {
-      return new List<BackupMetadata> {
-        new BackupMetadata {
-          BackupType = BackupFileTools.BackupType.Log,
-          DatabaseBackupLsn = 126000000882000037,
-          CheckpointLsn = 126000000953600034,
-          FirstLsn = 126000000955200001,
-          LastLsn = 126000000955500001,
-          DatabaseName = "TestDb",
-          ServerName = "ServerA",
-          PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\LogBackup_2_stripe_2.trn",
-          StartTime = DateTime.Parse("2018-10-29 02:00:07.000")
-        },
-        new BackupMetadata {
           BackupType = BackupFileTools.BackupType.Log,
           DatabaseBackupLsn = 126000000943800037,
           CheckpointLsn = 126000000953600034,
@@ -92,100 +66,130 @@ namespace AgDatabaseMove.Unit
           LastLsn = 126000000955800001,
           DatabaseName = "TestDb",
           ServerName = "ServerB",
-          PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\LogBackup_1_noStripes.trn",
+          PhysicalDeviceName = @"\\DFS\BACKUP\ServerB\testDb\Testdb_backup_2018_10_29_030006_660.trn",
           StartTime = DateTime.Parse("2018-10-29 03:00:06.000")
         },
         new BackupMetadata {
-          BackupType = BackupFileTools.BackupType.Full,
-          DatabaseBackupLsn = 126000000882000037,
-          CheckpointLsn = 126000000943800037,
-          FirstLsn = 126000000936100001,
-          LastLsn = 126000000945500001,
-          DatabaseName = "TestDb",
-          ServerName = "ServerA",
-          PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\FullBackup_stripe_1.full",
-          StartTime = DateTime.Parse("2018-10-28 00:02:28.000")
-        },
-        new BackupMetadata {
           BackupType = BackupFileTools.BackupType.Diff,
           DatabaseBackupLsn = 126000000943800037,
           CheckpointLsn = 126000000953600034,
-          FirstLsn = 126000000943800037,
+          FirstLsn = 126000000943800038,
           LastLsn = 126000000955200001,
           DatabaseName = "TestDb",
           ServerName = "ServerA",
-          PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\DiffBackup_stripe_1.diff",
-          StartTime = DateTime.Parse("2018-10-29 00:03:39.000")
-        },
-        new BackupMetadata {
-          BackupType = BackupFileTools.BackupType.Log,
-          DatabaseBackupLsn = 126000000882000037,
-          CheckpointLsn = 126000000953600034,
-          FirstLsn = 126000000955200001,
-          LastLsn = 126000000955500001,
-          DatabaseName = "TestDb",
-          ServerName = "ServerA",
-          PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\LogBackup_2_stripe_1.trn",
-          StartTime = DateTime.Parse("2018-10-29 02:00:07.000")
-        },
-        new BackupMetadata {
-          BackupType = BackupFileTools.BackupType.Full,
-          DatabaseBackupLsn = 126000000882000037,
-          CheckpointLsn = 126000000943800037,
-          FirstLsn = 126000000936100001,
-          LastLsn = 126000000945500001,
-          DatabaseName = "TestDb",
-          ServerName = "ServerA",
-          PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\FullBackup_stripe_2.full",
-          StartTime = DateTime.Parse("2018-10-28 00:02:28.000")
-        },
-        new BackupMetadata {
-          BackupType = BackupFileTools.BackupType.Diff,
-          DatabaseBackupLsn = 126000000943800037,
-          CheckpointLsn = 126000000953600034,
-          FirstLsn = 126000000943800037,
-          LastLsn = 126000000955200001,
-          DatabaseName = "TestDb",
-          ServerName = "ServerA",
-          PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\DiffBackup_stripe_2.diff",
+          PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\Testdb_backup_2018_10_29_000339_780.diff",
           StartTime = DateTime.Parse("2018-10-29 00:03:39.000")
         }
       };
     }
 
-    [Fact]
-    public void BackupChainOrdered()
+    private static List<BackupMetadata> GetBackupListWithoutLogs()
     {
-      var agDatabase = new Mock<IAgDatabase>();
-      agDatabase.Setup(agd => agd.RecentBackups()).Returns(_listBackups);
-      var backupChain = new BackupChain(agDatabase.Object);
-
-      var expected = _listBackups.OrderBy(bu => bu.FirstLsn);
-
-      Assert.Equal<IEnumerable>(backupChain.OrderedBackups, expected);
+      var list = GetBackupList();
+      list.RemoveAll(b => b.BackupType == BackupFileTools.BackupType.Log);
+      return list;
+    }
+    
+    private static List<BackupMetadata> GetBackupListWithoutDiff()
+    {
+      var list = GetBackupList();
+      list.RemoveAll(b => b.BackupType == BackupFileTools.BackupType.Diff);
+      return list;
     }
 
-    [Fact]
-    public void MissingLink()
+    private static List<BackupMetadata> GetBackupListWithStripes()
     {
-      var backups = ListBackups().Where(b => b.FirstLsn != 126000000955200001).ToList();
-      var agDatabase = new Mock<IAgDatabase>();
-      agDatabase.Setup(agd => agd.RecentBackups()).Returns(backups);
-
-      var chain = new BackupChain(agDatabase.Object).OrderedBackups;
-      Assert.NotEqual(chain.Last().LastLsn, ListBackups().Max(b => b.LastLsn));
+      var list = GetBackupList();
+      var listWithStripes = CloneBackupMetaDataList(list).ToList();
+      listWithStripes.ForEach(b => {
+        var path = b.PhysicalDeviceName.Split('.');
+        b.PhysicalDeviceName = $"{path[0]}_striped.{path[1]}";
+      });
+      list.AddRange(listWithStripes);
+      return list;
     }
 
-    [Fact]
-    public void BackupChainWithStripesOrdered()
+    private static List<BackupMetadata> GetBackupListWithStripesAndDuplicates()
+    {
+      var listWithStripes = GetBackupListWithStripes();
+      var duplicate = CloneBackupMetaDataList(listWithStripes);
+      listWithStripes.AddRange(duplicate);
+      return listWithStripes;
+    }
+
+
+
+    private static void VerifyListIsAValidBackupChain(IEnumerable<BackupMetadata> backupChain)
+    {
+      var backupChainList = backupChain.ToList();
+
+      var listOfFileNames = backupChainList.Select(b => b.PhysicalDeviceName).ToList();
+      Assert.True(listOfFileNames.Count == listOfFileNames.Distinct().Count());
+
+      var orderedBackups = CloneBackupMetaDataList(backupChainList)
+        .OrderBy(b => b.LastLsn)
+        // 'PhysicalDeviceName' ordering doesn't matter but need it here to simplify this check for LSN ordering
+        .ThenBy(b => b.PhysicalDeviceName).ToList();
+      Assert.True(backupChainList.SequenceEqual(orderedBackups, new BackupMetadataEqualityComparer()));
+
+      // first one has to be full
+      var full = backupChainList.FirstOrDefault();
+      Assert.NotNull(full);
+      Assert.True(full.BackupType == BackupFileTools.BackupType.Full);
+
+      // removing all the striped files of the full backup
+      backupChainList.RemoveAll(b => b.BackupType == BackupFileTools.BackupType.Full &&
+                                     b.CheckpointLsn == full.CheckpointLsn);
+
+      var otherFullBackups = backupChainList.RemoveAll(b => b.BackupType == BackupFileTools.BackupType.Full);
+      Assert.Equal(0, otherFullBackups);
+
+      // next one can be diff or log
+      var currentBackup = backupChainList.FirstOrDefault();
+      if(currentBackup == null) {
+        return;
+      }
+
+      Assert.True(currentBackup.DatabaseBackupLsn == full.CheckpointLsn);
+
+      if(currentBackup.BackupType == BackupFileTools.BackupType.Diff) {
+
+        // removing all the striped files of the diff backup
+        backupChainList.RemoveAll(b => b.BackupType == BackupFileTools.BackupType.Diff &&
+                                       b.FirstLsn == currentBackup.FirstLsn && b.LastLsn == currentBackup.LastLsn);
+
+        var otherDiffBackups = backupChainList.RemoveAll(b => b.BackupType == BackupFileTools.BackupType.Diff);
+        Assert.Equal(0, otherDiffBackups);
+      }
+
+      var prevBackup = currentBackup;
+      backupChainList.ForEach(b => {
+        Assert.True(b.BackupType == BackupFileTools.BackupType.Log &&
+                    (
+                      (prevBackup.FirstLsn == b.FirstLsn && prevBackup.LastLsn == b.LastLsn) ||
+                      prevBackup.LastLsn == b.FirstLsn)
+                    );
+        prevBackup = b;
+      });
+
+    }
+
+    public static IEnumerable<object[]> PositiveTestData => new List<object[]> {
+      new object[] { GetBackupList() },
+      new object[] { GetBackupListWithStripes() },
+      new object[] { GetBackupListWithStripesAndDuplicates() },
+      new object[] { GetBackupListWithoutDiff() },
+      new object[] { GetBackupListWithoutLogs() }
+    };
+    
+    [Theory]
+    [MemberData(nameof(PositiveTestData))]
+    public void BackupChainIsCorrect(List<BackupMetadata> backupList)
     {
       var agDatabase = new Mock<IAgDatabase>();
-      agDatabase.Setup(agd => agd.RecentBackups()).Returns(_listBackupsWithStripes);
+      agDatabase.Setup(agd => agd.RecentBackups()).Returns(backupList);
       var backupChain = new BackupChain(agDatabase.Object);
-
-      var expected = _listBackupsWithStripes.OrderBy(bu => bu.FirstLsn);
-
-      Assert.Equal<IEnumerable>(backupChain.OrderedBackups, expected);
+      VerifyListIsAValidBackupChain(backupChain.OrderedBackups);
     }
     
     // TODO: test skipping of logs if diff last LSN and log last LSN matches
