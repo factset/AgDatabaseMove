@@ -12,10 +12,10 @@ namespace AgDatabaseMove.Unit
   public class BackupOrder
   {
 
-    private static IEnumerable<BackupMetadata> CloneBackupMetaDataList(List<BackupMetadata> baseList)
+    private static IEnumerable<BackupMetadata> CloneBackupMetaDataList(List<BackupMetadata> list)
     {
       var result = new List<BackupMetadata>();
-      baseList.ForEach(b => {
+      list.ForEach(b => {
         result.Add((BackupMetadata)b.Clone());
       });
       result.Reverse();
@@ -191,7 +191,7 @@ namespace AgDatabaseMove.Unit
       var backupChain = new BackupChain(agDatabase.Object);
       VerifyListIsAValidBackupChain(backupChain.OrderedBackups);
     }
-    
+
     // TODO: test skipping of logs if diff last LSN and log last LSN matches
     // TODO: test skipping of logs between diffs
     // TODO: test only keep last diff
