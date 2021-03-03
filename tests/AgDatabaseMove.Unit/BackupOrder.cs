@@ -214,6 +214,18 @@ namespace AgDatabaseMove.Unit
       Assert.Throws<BackupChainException>(() => new BackupChain(agDatabase.Object));
     }
 
+    [Fact]
+    public void MissingLink()
+    {
+      var backups = GetBackupList().Where(b => b.FirstLsn != 126000000955200001).ToList();
+      var agDatabase = new Mock<IAgDatabase>();
+      agDatabase.Setup(agd => agd.RecentBackups()).Returns(backups);
+
+      var chain = new BackupChain(agDatabase.Object).OrderedBackups.ToList();
+      Assert.NotEqual(chain.Last().LastLsn, GetBackupList().Max(b => b.LastLsn));
+      VerifyListIsAValidBackupChain(chain);
+    }
+
     // TODO: test skipping of logs if diff last LSN and log last LSN matches
     // TODO: test skipping of logs between diffs
     // TODO: test only keep last diff
