@@ -23,7 +23,7 @@ namespace AgDatabaseMove
     // This also handles any striped backups
     private BackupChain(IList<BackupMetadata> recentBackups)
     {
-      if (!(recentBackups?.Count > 0)) {
+      if (recentBackups == null || recentBackups.Count == 0) {
         throw new BackupChainException("There are no recent backups to form a chain");
       }
 

@@ -142,7 +142,7 @@ namespace AgDatabaseMove.Unit
         }
         else if(currentBackup.BackupType == BackupFileTools.BackupType.Diff) {
           Assert.True(foundFull && !foundDiff && !foundLog);
-          Assert.Equal(currentBackup.DatabaseBackupLsn, full.CheckpointLsn);
+          Assert.Equal(full.CheckpointLsn, currentBackup.DatabaseBackupLsn);
           Assert.True(currentBackup.FirstLsn >= lastBackup.LastLsn);
           foundDiff = true;
         }
@@ -208,7 +208,7 @@ namespace AgDatabaseMove.Unit
       var agDatabase = new Mock<IAgDatabase>();
       agDatabase.Setup(agd => agd.RecentBackups()).Returns(backups);
       var chain = new BackupChain(agDatabase.Object).OrderedBackups.ToList();
-      Assert.Equal(chain.Count, backups.Count/2);
+      Assert.Equal(backups.GroupBy(b => b.PhysicalDeviceName).Count(), chain.Count);
     }
 
     // TODO: test skipping of logs if diff last LSN and log last LSN matches
