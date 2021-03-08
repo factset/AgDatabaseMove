@@ -74,7 +74,7 @@ namespace AgDatabaseMove.Unit
           BackupType = BackupFileTools.BackupType.Diff,
           DatabaseBackupLsn = 126000000943800037,
           CheckpointLsn = 126000000953600034,
-          FirstLsn = 126000000943800038,
+          FirstLsn = 126000000945600000,
           LastLsn = 126000000955200001,
           DatabaseName = "TestDb",
           ServerName = "ServerA",
@@ -127,50 +127,35 @@ namespace AgDatabaseMove.Unit
 
     private static void VerifyListIsAValidBackupChain(List<BackupMetadata> backupChain)
     {
-      var listOfFileNames = backupChain.Select(b => b.PhysicalDeviceName).ToList();
-      Assert.True(listOfFileNames.Count == listOfFileNames.Distinct().Count(), "There are no duplicates?");
-
-      var fullBackup = backupChain.First();
-      Assert.NotNull(fullBackup);
-      Assert.True(fullBackup.BackupType == BackupFileTools.BackupType.Full, "Is the first backup a full backup?");
-      backupChain.RemoveAt(0);
+      bool foundFull, foundDiff, foundLog;
+      foundFull = foundDiff = foundLog = false;
+      BackupMetadata full = null;
+      BackupMetadata lastBackup = null;
 
       BackupMetadata currentBackup;
-      var prevBackup = fullBackup;
+      while((currentBackup = backupChain.FirstOrDefault()) != null) {
 
-      while((currentBackup = backupChain.FirstOrDefault())?.BackupType == BackupFileTools.BackupType.Full) {
-        Assert.True(currentBackup.CheckpointLsn == prevBackup.CheckpointLsn,
-                    "Is it a striped file of the full backup?");
-        prevBackup = currentBackup;
-        backupChain.RemoveAt(0);
+        if(currentBackup.BackupType == BackupFileTools.BackupType.Full) {
+          Assert.True(!foundFull && !foundDiff && !foundLog);
+          foundFull = true;
+          full = currentBackup;
+        }
+        else if(currentBackup.BackupType == BackupFileTools.BackupType.Diff) {
+          Assert.True(foundFull && !foundDiff && !foundLog);
+          Assert.Equal(currentBackup.DatabaseBackupLsn, full.CheckpointLsn);
+          Assert.True(currentBackup.FirstLsn >= lastBackup.LastLsn);
+          foundDiff = true;
+        }
+        else if(currentBackup.BackupType == BackupFileTools.BackupType.Log) {
+          Assert.True(foundFull);
+          Assert.True(currentBackup.FirstLsn >= lastBackup.LastLsn);
+          foundLog = true;
+        }
+
+        lastBackup = currentBackup;
+        backupChain.RemoveAll(b => b.LastLsn == currentBackup.LastLsn);
       }
-
-      prevBackup = currentBackup;
-      while((currentBackup = backupChain.FirstOrDefault())?.BackupType == BackupFileTools.BackupType.Diff) {
-        Assert.True(currentBackup.DatabaseBackupLsn == fullBackup.CheckpointLsn,
-                    "Is the diff linked to the full backup?");
-        Assert.True(currentBackup.FirstLsn == prevBackup.FirstLsn && currentBackup.LastLsn == prevBackup.LastLsn,
-                    "Is it a striped file of the diff backup?");
-        prevBackup = currentBackup;
-        backupChain.RemoveAt(0);
-      }
-
-      prevBackup = currentBackup;
-      while((currentBackup = backupChain.FirstOrDefault())?.BackupType == BackupFileTools.BackupType.Log) {
-        Assert.True(currentBackup.DatabaseBackupLsn == fullBackup.CheckpointLsn,
-                    "Is the log linked to the full backup?");
-        Assert.True(
-                    (currentBackup.FirstLsn == prevBackup.FirstLsn && currentBackup.LastLsn == prevBackup.LastLsn) ||
-                    (prevBackup.LastLsn == currentBackup.FirstLsn),
-                    "Is it either the striped file of the prev log backup or the next one in the chain?");
-
-        prevBackup = currentBackup;
-        backupChain.RemoveAt(0);
-      }
-
-      Assert.Empty(backupChain);
     }
-
 
     public static IEnumerable<object[]> PositiveTestData => new List<object[]> {
       new object[] { GetBackupList() },
