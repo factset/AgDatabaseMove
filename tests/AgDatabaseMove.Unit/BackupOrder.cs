@@ -160,7 +160,6 @@ namespace AgDatabaseMove.Unit
     public static IEnumerable<object[]> PositiveTestData => new List<object[]> {
       new object[] { GetBackupList() },
       new object[] { GetBackupListWithStripes() },
-      new object[] { GetBackupListWithStripesAndDuplicates() },
       new object[] { GetBackupListWithoutDiff() },
       new object[] { GetBackupListWithoutLogs() }
     };
@@ -200,6 +199,16 @@ namespace AgDatabaseMove.Unit
       var chain = new BackupChain(agDatabase.Object).OrderedBackups.ToList();
       Assert.NotEqual(chain.Last().LastLsn, GetBackupList().Max(b => b.LastLsn));
       VerifyListIsAValidBackupChain(chain);
+    }
+
+    [Fact]
+    public void DuplicateFiles()
+    {
+      var backups = GetBackupListWithStripesAndDuplicates();
+      var agDatabase = new Mock<IAgDatabase>();
+      agDatabase.Setup(agd => agd.RecentBackups()).Returns(backups);
+      var chain = new BackupChain(agDatabase.Object).OrderedBackups.ToList();
+      Assert.Equal(chain.Count, backups.Count/2);
     }
 
     // TODO: test skipping of logs if diff last LSN and log last LSN matches
