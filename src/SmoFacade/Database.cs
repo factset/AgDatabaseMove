@@ -70,8 +70,15 @@ namespace AgDatabaseMove.SmoFacade
                   "s.database_backup_lsn, s.checkpoint_lsn, s.[type] AS backup_type, s.server_name, s.recovery_model " +
                   "FROM msdb.dbo.backupset s " +
                   "INNER JOIN msdb.dbo.backupmediafamily m ON s.media_set_id = m.media_set_id " +
-                  "WHERE s.last_lsn >= (SELECT MAX(last_lsn)  FROM msdb.dbo.backupset WHERE [type] = 'D' and database_name = @dbName) " +
-                  "AND s.database_name = @dbName ORDER BY s.backup_start_date DESC, backup_finish_date";
+                  "WHERE s.last_lsn >= (" +
+                    "SELECT MAX(last_lsn) FROM msdb.dbo.backupset " +
+                    "WHERE [type] = 'D' " +
+                    "AND database_name = @dbName " +
+                    "AND is_copy_only = 0" +
+                  ") " +
+                  "AND s.database_name = @dbName " +
+                  "AND is_copy_only = 0" +
+                  "ORDER BY s.backup_start_date DESC, backup_finish_date";
 
       using var cmd = _server.SqlConnection.CreateCommand();
       cmd.CommandText = query;
