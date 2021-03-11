@@ -1,4 +1,3 @@
-[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("AgDatabaseMove.Unit")]
 namespace AgDatabaseMove.SmoFacade
 {
   using System;
@@ -147,7 +146,7 @@ namespace AgDatabaseMove.SmoFacade
 
     /// <summary>
     ///   Resolves 'agReplicaInstanceName' to a FQDN
-    ///   However on Unix OS, when 'val' in 'Dns.GetHostEntry(val)' is not a complete domain (i.e is just "abc", instead of "abc.def.com"), it fails intermittently
+    ///   However on Unix OS, when 'val' in 'Dns.GetHostEntry(val)' is not a FQDN, it fails intermittently
     ///   Therefore, if dns lookup on just the instance name fails, we retry after appending the domain fragments from the listener to the instance name
     /// </summary>
     /// <param name="agReplicaInstanceName"> The name for an instance within the AG (for which we are trying to get the FQDN)</param>
