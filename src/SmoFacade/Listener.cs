@@ -1,3 +1,4 @@
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("AgDatabaseMove.Unit")]
 namespace AgDatabaseMove.SmoFacade
 {
   using System;
@@ -69,12 +70,12 @@ namespace AgDatabaseMove.SmoFacade
       var secondaryNames = availabilityGroup.Replicas.Where(l => l != primaryName);
 
       // Connect to each server instance
-      Primary = AgListenerNameToServer(ref connectionStringBuilder, primaryName, credentialName);
+      Primary = AgInstanceNameToServer(ref connectionStringBuilder, primaryName, credentialName);
       AvailabilityGroup = Primary.AvailabilityGroups.Single(ag => ag.Name == availabilityGroup.Name);
 
       _secondaries = new List<Server>();
       foreach(var secondaryName in secondaryNames)
-        _secondaries.Add(AgListenerNameToServer(ref connectionStringBuilder,
+        _secondaries.Add(AgInstanceNameToServer(ref connectionStringBuilder,
                                                 secondaryName,
                                                 credentialName));
     }
@@ -130,19 +131,83 @@ namespace AgDatabaseMove.SmoFacade
       return dotIndex >= 0 ? dataSource.Remove(dotIndex) : dataSource;
     }
 
-    private static Server AgListenerNameToServer(ref SqlConnectionStringBuilder connBuilder, string agInstanceName,
+    private static Server AgInstanceNameToServer(ref SqlConnectionStringBuilder connBuilder, string agInstanceName,
       string credentialName)
     {
-      var parts = agInstanceName.Split('\\');
-      if(parts.Length == 1)
-        connBuilder.DataSource = Dns.GetHostEntry(agInstanceName).HostName;
-      else if(parts.Length == 2)
-        // NamedInstances: chop instance name, resolve DNS, slap instance name back on!
-        connBuilder.DataSource = $"{Dns.GetHostEntry(parts[0]).HostName}\\{parts[1]}";
-      else
-        throw new ArgumentException($"agInstanceName param {agInstanceName} cannot be resolved by DNS");
-
-      return new Server(connBuilder.ToString(), credentialName);
+      try 
+      {
+        connBuilder.DataSource = ResolveDnsHostNameForInstance(agInstanceName, connBuilder.DataSource);
+        return new Server(connBuilder.ToString(), credentialName);
+      }
+      catch (Exception e)
+      {
+        throw new ArgumentException($"agInstanceName param {agInstanceName} cannot be resolved by DNS", e);
+      }
     }
+
+    /// <summary>
+    ///   Resolves 'agReplicaInstanceName' to a FQDN
+    ///   However on Unix OS, when 'val' in 'Dns.GetHostEntry(val)' is not a complete domain (i.e is just "abc", instead of "abc.def.com"), it fails intermittently
+    ///   Therefore, if dns lookup on just the instance name fails, we retry after appending the domain fragments from the listener to the instance name
+    /// </summary>
+    /// <param name="agReplicaInstanceName"> The name for an instance within the AG (for which we are trying to get the FQDN)</param>
+    /// <param name="agListenerDomain"> The complete domain for the AG listener</param>
+    private static string ResolveDnsHostNameForInstance(string agReplicaInstanceName, string agListenerDomain)
+    {
+      // Sometimes instances and listeners have ports or named instances
+      // Therefore, we strip them off before calling DNS.GetHostEntry() and then add them back to the result 
+      var (listenerDomain, listenerPortOrNamedInstance) = SplitDomainAndPort(agListenerDomain);
+      var (instanceName, instancePortOrNamedInstance) = SplitDomainAndPort(agReplicaInstanceName);
+      var preferredPortOrNamedInstance = GetPreferredPort(instancePortOrNamedInstance, listenerPortOrNamedInstance);
+
+      try
+      {
+        return $"{Dns.GetHostEntry(instanceName).HostName}{preferredPortOrNamedInstance}";
+      }
+      catch (System.Net.Sockets.SocketException)
+      {
+        // Re-try by appending the domain fragments from listener to the instance name 
+        // However, we don't need the listener's "host name" (first fragment), so we need to strip that off
+        // eg: if listener is "abc.def.ghi" we want to append only ".def.ghi" to the instance name
+        var listenerDomainFragments = listenerDomain.Split('.');
+        listenerDomainFragments[0] = null;
+        var instanceDomain = $"{instanceName}{string.Join(".", listenerDomainFragments)}";
+
+        return $"{Dns.GetHostEntry(instanceDomain).HostName}{preferredPortOrNamedInstance}";
+      }
+    }
+
+    // First preference is to add back a port over a named instance  
+    // (port is TCP/IP standard while named instance is only SQL Server standard)
+    // If both are same type, then prioritize instance over listener (in almost all cases they should be identical)
+    internal static string GetPreferredPort(string instancePortOrNamedInstance, string listenerPortOrNamedInstance)
+    {
+      if (string.IsNullOrEmpty(instancePortOrNamedInstance) || string.IsNullOrEmpty(listenerPortOrNamedInstance))
+      {
+        return (instancePortOrNamedInstance ?? listenerPortOrNamedInstance);
+      }
+      return instancePortOrNamedInstance.StartsWith("\\") && listenerPortOrNamedInstance.StartsWith(",") 
+        ? listenerPortOrNamedInstance 
+        : instancePortOrNamedInstance;
+    }
+
+    // This function handles named instances ("<domain>\<named instance>") in the same way as ports
+    internal static (string domain, string port) SplitDomainAndPort(string domainAndPort)
+    {
+      var domain = domainAndPort;
+      var splitValue = domainAndPort.Contains(',') ? "," : domainAndPort.Contains('\\') ? "\\" : null;
+
+      if(splitValue == null)
+      {
+        return (domain, null);
+      }
+
+      var fragments = domainAndPort.Split(splitValue.ToCharArray(), 2);
+      domain = fragments[0];
+      var port = $"{splitValue}{fragments[1]}";
+
+      return (domain, port);
+    }
+
   }
 }
