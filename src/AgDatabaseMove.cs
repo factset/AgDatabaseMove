@@ -59,7 +59,7 @@ namespace AgDatabaseMove
         throw new
           ArgumentException("lastLsn parameter can only be used if the Destination database is in a restoring state");
 
-      if(_options.Overwrite)
+      if(_options.Overwrite && lastLsn == null)
         _options.Destination.Delete();
 
       _options.Source.LogBackup();
