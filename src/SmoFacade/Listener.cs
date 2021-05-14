@@ -5,6 +5,7 @@ namespace AgDatabaseMove.SmoFacade
   using System.Data.SqlClient;
   using System.Linq;
   using System.Net;
+  using System.Net.Sockets;
   using System.Threading.Tasks;
 
 
@@ -133,13 +134,11 @@ namespace AgDatabaseMove.SmoFacade
     private static Server AgInstanceNameToServer(ref SqlConnectionStringBuilder connBuilder, string agInstanceName,
       string credentialName)
     {
-      try 
-      {
+      try {
         connBuilder.DataSource = ResolveDnsHostNameForInstance(agInstanceName, connBuilder.DataSource);
         return new Server(connBuilder.ToString(), credentialName);
       }
-      catch (Exception e)
-      {
+      catch(Exception e) {
         throw new ArgumentException($"agInstanceName param {agInstanceName} cannot be resolved by DNS", e);
       }
     }
@@ -147,7 +146,8 @@ namespace AgDatabaseMove.SmoFacade
     /// <summary>
     ///   Resolves 'agReplicaInstanceName' to a FQDN
     ///   However on Unix OS, when 'val' in 'Dns.GetHostEntry(val)' is not a FQDN, it fails intermittently
-    ///   Therefore, if dns lookup on just the instance name fails, we retry after appending the domain fragments from the listener to the instance name
+    ///   Therefore, if dns lookup on just the instance name fails, we retry after appending the domain fragments from the
+    ///   listener to the instance name
     /// </summary>
     /// <param name="agReplicaInstanceName"> The name for an instance within the AG (for which we are trying to get the FQDN)</param>
     /// <param name="agListenerDomain"> The complete domain for the AG listener</param>
@@ -159,12 +159,10 @@ namespace AgDatabaseMove.SmoFacade
       var (instanceName, instancePortOrNamedInstance) = SplitDomainAndPort(agReplicaInstanceName);
       var preferredPortOrNamedInstance = GetPreferredPort(instancePortOrNamedInstance, listenerPortOrNamedInstance);
 
-      try
-      {
+      try {
         return $"{Dns.GetHostEntry(instanceName).HostName}{preferredPortOrNamedInstance}";
       }
-      catch (System.Net.Sockets.SocketException)
-      {
+      catch(SocketException) {
         // Re-try by appending the domain fragments from listener to the instance name 
         // However, we don't need the listener's "host name" (first fragment), so we need to strip that off
         // eg: if listener is "abc.def.ghi" we want to append only ".def.ghi" to the instance name
@@ -181,12 +179,10 @@ namespace AgDatabaseMove.SmoFacade
     // If both are same type, then prioritize instance over listener (in almost all cases they should be identical)
     internal static string GetPreferredPort(string instancePortOrNamedInstance, string listenerPortOrNamedInstance)
     {
-      if (string.IsNullOrEmpty(instancePortOrNamedInstance) || string.IsNullOrEmpty(listenerPortOrNamedInstance))
-      {
-        return (instancePortOrNamedInstance ?? listenerPortOrNamedInstance);
-      }
-      return instancePortOrNamedInstance.StartsWith("\\") && listenerPortOrNamedInstance.StartsWith(",") 
-        ? listenerPortOrNamedInstance 
+      if(string.IsNullOrEmpty(instancePortOrNamedInstance) || string.IsNullOrEmpty(listenerPortOrNamedInstance))
+        return instancePortOrNamedInstance ?? listenerPortOrNamedInstance;
+      return instancePortOrNamedInstance.StartsWith("\\") && listenerPortOrNamedInstance.StartsWith(",")
+        ? listenerPortOrNamedInstance
         : instancePortOrNamedInstance;
     }
 
@@ -196,10 +192,7 @@ namespace AgDatabaseMove.SmoFacade
       var domain = domainAndPort;
       var splitValue = domainAndPort.Contains(',') ? "," : domainAndPort.Contains('\\') ? "\\" : null;
 
-      if(splitValue == null)
-      {
-        return (domain, null);
-      }
+      if(splitValue == null) return (domain, null);
 
       var fragments = domainAndPort.Split(splitValue.ToCharArray(), 2);
       domain = fragments[0];
@@ -207,6 +200,5 @@ namespace AgDatabaseMove.SmoFacade
 
       return (domain, port);
     }
-
   }
 }

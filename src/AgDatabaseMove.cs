@@ -17,7 +17,6 @@ namespace AgDatabaseMove
     public IAgDatabase Source { get; set; }
     public IAgDatabase Destination { get; set; }
     public bool Overwrite { get; set; }
-    public bool DeleteSource { get; set; } = true;
     public bool Finalize { get; set; }
     public bool CopyLogins { get; set; }
     public Func<string, string> FileRelocator { get; set; }
@@ -55,12 +54,12 @@ namespace AgDatabaseMove
       if(!_options.Overwrite && _options.Destination.Exists() && !_options.Destination.Restoring)
         throw new ArgumentException("Database exists and overwrite option is not set");
 
+      if(_options.Overwrite && lastLsn == null)
+        _options.Destination.Delete();
+
       if(lastLsn == null && _options.Destination.Restoring)
         throw new
           ArgumentException("lastLsn parameter can only be used if the Destination database is in a restoring state");
-
-      if(_options.Overwrite && lastLsn == null)
-        _options.Destination.Delete();
 
       _options.Source.LogBackup();
 
@@ -80,9 +79,6 @@ namespace AgDatabaseMove
 
       if(_options.Finalize)
         _options.Destination.JoinAg();
-
-      if(_options.DeleteSource)
-        _options.Source.Delete();
 
       return backupList.Max(bl => bl.LastLsn);
     }

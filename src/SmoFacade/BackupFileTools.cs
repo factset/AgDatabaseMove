@@ -3,7 +3,6 @@
   using System;
   using System.IO;
   using System.Linq;
-  using System.Text.RegularExpressions;
 
 
   public static class BackupFileTools
@@ -53,11 +52,9 @@
     public static bool IsValidFilePath(string path)
     {
       // A quick check before leaning on exceptions
-      if(Path.GetInvalidPathChars().Any(path.Contains)) {
-        return false;
-      }
+      if(Path.GetInvalidPathChars().Any(path.Contains)) return false;
 
-      try { 
+      try {
         // This will throw an argument exception if the path is invalid
         Path.GetFullPath(path);
         // A relative path won't help us much if the destination is another server. It needs to be rooted.

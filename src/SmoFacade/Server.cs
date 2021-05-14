@@ -9,6 +9,7 @@ namespace AgDatabaseMove.SmoFacade
   using Exceptions;
   using Microsoft.SqlServer.Management.Common;
   using Microsoft.SqlServer.Management.Smo;
+  using Polly;
 
 
   /// <summary>
@@ -129,6 +130,14 @@ namespace AgDatabaseMove.SmoFacade
     public void Restore(IEnumerable<BackupMetadata> backupOrder, string databaseName,
       Func<string, string> fileRelocation = null)
     {
+      var policy = Policy
+        .Handle<ExecutionFailureException>(e => e.InnerException != null
+                                                && e.InnerException is SqlException
+                                                && e.InnerException.Message
+                                                  .Contains("The process cannot access the file because it is being used by another process"))
+        .WaitAndRetry(12, retryAttempt => TimeSpan.FromSeconds(10 * retryAttempt));
+
+
       var restore = new Restore { Database = databaseName, NoRecovery = true };
 
       foreach(var backup in backupOrder) {
@@ -142,7 +151,8 @@ namespace AgDatabaseMove.SmoFacade
         var defaultFileLocations = DefaultFileLocations();
         if(defaultFileLocations != null) {
           restore.RelocateFiles.Clear();
-          foreach(var file in restore.ReadFileList(_server).AsEnumerable()) {
+          var fileList = policy.Execute(() => restore.ReadFileList(_server).AsEnumerable());
+          foreach(var file in fileList) {
             var physicalName = (string)file["PhysicalName"];
             var fileName = Path.GetFileName(physicalName) ??
                            throw new InvalidBackupException($"Physical name in backup is incomplete: {physicalName}");
@@ -161,7 +171,7 @@ namespace AgDatabaseMove.SmoFacade
 
         _server.ConnectionContext.StatementTimeout = 86400; // 60 * 60 * 24 = 24 hours
 
-        restore.SqlRestore(_server);
+        policy.Execute(() => restore.SqlRestore(_server));
         restore.Devices.Remove(backupDeviceItem);
       }
     }

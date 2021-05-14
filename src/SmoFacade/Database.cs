@@ -71,10 +71,10 @@ namespace AgDatabaseMove.SmoFacade
                   "FROM msdb.dbo.backupset s " +
                   "INNER JOIN msdb.dbo.backupmediafamily m ON s.media_set_id = m.media_set_id " +
                   "WHERE s.last_lsn >= (" +
-                    "SELECT MAX(last_lsn) FROM msdb.dbo.backupset " +
-                    "WHERE [type] = 'D' " +
-                    "AND database_name = @dbName " +
-                    "AND is_copy_only = 0" +
+                  "SELECT MAX(last_lsn) FROM msdb.dbo.backupset " +
+                  "WHERE [type] = 'D' " +
+                  "AND database_name = @dbName " +
+                  "AND is_copy_only = 0" +
                   ") " +
                   "AND s.database_name = @dbName " +
                   "AND is_copy_only = 0" +
