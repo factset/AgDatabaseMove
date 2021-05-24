@@ -126,8 +126,10 @@ namespace AgDatabaseMove.SmoFacade
     /// </summary>
     /// <param name="backupOrder">An ordered list of backups to apply.</param>
     /// <param name="databaseName">Database to restore to.</param>
+    /// <param name="retryDurationProvider">Retry duration function.</param>
     /// <param name="fileRelocation">Option for renaming files during the restore.</param>
     public void Restore(IEnumerable<BackupMetadata> backupOrder, string databaseName,
+      Func<int, TimeSpan> retryDurationProvider,
       Func<string, string> fileRelocation = null)
     {
       var policy = Policy
@@ -135,7 +137,7 @@ namespace AgDatabaseMove.SmoFacade
                                                 && e.InnerException is SqlException
                                                 && e.InnerException.Message
                                                   .Contains("The process cannot access the file because it is being used by another process"))
-        .WaitAndRetry(12, retryAttempt => TimeSpan.FromSeconds(10 * retryAttempt));
+        .WaitAndRetry(10, retryDurationProvider);
 
 
       var restore = new Restore { Database = databaseName, NoRecovery = true };

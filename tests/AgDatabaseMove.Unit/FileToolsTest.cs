@@ -1,13 +1,11 @@
 namespace AgDatabaseMove.Unit
 {
-  using System.Collections.Generic;
   using SmoFacade;
   using Xunit;
 
 
   public class BackupFileToolsTest
   {
-
     [Theory]
     [InlineData(@"https://hello/a.bak")]
     [InlineData(@"https://hello/a.full")]
@@ -63,7 +61,6 @@ namespace AgDatabaseMove.Unit
     [Theory]
     [InlineData(@"C:\dir\file.ext")]
     [InlineData(@"/some/file.ext")]
-    
     public void ValidPathTests(string path)
     {
       Assert.True(BackupFileTools.IsValidFilePath(path));

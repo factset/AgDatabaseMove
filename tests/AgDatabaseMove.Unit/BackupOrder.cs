@@ -1,7 +1,6 @@
 namespace AgDatabaseMove.Unit
 {
   using System;
-  using System.Collections;
   using System.Collections.Generic;
   using System.Linq;
   using Exceptions;
@@ -12,13 +11,23 @@ namespace AgDatabaseMove.Unit
 
   public class BackupOrder
   {
+    public static IEnumerable<object[]> PositiveTestData => new List<object[]> {
+      new object[] { GetBackupList() },
+      new object[] { GetBackupListWithStripes() },
+      new object[] { GetBackupListWithoutDiff() },
+      new object[] { GetBackupListWithoutLogs() }
+    };
+
+
+    public static IEnumerable<object[]> NegativeTestData => new List<object[]> {
+      new object[] { GetBackupListWithoutFull() },
+      new object[] { new List<BackupMetadata>() }
+    };
 
     private static IEnumerable<BackupMetadata> CloneBackupMetaDataList(List<BackupMetadata> list)
     {
       var result = new List<BackupMetadata>();
-      list.ForEach(b => {
-        result.Add((BackupMetadata)b.Clone());
-      });
+      list.ForEach(b => { result.Add((BackupMetadata)b.Clone()); });
       result.Reverse();
       return result;
     }
@@ -90,7 +99,7 @@ namespace AgDatabaseMove.Unit
       list.RemoveAll(b => b.BackupType == BackupFileTools.BackupType.Log);
       return list;
     }
-    
+
     private static List<BackupMetadata> GetBackupListWithoutDiff()
     {
       var list = GetBackupList();
@@ -134,7 +143,6 @@ namespace AgDatabaseMove.Unit
 
       BackupMetadata currentBackup;
       while((currentBackup = backupChain.FirstOrDefault()) != null) {
-
         if(currentBackup.BackupType == BackupFileTools.BackupType.Full) {
           Assert.True(!foundFull && !foundDiff && !foundLog);
           foundFull = true;
@@ -157,13 +165,6 @@ namespace AgDatabaseMove.Unit
       }
     }
 
-    public static IEnumerable<object[]> PositiveTestData => new List<object[]> {
-      new object[] { GetBackupList() },
-      new object[] { GetBackupListWithStripes() },
-      new object[] { GetBackupListWithoutDiff() },
-      new object[] { GetBackupListWithoutLogs() }
-    };
-    
     [Theory]
     [MemberData(nameof(PositiveTestData))]
     public void BackupChainIsCorrect(List<BackupMetadata> backupList)
@@ -173,12 +174,6 @@ namespace AgDatabaseMove.Unit
       var backupChain = new BackupChain(agDatabase.Object);
       VerifyListIsAValidBackupChain(backupChain.OrderedBackups.ToList());
     }
-
-
-    public static IEnumerable<object[]> NegativeTestData => new List<object[]> {
-      new object[] { GetBackupListWithoutFull() },
-      new object[] { new List<BackupMetadata>() }
-    };
 
     [Theory]
     [MemberData(nameof(NegativeTestData))]

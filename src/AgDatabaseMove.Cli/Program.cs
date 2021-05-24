@@ -30,6 +30,7 @@ namespace AgDatabaseMove.Cli
         Overwrite = arguments.Overwrite,
         Finalize = arguments.Finalize,
         CopyLogins = arguments.CopyLogins,
+        RetryDuration = attemptNumber => TimeSpan.FromSeconds(10 * attemptNumber),
         FileRelocator = filename =>
           RestoreFileRelocator(arguments.From.DatabaseName, arguments.To.DatabaseName, filename)
       });

@@ -19,6 +19,7 @@ namespace AgDatabaseMove
     public bool Overwrite { get; set; }
     public bool Finalize { get; set; }
     public bool CopyLogins { get; set; }
+    public Func<int, TimeSpan> RetryDuration { get; set; }
     public Func<string, string> FileRelocator { get; set; }
   }
 
@@ -42,6 +43,7 @@ namespace AgDatabaseMove
           : "master";
       return loginProperties;
     }
+
 
     /// <summary>
     ///   AgDatabaseMove the database to all instances of the availability group.
@@ -72,7 +74,7 @@ namespace AgDatabaseMove
       if(!backupList.Any())
         throw new BackupChainException("No backups found to restore");
 
-      _options.Destination.Restore(backupList, _options.FileRelocator);
+      _options.Destination.Restore(backupList, _options.RetryDuration, _options.FileRelocator);
 
       if(_options.CopyLogins)
         _options.Destination.CopyLogins(_options.Source.AssociatedLogins().Select(UpdateDefaultDb).ToList());
