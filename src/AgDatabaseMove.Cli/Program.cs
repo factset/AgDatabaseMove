@@ -15,7 +15,7 @@ namespace AgDatabaseMove.Cli
     public bool DeleteSource { get; set; } = false;
   }
 
-  
+
   internal class Program
   {
     private static void Main(string[] args)
