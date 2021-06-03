@@ -126,7 +126,7 @@ namespace AgDatabaseMove.SmoFacade
     /// </summary>
     /// <param name="backupOrder">An ordered list of backups to apply.</param>
     /// <param name="databaseName">Database to restore to.</param>
-    /// <param name="retryDurationProvider">Retry duration function.</param>
+    /// <param name="retryDurationProvider">Retry duration function. Retry 10 times, input retry number, output timespan to wait</param>
     /// <param name="fileRelocation">Option for renaming files during the restore.</param>
     public void Restore(IEnumerable<BackupMetadata> backupOrder, string databaseName,
       Func<int, TimeSpan> retryDurationProvider,
