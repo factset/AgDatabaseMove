@@ -57,6 +57,34 @@ namespace AgDatabaseMove.SmoFacade
       _server.Logins[login.Name].DropIfExists();
     }
 
+    public decimal DatabaseSizeMb(string dbName)
+    {
+      string query = "SELECT total_size_mb = (SUM(size) * 8. / 1024) " + 
+                     "FROM sys.master_files WITH(NOWAIT) " +
+                     $"WHERE database_id = DB_ID('{dbName}') " + 
+                     "GROUP BY database_id";
+
+      using var cmd = SqlConnection.CreateCommand();
+      cmd.CommandText = query;
+      using var reader = cmd.ExecuteReader();
+      reader.Read();
+      return (decimal)reader["total_size_mb"];
+    }
+
+    public int RemainingDiskMb()
+    {
+      string query = "SELECT DISTINCT CONVERT(INT, dovs.available_bytes/1048576.0) AS free_size_mb " +
+                     "FROM sys.master_files mf " +
+                     "CROSS APPLY sys.dm_os_volume_stats(mf.database_id, mf.FILE_ID) dovs " +
+                     "WHERE dovs.logical_volume_name = 'Data'";
+
+      using var cmd = SqlConnection.CreateCommand();
+      cmd.CommandText = query;
+      using var reader = cmd.ExecuteReader();
+      reader.Read();
+      return (int)reader["free_size_mb"];
+    }
+
     /// <summary>
     ///   Parses the AG name from the connection's DataSource.
     /// </summary>

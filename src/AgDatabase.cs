@@ -63,6 +63,10 @@ namespace AgDatabaseMove
     /// </summary>
     public bool Restoring => _listener.Primary.Database(Name)?.Restoring ?? false;
 
+    public decimal SizeMb => _listener.Primary.DatabaseSizeMb(Name);
+
+    public int ServerRemainingDiskMb => _listener.Primary.RemainingDiskMb();
+
     /// <summary>
     ///   Database name
     /// </summary>

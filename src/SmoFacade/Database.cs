@@ -28,6 +28,8 @@ namespace AgDatabaseMove.SmoFacade
 
     public bool Restoring => _database.Status == DatabaseStatus.Restoring;
 
+    public void SizeMb() => _server.DatabaseSizeMb(Name);
+
     public void RestoreWithRecovery()
     {
       // TODO: Sql injection paranoia. - can we execute normally with a parameterized statement here?
