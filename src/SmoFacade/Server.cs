@@ -61,10 +61,11 @@ namespace AgDatabaseMove.SmoFacade
     {
       var query = "SELECT total_size_mb = (SUM(size) * 8. / 1024) " +
                   "FROM sys.master_files WITH(NOWAIT) " +
-                  $"WHERE database_id = DB_ID('{dbName}') " +
+                  "WHERE database_id = DB_ID(@db_name) " +
                   "GROUP BY database_id";
 
       using var cmd = SqlConnection.CreateCommand();
+      cmd.Parameters.Add(new SqlParameter("db_name", SqlDbType.VarChar) { Value = dbName });
       cmd.CommandText = query;
       using var reader = cmd.ExecuteReader();
       reader.Read();
