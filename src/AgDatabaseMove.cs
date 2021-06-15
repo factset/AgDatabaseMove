@@ -77,7 +77,8 @@ namespace AgDatabaseMove
       _options.Destination.Restore(backupList, _options.RetryDuration, _options.FileRelocator);
 
       if(_options.CopyLogins)
-        _options.Destination.CopyLogins(_options.Source.AssociatedLogins().Select(UpdateDefaultDb).ToList());
+        foreach(var loginProperty in _options.Source.AssociatedLogins().Select(UpdateDefaultDb))
+          _options.Destination.AddLogin(loginProperty);
 
       if(_options.Finalize)
         _options.Destination.JoinAg();

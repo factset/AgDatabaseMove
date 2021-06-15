@@ -9,10 +9,10 @@ namespace AgDatabaseMove.Cli
   {
     public DatabaseConfig From { get; set; }
     public DatabaseConfig To { get; set; }
-    public bool Overwrite { get; set; } = false;
+    public bool Overwrite { get; set; }
     public bool Finalize { get; set; } = true;
     public bool CopyLogins { get; set; } = true;
-    public bool DeleteSource { get; set; } = false;
+    public bool DeleteSource { get; set; }
   }
 
 

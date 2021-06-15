@@ -28,7 +28,10 @@ namespace AgDatabaseMove.SmoFacade
 
     public bool Restoring => _database.Status == DatabaseStatus.Restoring;
 
-    public void SizeMb() => _server.DatabaseSizeMb(Name);
+    public void SizeMb()
+    {
+      _server.DatabaseSizeMb(Name);
+    }
 
     public void RestoreWithRecovery()
     {

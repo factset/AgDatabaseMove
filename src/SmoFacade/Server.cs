@@ -263,14 +263,14 @@ namespace AgDatabaseMove.SmoFacade
       backup.SqlBackup(_server);
     }
 
-    public void EnsureLogins(IEnumerable<LoginProperties> newLogins)
+    public void AddLogin(LoginProperties login, string role = null)
     {
-      foreach(var login in newLogins) {
-        var matchingLogin =
-          Logins.SingleOrDefault(l => l.Name.Equals(login.Name, StringComparison.InvariantCultureIgnoreCase));
-        if(matchingLogin == null)
-          new Login(login, this);
-      }
+      var matchingLogin =
+        Logins.SingleOrDefault(l => l.Name.Equals(login.Name, StringComparison.InvariantCultureIgnoreCase));
+      if(matchingLogin == null) matchingLogin = new Login(login, this);
+
+      if(role != null)
+        matchingLogin.AddRole(role);
     }
   }
 }

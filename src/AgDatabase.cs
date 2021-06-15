@@ -29,7 +29,7 @@ namespace AgDatabaseMove
     void Restore(IEnumerable<BackupMetadata> backupOrder, Func<int, TimeSpan> retryDurationProvider,
       Func<string, string> fileRelocation = null);
 
-    void CopyLogins(IEnumerable<LoginProperties> logins);
+    void AddLogin(LoginProperties login, string role = null);
     IEnumerable<LoginProperties> AssociatedLogins();
     void DropLogin(LoginProperties login);
     void DropAllLogins();
@@ -58,14 +58,14 @@ namespace AgDatabaseMove
                                dbConfig.CredentialName);
     }
 
+    public decimal SizeMb => _listener.Primary.DatabaseSizeMb(Name);
+
+    public int ServerRemainingDiskMb => _listener.Primary.RemainingDiskMb();
+
     /// <summary>
     ///   Determines if the database is in a restoring state.
     /// </summary>
     public bool Restoring => _listener.Primary.Database(Name)?.Restoring ?? false;
-
-    public decimal SizeMb => _listener.Primary.DatabaseSizeMb(Name);
-
-    public int ServerRemainingDiskMb => _listener.Primary.RemainingDiskMb();
 
     /// <summary>
     ///   Database name
@@ -139,11 +139,6 @@ namespace AgDatabaseMove
       });
     }
 
-    public void CopyLogins(IEnumerable<LoginProperties> logins)
-    {
-      _listener.ForEachAgInstance(server => server.EnsureLogins(logins));
-    }
-
     public IEnumerable<LoginProperties> AssociatedLogins()
     {
       return _listener.Primary.Database(Name).Users.Where(u => u.Login != null && u.Login.Name != "sa")
@@ -158,6 +153,11 @@ namespace AgDatabaseMove
     public void DropAllLogins()
     {
       foreach(var loginProp in AssociatedLogins()) DropLogin(loginProp);
+    }
+
+    public void AddLogin(LoginProperties login, string role = null)
+    {
+      _listener.ForEachAgInstance(server => server.AddLogin(login, role));
     }
 
     /// <summary>

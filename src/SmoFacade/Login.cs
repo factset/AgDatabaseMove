@@ -68,6 +68,11 @@ namespace AgDatabaseMove.SmoFacade
       return HashString((byte[])reader["passwordHash"]);
     }
 
+    public void AddRole(string role)
+    {
+      _login.AddToRole(role);
+    }
+
     private string HashString(byte[] passwordHash)
     {
       return "0x" + BitConverter.ToString(passwordHash).Replace("-", string.Empty);
