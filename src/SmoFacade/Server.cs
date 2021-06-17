@@ -47,6 +47,8 @@ namespace AgDatabaseMove.SmoFacade
     public IEnumerable<Login> Logins => _server.Logins.Cast<Microsoft.SqlServer.Management.Smo.Login>()
       .Select(l => new Login(l, this));
 
+    public IEnumerable<Role> Roles => _server.Roles.Cast<ServerRole>().Select(r => new Role(r, this));
+
     public void Dispose()
     {
       SqlConnection?.Dispose();
@@ -268,9 +270,16 @@ namespace AgDatabaseMove.SmoFacade
       var matchingLogin =
         Logins.SingleOrDefault(l => l.Name.Equals(login.Name, StringComparison.InvariantCultureIgnoreCase));
       if(matchingLogin == null) matchingLogin = new Login(login, this);
+    }
 
-      if(role != null)
-        matchingLogin.AddRole(role);
+    public void AddRole(LoginProperties login, Role role)
+    {
+      var matchingLogin =
+        Logins.SingleOrDefault(l => l.Name.Equals(login.Name, StringComparison.InvariantCultureIgnoreCase));
+      if(matchingLogin == null)
+        throw new Exception("No matching login found");
+
+      matchingLogin.AddRole(role.Name);
     }
   }
 }
