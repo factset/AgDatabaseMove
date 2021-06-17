@@ -29,7 +29,7 @@ namespace AgDatabaseMove
     void Restore(IEnumerable<BackupMetadata> backupOrder, Func<int, TimeSpan> retryDurationProvider,
       Func<string, string> fileRelocation = null);
 
-    void AddLogin(LoginProperties login, string role = null);
+    void AddLogin(LoginProperties login);
     IEnumerable<LoginProperties> AssociatedLogins();
     void DropLogin(LoginProperties login);
     void DropAllLogins();
@@ -155,9 +155,9 @@ namespace AgDatabaseMove
       foreach(var loginProp in AssociatedLogins()) DropLogin(loginProp);
     }
 
-    public void AddLogin(LoginProperties login, string role = null)
+    public void AddLogin(LoginProperties login)
     {
-      _listener.ForEachAgInstance(server => server.AddLogin(login, role));
+      _listener.ForEachAgInstance(server => server.AddLogin(login));
     }
 
     /// <summary>
@@ -166,6 +166,16 @@ namespace AgDatabaseMove
     public void Dispose()
     {
       _listener?.Dispose();
+    }
+
+    public IEnumerable<Role> AssociatedRoles()
+    {
+      return _listener.Primary.Roles;
+    }
+
+    public void AddRole(LoginProperties login, Role role)
+    {
+      _listener.ForEachAgInstance(server => server.AddRole(login, role));
     }
 
     public void FullBackup()
