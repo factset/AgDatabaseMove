@@ -33,6 +33,7 @@ namespace AgDatabaseMove
     IEnumerable<LoginProperties> AssociatedLogins();
     void DropLogin(LoginProperties login);
     void DropAllLogins();
+    void AddRole(LoginProperties login, Role role);
   }
 
 
