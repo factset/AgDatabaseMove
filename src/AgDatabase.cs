@@ -34,6 +34,7 @@ namespace AgDatabaseMove
     void DropLogin(LoginProperties login);
     void DropAllLogins();
     void AddRole(LoginProperties login, Role role);
+    IEnumerable<Role> AssociatedRoles();
   }
 
 
@@ -161,14 +162,6 @@ namespace AgDatabaseMove
       _listener.ForEachAgInstance(server => server.AddLogin(login));
     }
 
-    /// <summary>
-    ///   IDisposable implemented for our connection to the primary AG database server.
-    /// </summary>
-    public void Dispose()
-    {
-      _listener?.Dispose();
-    }
-
     public IEnumerable<Role> AssociatedRoles()
     {
       return _listener.Primary.Roles;
@@ -177,6 +170,14 @@ namespace AgDatabaseMove
     public void AddRole(LoginProperties login, Role role)
     {
       _listener.ForEachAgInstance(server => server.AddRole(login, role));
+    }
+
+    /// <summary>
+    ///   IDisposable implemented for our connection to the primary AG database server.
+    /// </summary>
+    public void Dispose()
+    {
+      _listener?.Dispose();
     }
 
     public void FullBackup()
