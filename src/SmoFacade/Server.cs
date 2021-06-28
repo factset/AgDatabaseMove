@@ -272,7 +272,7 @@ namespace AgDatabaseMove.SmoFacade
       if(matchingLogin == null) matchingLogin = new Login(login, this);
     }
 
-    public void AddRole(LoginProperties login, Role role)
+    public void AddRole(LoginProperties login, RoleProperties role)
     {
       var matchingLogin =
         Logins.SingleOrDefault(l => l.Name.Equals(login.Name, StringComparison.InvariantCultureIgnoreCase));

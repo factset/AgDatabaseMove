@@ -33,8 +33,8 @@ namespace AgDatabaseMove
     IEnumerable<LoginProperties> AssociatedLogins();
     void DropLogin(LoginProperties login);
     void DropAllLogins();
-    void AddRole(LoginProperties login, Role role);
-    IEnumerable<Role> AssociatedRoles();
+    void AddRole(LoginProperties login, RoleProperties role);
+    IEnumerable<RoleProperties> AssociatedRoles();
   }
 
 
@@ -162,12 +162,12 @@ namespace AgDatabaseMove
       _listener.ForEachAgInstance(server => server.AddLogin(login));
     }
 
-    public IEnumerable<Role> AssociatedRoles()
+    public IEnumerable<RoleProperties> AssociatedRoles()
     {
-      return _listener.Primary.Roles;
+      return _listener.Primary.Roles.Select(r => r.Properties());
     }
 
-    public void AddRole(LoginProperties login, Role role)
+    public void AddRole(LoginProperties login, RoleProperties role)
     {
       _listener.ForEachAgInstance(server => server.AddRole(login, role));
     }

@@ -3,6 +3,11 @@
   using Microsoft.SqlServer.Management.Smo;
 
 
+  public class RoleProperties
+  {
+    public string Name { get; set; }
+  }
+
   public class Role
   {
     private readonly ServerRole _role;
@@ -14,6 +19,11 @@
       _server = server;
     }
 
-    public string Name => _role.Name;
+    public RoleProperties Properties()
+    {
+      return new RoleProperties {
+        Name = _role.Name
+      };
+    }
   }
 }
