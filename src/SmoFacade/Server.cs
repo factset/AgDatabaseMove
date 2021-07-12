@@ -77,10 +77,10 @@ namespace AgDatabaseMove.SmoFacade
     public int RemainingDiskMb()
     {
       // https://docs.microsoft.com/en-us/sql/relational-databases/system-catalog-views/sys-master-files-transact-sql?view=sql-server-ver15
-      var query = "SELECT DISTINCT CONVERT(INT, dovs.available_bytes/1048576.0) AS free_size_mb" +
-                  "FROM sys.master_files mf" +
-                  "CROSS APPLY sys.dm_os_volume_stats(mf.database_id, mf.FILE_ID) dovs" +
-                  "WHERE mf.type IN(0,1)" + // Rows and Logs
+      var query = "SELECT DISTINCT CONVERT(INT, dovs.available_bytes/1048576.0) AS free_size_mb " +
+                  "FROM sys.master_files mf " +
+                  "CROSS APPLY sys.dm_os_volume_stats(mf.database_id, mf.FILE_ID) dovs " +
+                  "WHERE mf.type IN(0,1) " + // Rows and Logs
                   "AND SUBSTRING(CONVERT(VARCHAR, SERVERPROPERTY('InstanceDefaultDataPath')), 1, 3) = dovs.volume_mount_point"; // Disk Drive equals
 
       using var cmd = SqlConnection.CreateCommand();
