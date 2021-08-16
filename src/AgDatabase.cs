@@ -12,6 +12,8 @@ namespace AgDatabaseMove
   using System.Data.SqlClient;
   using System.Linq;
   using System.Threading;
+  using Exceptions;
+  using Microsoft.SqlServer.Management.SqlParser.SqlCodeDom;
   using Polly;
   using SmoFacade;
 
@@ -35,6 +37,7 @@ namespace AgDatabaseMove
     void DropAllLogins();
     void AddRole(LoginProperties login, RoleProperties role);
     IEnumerable<RoleProperties> AssociatedRoles();
+    void ContainsLogin(string loginName);
   }
 
 
@@ -149,7 +152,8 @@ namespace AgDatabaseMove
 
     public void DropLogin(LoginProperties login)
     {
-      _listener.ForEachAgInstance(server => server.DropLogin(login));
+      _listener.Secondaries.First().DropLogin(login);
+      //_listener.ForEachAgInstance(server => server.DropLogin(login));
     }
 
     public void DropAllLogins()
@@ -232,6 +236,49 @@ namespace AgDatabaseMove
     public void MultiUserMode()
     {
       _listener.Primary.Database(Name).MultiUserMode();
+    }
+
+    private void CheckLoginExists(Server server, AvailabilityGroup availabilityGroup, string loginName)
+    {
+      var matchingLogins = server.Logins.Where(l => l.Name == loginName);
+      
+      if (matchingLogins.Count() == 0)
+        throw new MissingLoginException($"Login missing on {server.Name}, {_listener.AvailabilityGroup.Name}, {loginName}");
+
+      if (matchingLogins.Count() > 1)
+        throw new
+          MultipleLoginException($"Multiple logins exist on {server.Name}, {_listener.AvailabilityGroup.Name}, {loginName}");
+
+      var sid = matchingLogins.First().Sid;
+      if (sid == null || sid.Length == 0)
+        throw new MissingSidException($"Sid missing on {server.Name}, {_listener.AvailabilityGroup.Name}, {loginName}");
+    }
+
+    public void ContainsLogin(string loginName)
+    {
+      var exceptions = new ConcurrentQueue<Exception>();
+
+      _listener.ForEachAgInstance((s, ag) => {
+        try {
+          CheckLoginExists(s, ag, loginName);
+        }
+        catch(MissingLoginException ex) {
+          exceptions.Enqueue(ex);
+        }
+        catch(MultipleLoginException ex) {
+          exceptions.Enqueue(ex);
+        }
+        catch(MissingSidException ex) {
+          exceptions.Enqueue(ex);
+        }
+      });
+
+      if(exceptions.Count > 0) throw new AggregateException(exceptions);
+    }
+
+    public byte[] GetSid(string dbName)
+    {
+      return _listener.Primary.Logins.Single(d => d.Name == dbName).Sid;
     }
   }
 }
