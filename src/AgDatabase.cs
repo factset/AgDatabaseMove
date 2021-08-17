@@ -38,6 +38,7 @@ namespace AgDatabaseMove
     void AddRole(LoginProperties login, RoleProperties role);
     IEnumerable<RoleProperties> AssociatedRoles();
     void ContainsLogin(string loginName);
+    byte[] GetSid(string dbName);
   }
 
 
@@ -152,8 +153,7 @@ namespace AgDatabaseMove
 
     public void DropLogin(LoginProperties login)
     {
-      _listener.Secondaries.First().DropLogin(login);
-      //_listener.ForEachAgInstance(server => server.DropLogin(login));
+      _listener.ForEachAgInstance(server => server.DropLogin(login));
     }
 
     public void DropAllLogins()
