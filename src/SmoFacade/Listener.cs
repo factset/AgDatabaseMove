@@ -26,8 +26,6 @@ namespace AgDatabaseMove.SmoFacade
     /// </summary>
     AvailabilityGroup AvailabilityGroup { get; set; }
 
-    IEnumerable<Server> AllInstances { get; }
-
     /// <summary>
     ///   Executes the provided action on each availability group server instance.
     ///   This may use one or more threads to execute in parallel.
@@ -44,7 +42,6 @@ namespace AgDatabaseMove.SmoFacade
   internal class Listener : IListener
   {
     private IList<Server> _secondaries;
-    private IList<Server> _allInstances;
 
     /**
      * We initially connect an availability group instance by way of a listener name. This creates a different connection and
@@ -76,16 +73,12 @@ namespace AgDatabaseMove.SmoFacade
       Primary = AgInstanceNameToServer(ref connectionStringBuilder, primaryName, credentialName);
       AvailabilityGroup = Primary.AvailabilityGroups.Single(ag => ag.Name == availabilityGroup.Name);
 
-      _allInstances = new List<Server>();
-      _allInstances.Add(Primary);
-
       _secondaries = new List<Server>();
       foreach(var secondaryName in secondaryNames) {
         var secondary = AgInstanceNameToServer(ref connectionStringBuilder,
                                                secondaryName,
                                                credentialName);
         _secondaries.Add(secondary);
-        _allInstances.Add(secondary);
       }
     }
 
@@ -97,8 +90,6 @@ namespace AgDatabaseMove.SmoFacade
     public IEnumerable<Server> Secondaries => _secondaries;
 
     public AvailabilityGroup AvailabilityGroup { get; set; }
-
-    public IEnumerable<Server> AllInstances => _allInstances;
 
     public void Dispose()
     {
