@@ -13,7 +13,6 @@ namespace AgDatabaseMove
   using System.Linq;
   using System.Threading;
   using Exceptions;
-  using Microsoft.SqlServer.Management.SqlParser.SqlCodeDom;
   using Polly;
   using SmoFacade;
 
@@ -38,7 +37,7 @@ namespace AgDatabaseMove
     void AddRole(LoginProperties login, RoleProperties role);
     IEnumerable<RoleProperties> AssociatedRoles();
     void ContainsLogin(string loginName);
-    byte[] GetSid(string dbName);
+    LoginProperties GetLoginProperties(string dbName);
   }
 
 
@@ -276,9 +275,9 @@ namespace AgDatabaseMove
       if(exceptions.Count > 0) throw new AggregateException(exceptions);
     }
 
-    public byte[] GetSid(string dbName)
+    public LoginProperties GetLoginProperties(string dbName)
     {
-      return _listener.Primary.Logins.Single(d => d.Name == dbName).Sid;
+      return _listener.Primary.Logins.Single(d => d.Name == dbName).Properties();
     }
   }
 }
