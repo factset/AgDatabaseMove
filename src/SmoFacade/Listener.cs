@@ -74,7 +74,7 @@ namespace AgDatabaseMove.SmoFacade
       AvailabilityGroup = Primary.AvailabilityGroups.Single(ag => ag.Name == availabilityGroup.Name);
 
       _secondaries = new List<Server>();
-      foreach (var secondaryName in secondaryNames)
+      foreach(var secondaryName in secondaryNames)
         _secondaries.Add(AgInstanceNameToServer(ref connectionStringBuilder,
                                                 secondaryName,
                                                 credentialName));

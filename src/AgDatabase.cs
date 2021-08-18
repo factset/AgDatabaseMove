@@ -37,7 +37,6 @@ namespace AgDatabaseMove
     void AddRole(LoginProperties login, RoleProperties role);
     IEnumerable<RoleProperties> AssociatedRoles();
     void ContainsLogin(string loginName);
-    LoginProperties GetLoginProperties(string dbName);
   }
 
 
@@ -273,11 +272,6 @@ namespace AgDatabaseMove
       });
 
       if(exceptions.Count > 0) throw new AggregateException(exceptions);
-    }
-
-    public LoginProperties GetLoginProperties(string dbName)
-    {
-      return _listener.Primary.Logins.Single(d => d.Name == dbName).Properties();
     }
   }
 }
