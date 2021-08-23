@@ -104,11 +104,15 @@ namespace AgDatabaseMove.SmoFacade
     {
       var login = new Microsoft.SqlServer.Management.Smo.Login(server._server, loginProperties.Name) {
         LoginType = loginProperties.LoginType,
-        Sid = loginProperties.Sid,
         DefaultDatabase = loginProperties.DefaultDatabase
       };
 
-      if(loginProperties.LoginType == LoginType.SqlLogin) {
+      if (loginProperties.Sid != null)
+      {
+        login.Sid = loginProperties.Sid;
+      }
+
+      if (loginProperties.LoginType == LoginType.SqlLogin) {
         if(loginProperties.PasswordHash != null)
           login.Create(loginProperties.PasswordHash, LoginCreateOptions.IsHashed);
         else if(loginProperties.Password != null)
