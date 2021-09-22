@@ -17,9 +17,9 @@ namespace AgDatabaseMove.SmoFacade
   /// </summary>
   public class Server : IDisposable
   {
+    private readonly string _connectionString;
     internal readonly string _credentialName;
     internal readonly Microsoft.SqlServer.Management.Smo.Server _server;
-    private readonly string _connectionString;
 
     public Server(string connectionString, string credentialName = null)
     {
@@ -92,6 +92,18 @@ namespace AgDatabaseMove.SmoFacade
       return (int)reader["free_size_mb"];
     }
 
+    private static string GetFileName(string physicalName)
+    {
+      if(Path.IsPathRooted(physicalName))
+        return Path.GetFileName(physicalName) ??
+               throw new InvalidBackupException($"Physical name in backup is incomplete: {physicalName}");
+
+      var lastDirIndex = physicalName.LastIndexOf('\\');
+      return lastDirIndex > 0
+        ? physicalName.Remove(0, lastDirIndex + 1)
+        : physicalName;
+    }
+
     /// <summary>
     ///   Parses the AG name from the connection's DataSource.
     /// </summary>
@@ -141,7 +153,7 @@ namespace AgDatabaseMove.SmoFacade
           result = (string)reader[0];
       }
 
-      result = result ?? _server.BackupDirectory;
+      result ??= _server.BackupDirectory;
       if(result.EndsWith("\\") || result.EndsWith("/"))
         result = result.Substring(0, result.Length - 1);
 
@@ -194,14 +206,13 @@ namespace AgDatabaseMove.SmoFacade
           var fileList = policy.Execute(() => restore.ReadFileList(_server).AsEnumerable());
           foreach(var file in fileList) {
             var physicalName = (string)file["PhysicalName"];
-            var fileName = Path.GetFileName(physicalName) ??
-                           throw new InvalidBackupException($"Physical name in backup is incomplete: {physicalName}");
+            var fileName = GetFileName(physicalName);
 
             if(fileRelocation != null)
               fileName = fileRelocation(fileName);
 
             var path = (string)file["Type"] == "L" ? defaultFileLocations?.Log : defaultFileLocations?.Data;
-            path = path ?? Path.GetFullPath(physicalName);
+            path ??= Path.GetFullPath(physicalName);
 
             var newFilePath = Path.Combine(path, fileName);
 
@@ -286,8 +297,7 @@ namespace AgDatabaseMove.SmoFacade
 
     public void CheckDBConnection(string dbName, int connectionTimeout)
     {
-      var connectionString = new SqlConnectionStringBuilder(_connectionString)
-      {
+      var connectionString = new SqlConnectionStringBuilder(_connectionString) {
         ConnectTimeout = connectionTimeout,
         InitialCatalog = dbName
       }.ToString();
