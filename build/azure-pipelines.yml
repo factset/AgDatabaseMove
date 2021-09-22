@@ -57,6 +57,7 @@ jobs:
       inputs:
         command: 'push'
         nuGetFeedType: 'external'
+        # Service Connection - at project level
         publishFeedCredentials: 'FactSet Nuget'
 
   - job: CodeCleanup
