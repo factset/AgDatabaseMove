@@ -11,7 +11,7 @@ pr:
 jobs:
   - job: Build
     pool:
-      vmImage: 'vs2017-win2016'
+      vmImage: 'windows-latest'
     strategy:
       matrix:
         Release:
@@ -62,7 +62,7 @@ jobs:
 
   - job: CodeCleanup
     pool:
-      vmImage: 'vs2017-win2016'
+      vmImage: 'windows-latest'
     steps:
     - task: NuGetToolInstaller@0
     - powershell: |
