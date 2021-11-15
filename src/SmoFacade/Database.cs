@@ -51,18 +51,17 @@ namespace AgDatabaseMove.SmoFacade
 
       // ensure database is not in AvailabilityGroup, WaitAndRetry loop for each instance to sync
       policyPrep.Execute(() => {
-        if (!string.IsNullOrEmpty(_database.AvailabilityGroupName))
-          throw new Exception($"Cannot kill the database {Name} until it has been removed from the AvailabilityGroup");
-        try
-        {
-          if (_database.AvailabilityDatabaseSynchronizationState >
-              AvailabilityDatabaseSynchronizationState.NotSynchronizing)
+        try {
+          if(!string.IsNullOrEmpty(_database.AvailabilityGroupName))
+            throw
+              new Exception($"Cannot kill the database {Name} until it has been removed from the AvailabilityGroup");
+          if(_database.AvailabilityDatabaseSynchronizationState >
+             AvailabilityDatabaseSynchronizationState.NotSynchronizing)
             throw new
               Exception($"Cannot kill the database {Name} until AvailabilityDatabaseSynchronizationState is inaccessible");
         }
-        catch (
-          PropertyCannotBeRetrievedException)
-        { } // good here, AvailabilityDatabaseSynchronizationState unavailable means it has no state
+        catch(
+          PropertyCannotBeRetrievedException) { } // good here, AvailabilityDatabaseSynchronizationState unavailable means it has no state
       });
 
       var policy = Policy
@@ -85,10 +84,10 @@ namespace AgDatabaseMove.SmoFacade
                   "FROM msdb.dbo.backupset s " +
                   "INNER JOIN msdb.dbo.backupmediafamily m ON s.media_set_id = m.media_set_id " +
                   "WHERE s.last_lsn >= (" +
-                    "SELECT MAX(last_lsn) FROM msdb.dbo.backupset " +
-                    "WHERE [type] = 'D' " +
-                    "AND database_name = @dbName " +
-                    "AND is_copy_only = 0" +
+                  "SELECT MAX(last_lsn) FROM msdb.dbo.backupset " +
+                  "WHERE [type] = 'D' " +
+                  "AND database_name = @dbName " +
+                  "AND is_copy_only = 0" +
                   ") " +
                   "AND s.database_name = @dbName " +
                   "AND is_copy_only = 0 " +
