@@ -45,24 +45,7 @@ namespace AgDatabaseMove.SmoFacade
     /// </summary>
     public void Drop()
     {
-      var policyPrep = Policy
-        .Handle<Exception>()
-        .WaitAndRetry(5, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(10, retryAttempt)));
-
-      // ensure database is not in AvailabilityGroup, WaitAndRetry loop for each instance to sync
-      policyPrep.Execute(() => {
-        try {
-          if(!string.IsNullOrEmpty(_database.AvailabilityGroupName))
-            throw
-              new Exception($"Cannot kill the database {Name} until it has been removed from the AvailabilityGroup");
-          if(_database.AvailabilityDatabaseSynchronizationState >
-             AvailabilityDatabaseSynchronizationState.NotSynchronizing)
-            throw new
-              Exception($"Cannot kill the database {Name} until AvailabilityDatabaseSynchronizationState is inaccessible");
-        }
-        catch(
-          PropertyCannotBeRetrievedException) { } // good here, AvailabilityDatabaseSynchronizationState unavailable means it has no state
-      });
+      ThrowIfUnreadyToDrop();
 
       var policy = Policy
         .Handle<FailedOperationException>()
@@ -133,6 +116,32 @@ namespace AgDatabaseMove.SmoFacade
     {
       _database.DatabaseOptions.UserAccess = DatabaseUserAccess.Multiple;
       _database.Alter(TerminationClause.RollbackTransactionsImmediately);
+    }
+
+    private void ThrowIfUnreadyToDrop()
+    {
+      if(Restoring)
+        return; // restoring state means we're good to drop
+
+      var policyPrep = Policy
+        .Handle<Exception>()
+        .WaitAndRetry(3, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(10, retryAttempt)));
+
+      // ensure database is not in AvailabilityGroup, WaitAndRetry loop for each instance to sync
+      policyPrep.Execute(() => {
+        try {
+          if(!string.IsNullOrEmpty(_database.AvailabilityGroupName))
+            throw
+              new Exception($"Cannot kill the database {Name} until it has been removed from the AvailabilityGroup");
+          if(_database.AvailabilityDatabaseSynchronizationState >
+             AvailabilityDatabaseSynchronizationState.NotSynchronizing)
+            throw new
+              Exception($"Cannot kill the database {Name} until AvailabilityDatabaseSynchronizationState is inaccessible");
+        }
+        catch(
+          PropertyCannotBeRetrievedException) { } // good here, AvailabilityDatabaseSynchronizationState unavailable means it has no state
+        catch(SmoException e) when(e.Message.Contains("Cannot access properties or methods")) { }
+      });
     }
   }
 }
