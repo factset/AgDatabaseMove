@@ -120,15 +120,15 @@ namespace AgDatabaseMove.SmoFacade
 
     private void ThrowIfUnreadyToDrop()
     {
-      if(Restoring)
-        return; // restoring state means we're good to drop
-
       var policyPrep = Policy
         .Handle<Exception>()
         .WaitAndRetry(3, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(10, retryAttempt)));
 
       // ensure database is not in AvailabilityGroup, WaitAndRetry loop for each instance to sync
       policyPrep.Execute(() => {
+        if(Restoring)
+          return; // restoring state means we're good to drop
+        
         try {
           if(!string.IsNullOrEmpty(_database.AvailabilityGroupName))
             throw
