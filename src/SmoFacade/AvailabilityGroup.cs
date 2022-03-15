@@ -38,13 +38,12 @@ namespace AgDatabaseMove.SmoFacade
 
     public void JoinSecondary(string dbName)
     {
-      var database = _availabilityGroup.AvailabilityDatabases[dbName];
-      if(database == null)
-        _availabilityGroup.AvailabilityDatabases.Refresh();
-      database = _availabilityGroup.AvailabilityDatabases[dbName];
-      if(database == null)
-        throw new AgJoinException("Availability database not found");
-      _availabilityGroup.AvailabilityDatabases[dbName].JoinAvailablityGroup();
+      var agDb = Policy
+          .HandleResult<MsftSmo.AvailabilityDatabase>(r => r == null)
+          .WaitAndRetry(4, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(10, retryAttempt)))
+        .Execute(() => _availabilityGroup.AvailabilityDatabases[dbName]);
+      
+      agDb.JoinAvailablityGroup();
     }
 
     public void JoinPrimary(string dbName)
