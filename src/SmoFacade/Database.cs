@@ -51,7 +51,7 @@ namespace AgDatabaseMove.SmoFacade
         .Handle<FailedOperationException>()
         .WaitAndRetry(3, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(10, retryAttempt)));
 
-      policy.Execute(() => { _database.Parent.KillDatabase(_database.Name); });
+      policy.Execute(() => { _database.Refresh(); _database.Parent.KillDatabase(_database.Name); });
     }
 
     /// <summary>
@@ -126,6 +126,7 @@ namespace AgDatabaseMove.SmoFacade
 
       // ensure database is not in AvailabilityGroup, WaitAndRetry loop for each instance to sync
       policyPrep.Execute(() => {
+        _database.Refresh();
         if(Restoring)
           return; // restoring state means we're good to drop
         
