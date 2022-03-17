@@ -41,7 +41,7 @@ namespace AgDatabaseMove.SmoFacade
       var agDb = Policy
           .HandleResult<MsftSmo.AvailabilityDatabase>(r => r == null)
           .WaitAndRetry(4, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(10, retryAttempt)))
-        .Execute(() => _availabilityGroup.AvailabilityDatabases[dbName]);
+          .Execute(() => { _availabilityGroup.AvailabilityDatabases.Refresh(); return _availabilityGroup.AvailabilityDatabases[dbName]; }); 
       
       agDb.JoinAvailablityGroup();
     }
