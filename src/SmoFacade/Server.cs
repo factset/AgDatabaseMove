@@ -58,7 +58,7 @@ namespace AgDatabaseMove.SmoFacade
 
     public void DropLogin(LoginProperties login)
     {
-      _server.Logins[login.Name].DropIfExists();
+      _server.Logins[login.Name]?.DropIfExists();
     }
 
     public decimal DatabaseSizeMb(string dbName)
