@@ -3,7 +3,7 @@ namespace AgDatabaseMove.SmoFacade
   using System;
   using System.Collections.Generic;
   using System.Linq;
-  using Exceptions;
+  using Polly;
   using MsftSmo = Microsoft.SqlServer.Management.Smo;
 
 
