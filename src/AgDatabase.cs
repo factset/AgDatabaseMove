@@ -184,18 +184,6 @@ namespace AgDatabaseMove
       _listener.Primary.FullBackup(Name, _backupPathSqlQuery);
     }
 
-    private void WaitForInitialization(Server server, AvailabilityGroup availabilityGroup)
-    {
-      var policy = Policy
-        .Handle<TimeoutException>()
-        .WaitAndRetry(4, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(10, retryAttempt)));
-
-      policy.Execute(() => {
-        if(availabilityGroup.IsInitializing(Name))
-          throw new TimeoutException($"{server.Name} is initializing. Wait period expired.");
-      });
-    }
-
     public void FinalizePrimary()
     {
       _listener.ForEachAgInstance(FinalizePrimary);
