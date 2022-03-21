@@ -40,6 +40,17 @@ namespace AgDatabaseMove.SmoFacade
       _database.Refresh();
     }
 
+    public void DropAssociatedLogins()
+    {
+      var logins = Users.Where(u => u.Login != null && u.Login.Name != "sa")
+        .Select(u => u.Login.Properties());
+      foreach(var login in logins) {
+        _server.DropLogin(new LoginProperties() {
+          Name = login.Name
+        });
+      }
+    }
+
     /// <summary>
     ///   Kills connections and deletes the database.
     /// </summary>
@@ -120,6 +131,10 @@ namespace AgDatabaseMove.SmoFacade
 
     private void ThrowIfUnreadyToDrop()
     {
+      // Deleting the database while it is initializing will leave it in a state where system redo threads are stuck.
+      // This leaves the database in a state that a SQL Server service restart prior to deletion.
+
+
       var policyPrep = Policy
         .Handle<Exception>()
         .WaitAndRetry(3, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(10, retryAttempt)));

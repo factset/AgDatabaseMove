@@ -64,9 +64,19 @@ namespace AgDatabaseMove.SmoFacade
         .SingleOrDefault(d => d.Name.Equals(dbName, StringComparison.InvariantCultureIgnoreCase));
       if(availabilityDatabase == null)
         return false;
+
       availabilityDatabase.Refresh();
 
-      return availabilityDatabase.SynchronizationState == MsftSmo.AvailabilityDatabaseSynchronizationState.Initializing;
+      try {
+        return availabilityDatabase.SynchronizationState ==
+               MsftSmo.AvailabilityDatabaseSynchronizationState.Initializing;
+      }
+      catch(
+        MsftSmo.PropertyCannotBeRetrievedException) { } // good here, AvailabilityDatabaseSynchronizationState unavailable means it has no state
+      catch(MsftSmo.SmoException e) when(e.Message.Contains("Cannot access properties or methods")) { }
+      catch(Exception) { return true; }
+
+      return false;
     }
   }
 }
