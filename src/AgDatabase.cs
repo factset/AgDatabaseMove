@@ -154,9 +154,6 @@ namespace AgDatabaseMove
     public void DropAllLogins()
     {
       _listener.ForEachAgInstance(s => s.Database(Name)?.DropAssociatedLogins());
-
-      //foreach (var loginProp in AssociatedLogins()) 
-      //  DropLogin(loginProp);
     }
 
     public void AddLogin(LoginProperties login)
