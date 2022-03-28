@@ -134,10 +134,9 @@ namespace AgDatabaseMove.SmoFacade
       // Deleting the database while it is initializing will leave it in a state where system redo threads are stuck.
       // This leaves the database in a state that a SQL Server service restart prior to deletion.
 
-
       var policyPrep = Policy
         .Handle<Exception>()
-        .WaitAndRetry(3, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(10, retryAttempt)));
+        .WaitAndRetry(6, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(5, retryAttempt)));
 
       // ensure database is not in AvailabilityGroup, WaitAndRetry loop for each instance to sync
       policyPrep.Execute(() => {
