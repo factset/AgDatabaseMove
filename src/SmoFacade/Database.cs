@@ -60,7 +60,13 @@ namespace AgDatabaseMove.SmoFacade
 
     public void DropUser(UserProperties user)
     {
-      _database.Users[user.Name].DropIfExists();
+      var matchingUser =
+        Users.SingleOrDefault(u => u.Name.Equals(user.Name, StringComparison.InvariantCultureIgnoreCase));
+      if (matchingUser == null) {
+        throw new Exception("No matching user found");
+      }
+
+      matchingUser.Drop();
     }
 
     /// <summary>
