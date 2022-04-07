@@ -295,6 +295,27 @@ namespace AgDatabaseMove.SmoFacade
       matchingLogin.AddRole(role.Name);
     }
 
+    public void AddUser(UserProperties user, string database)
+    {
+      var db = Databases.SingleOrDefault(d => d.Name.Equals(database, StringComparison.InvariantCultureIgnoreCase));
+      if (db == null) {
+        throw new Exception("No matching database found");
+      }
+
+      db.AddUser(user);
+    }
+
+    public void DropUser(UserProperties user, string database)
+    {
+      var db = Databases.SingleOrDefault(d => d.Name.Equals(database, StringComparison.InvariantCultureIgnoreCase));
+      if (db == null)
+      {
+        throw new Exception("No matching database found");
+      }
+
+      db.DropUser(user);
+    }
+
     public void CheckDBConnection(string dbName, int connectionTimeout)
     {
       var connectionString = new SqlConnectionStringBuilder(_connectionString) {
