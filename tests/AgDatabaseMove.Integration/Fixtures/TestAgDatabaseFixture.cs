@@ -22,6 +22,8 @@ namespace AgDatabaseMove.Integration.Fixtures
 
     public string _loginDefaultDatabase => _login._config.DefaultDatabase;
 
+    public string _username => _login._config.UserName;
+
     public AgDatabase ConstructAgDatabase()
     {
       var dbConfig = new DatabaseConfig
@@ -40,6 +42,12 @@ namespace AgDatabaseMove.Integration.Fixtures
       _agDatabase._listener.Primary._server.Logins[_loginName]?.DropIfExists();
       foreach(var server in _agDatabase._listener.Secondaries) {
         server._server.Logins[_loginName]?.DropIfExists();
+      }
+
+      // Cleanup new users created.
+      _agDatabase._listener.Primary._server.Databases[_config.DatabaseName].Users[_username].DropIfExists();
+      foreach(var server in _agDatabase._listener.Secondaries) {
+        server._server.Databases[_config.DatabaseName].Users[_username].DropIfExists();
       }
 
       _agDatabase.Dispose();

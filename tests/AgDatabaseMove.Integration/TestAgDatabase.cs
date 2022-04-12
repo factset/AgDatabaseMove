@@ -1,11 +1,12 @@
-﻿using AgDatabaseMove.Integration.Fixtures;
-using AgDatabaseMove.SmoFacade;
-using System.Collections.Generic;
-using Xunit;
-using Smo = Microsoft.SqlServer.Management.Smo;
-
-namespace AgDatabaseMove.Integration
+﻿namespace AgDatabaseMove.Integration
 {
+  using Fixtures;
+  using SmoFacade;
+  using System.Collections.Generic;
+  using Xunit;
+  using Smo = Microsoft.SqlServer.Management.Smo;
+  using System.Linq;
+
   public class TestAgDatabase : IClassFixture<TestAgDatabaseFixture>
   {
     private readonly TestAgDatabaseFixture _testAgDatabaseFixture;
@@ -22,6 +23,8 @@ namespace AgDatabaseMove.Integration
     private string LoginPassword => _testAgDatabaseFixture._loginPassword;
 
     private string DefaultDatabase => _testAgDatabaseFixture._loginDefaultDatabase;
+
+    private string UserName => _testAgDatabaseFixture._username;
 
     private void CreateNewSqlLogin(LoginProperties login)
     {
@@ -70,6 +73,47 @@ namespace AgDatabaseMove.Integration
       var createdLogins = GetCreatedLogins();
       TestLoginExistsOnAg(createdLogins);
       TestLoginSidsMatch(createdLogins);
+    }
+
+    private void CreateTestUser(UserProperties user)
+    {
+      AgDatabase.AddUser(user);
+    }
+
+    private void TestUserExists()
+    {
+      var db = AgDatabase._listener.Primary.Database(DefaultDatabase);
+      Assert.Contains(UserName, db.Users.Select(u => u.Name));
+    }
+
+    private void TestUserHasPermissions()
+    {
+      var db = AgDatabase._listener.Primary.Database(DefaultDatabase)._database;
+      var permissions = db.EnumDatabasePermissions(UserName);
+      Assert.NotNull(permissions.FirstOrDefault(p => p.PermissionType.Execute));
+    }
+
+    private void TestUserHasRoles()
+    {
+      var user = AgDatabase._listener.Primary.Database(DefaultDatabase)._database.Users[UserName];
+      Assert.True(user.EnumRoles().Contains("db_datareader"));
+    }
+
+    [Fact]
+    public void CreateNewUserTest()
+    {
+      var userProperties = new UserProperties
+      {
+        Name = UserName,
+        LoginName = LoginName,
+        Roles = new[] { new RoleProperties { Name = "db_datareader" } },
+        Permissions = new Smo.DatabasePermissionSet(Smo.DatabasePermission.Execute)
+      };
+
+      CreateTestUser(userProperties);
+      TestUserExists();
+      TestUserHasRoles();
+      TestUserHasPermissions();
     }
   }
 }
