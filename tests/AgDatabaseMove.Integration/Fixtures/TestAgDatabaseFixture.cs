@@ -1,47 +1,61 @@
-﻿using AgDatabaseMove.Integration.Config;
-using System;
-
-namespace AgDatabaseMove.Integration.Fixtures
+﻿namespace AgDatabaseMove.Integration.Fixtures
 {
-  public class TestAgDatabaseFixture : TestConfiguration<TestAgDatabaseConfig>, IDisposable
+  using Config;
+  using System;
+  using System.Collections.Generic;
+  using Microsoft.SqlServer.Management.Smo;
+  using SmoFacade;
+  using System.Linq;
+
+  public class TestAgDatabaseFixture : IDisposable
   {
-    public TestConfiguration<TestLoginConfig> _login;
+    public readonly TestAgDatabaseConfig _agConfig =
+      new TestConfiguration<TestAgDatabaseConfig>("TestAgDatabase")._config;
+
+    public readonly TestLoginConfig _loginConfig =
+      new TestConfiguration<TestLoginConfig>("TestLogin")._config;
 
     public AgDatabase _agDatabase;
 
-    public TestAgDatabaseFixture() : base("TestAgDatabase")
+    public IEnumerable<SmoFacade.Login> _createdLogins;
+
+    public TestAgDatabaseFixture()
     {
-      _agDatabase = ConstructAgDatabase();
-      _login = new TestConfiguration<TestLoginConfig>("TestLogin");
-    }
-
-    // Public fields for testing new sql login creation.
-    public string _loginPassword => _login._config.Password;
-
-    public string _loginName => _login._config.LoginName;
-
-    public string _loginDefaultDatabase => _login._config.DefaultDatabase;
-
-    public AgDatabase ConstructAgDatabase()
-    {
-      var dbConfig = new DatabaseConfig
+      _agDatabase = new AgDatabase(new DatabaseConfig
       {
-        BackupPathSqlQuery = _config.BackUpPathSqlQuery,
-        ConnectionString = _config.ConnectionString,
-        DatabaseName = _config.DatabaseName,
-        CredentialName = _config.CredentialName
-      };
+        BackupPathSqlQuery = _agConfig.BackUpPathSqlQuery,
+        ConnectionString = _agConfig.ConnectionString,
+        DatabaseName = _agConfig.DatabaseName,
+        CredentialName = _agConfig.CredentialName
+      });
+      _agDatabase.AddLogin(new LoginProperties
+      {
+        Name = _loginConfig.LoginName,
+        Password = _loginConfig.Password,
+        LoginType = LoginType.SqlLogin,
+        DefaultDatabase = _loginConfig.DefaultDatabase
+      });
 
-      return new AgDatabase(dbConfig);
+      _createdLogins = GetCreatedLogins();
     }
-    public void Dispose()
+
+    private IEnumerable<SmoFacade.Login> GetCreatedLogins()
     {
-      // Cleanup new Sql logins created.
-      _agDatabase._listener.Primary._server.Logins[_loginName]?.DropIfExists();
-      foreach(var server in _agDatabase._listener.Secondaries) {
-        server._server.Logins[_loginName]?.DropIfExists();
+      List<SmoFacade.Login> logins = new List<SmoFacade.Login>();
+      logins.Add(_agDatabase._listener.Primary.Logins
+                   .SingleOrDefault(l => l.Name.Equals(_loginConfig.LoginName, StringComparison.InvariantCultureIgnoreCase)));
+      foreach (var server in _agDatabase._listener.Secondaries)
+      {
+        logins.Add(server.Logins
+                     .SingleOrDefault(l => l.Name.Equals(_loginConfig.LoginName, StringComparison.InvariantCultureIgnoreCase)));
       }
 
+      return logins;
+    }
+
+    public void Dispose()
+    {
+      _agDatabase.DropLogin(new LoginProperties { Name = _loginConfig.LoginName });
       _agDatabase.Dispose();
     }
   }

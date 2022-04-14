@@ -1,75 +1,30 @@
-﻿using AgDatabaseMove.Integration.Fixtures;
-using AgDatabaseMove.SmoFacade;
-using System.Collections.Generic;
-using Xunit;
-using Smo = Microsoft.SqlServer.Management.Smo;
-
-namespace AgDatabaseMove.Integration
+﻿namespace AgDatabaseMove.Integration
 {
+  using System.Linq;
+  using Xunit;
+  using Fixtures;
+
   public class TestAgDatabase : IClassFixture<TestAgDatabaseFixture>
   {
-    private readonly TestAgDatabaseFixture _testAgDatabaseFixture;
+    private readonly TestAgDatabaseFixture _fixture;
 
     public TestAgDatabase(TestAgDatabaseFixture testAgDatabaseFixture)
     {
-      _testAgDatabaseFixture = testAgDatabaseFixture;
-    }
-
-    private AgDatabase AgDatabase => _testAgDatabaseFixture._agDatabase;
-
-    private string LoginName => _testAgDatabaseFixture._loginName;
-
-    private string LoginPassword => _testAgDatabaseFixture._loginPassword;
-
-    private string DefaultDatabase => _testAgDatabaseFixture._loginDefaultDatabase;
-
-    private void CreateNewSqlLogin(LoginProperties login)
-    {
-      AgDatabase.AddLogin(login);
-    }
-
-    private void TestLoginExistsOnAg(List<Smo.Login> createdLogins)
-    {
-      createdLogins.ForEach(Assert.NotNull);
-    }
-
-    private List<Smo.Login> GetCreatedLogins()
-    {
-      List<Smo.Login> logins = new List<Smo.Login>();
-      logins.Add(AgDatabase._listener.Primary._server.Logins[LoginName]);
-      foreach(var server in AgDatabase._listener.Secondaries)
-      {
-        logins.Add(server._server.Logins[LoginName]);
-      }
-
-      // Verifying login was created on more than primary.
-      Assert.True(logins.Count > 1);
-      return logins;
-    }
-
-    private void TestLoginSidsMatch(List<Smo.Login> createdLogins)
-    {
-      for (int i = 0; i < createdLogins.Count - 1; i++)
-      {
-        Assert.Equal(createdLogins[i].Sid, createdLogins[i + 1].Sid);
-      }
+      _fixture = testAgDatabaseFixture;
     }
 
     [Fact]
-    public void CreateNewSqlLoginTest()
+    public void TestLoginsExist()
     {
-      var newSqlLogin = new LoginProperties
-      {
-        Name = LoginName,
-        Password = LoginPassword,
-        LoginType = Smo.LoginType.SqlLogin,
-        DefaultDatabase = DefaultDatabase
-      };
+      _fixture._agDatabase.ContainsLogin(_fixture._loginConfig.LoginName);
+      Assert.True(true);
+    }
 
-      CreateNewSqlLogin(newSqlLogin);
-      var createdLogins = GetCreatedLogins();
-      TestLoginExistsOnAg(createdLogins);
-      TestLoginSidsMatch(createdLogins);
+    [Fact]
+    public void TestLoginSidsMatch()
+    {
+      Assert.Equal(_fixture._createdLogins.Select(l => l.Sid), 
+                   Enumerable.Repeat(_fixture._createdLogins.First().Sid, _fixture._createdLogins.Count()));
     }
   }
 }
