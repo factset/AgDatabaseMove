@@ -62,11 +62,7 @@ namespace AgDatabaseMove.SmoFacade
     {
       var matchingUser =
         Users.SingleOrDefault(u => u.Name.Equals(user.Name, StringComparison.InvariantCultureIgnoreCase));
-      if (matchingUser == null) {
-        throw new Exception("No matching user found");
-      }
-
-      matchingUser.Drop();
+      matchingUser?.Drop();
     }
 
     /// <summary>

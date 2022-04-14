@@ -179,12 +179,12 @@ namespace AgDatabaseMove
 
     public void AddUser(UserProperties user)
     {
-      _listener.ForEachAgInstance(server => server.AddUser(user, Name));
+      _listener.Primary.AddUser(user, Name);
     }
 
     public void DropUser(UserProperties user)
     {
-      _listener.ForEachAgInstance(server => server.DropUser(user, Name));
+      _listener.Primary.DropUser(user, Name);
     }
 
     public IEnumerable<RoleProperties> AssociatedRoles()

@@ -1,55 +1,70 @@
-﻿using AgDatabaseMove.Integration.Config;
-using System;
-
-namespace AgDatabaseMove.Integration.Fixtures
+﻿namespace AgDatabaseMove.Integration.Fixtures
 {
-  public class TestAgDatabaseFixture : TestConfiguration<TestAgDatabaseConfig>, IDisposable
+  using Config;
+  using System;
+  using System.Collections.Generic;
+  using Microsoft.SqlServer.Management.Smo;
+  using SmoFacade;
+  using System.Linq;
+
+  public class TestAgDatabaseFixture : IDisposable
   {
-    public TestConfiguration<TestLoginConfig> _login;
+    public readonly TestAgDatabaseConfig _agConfig =
+      new TestConfiguration<TestAgDatabaseConfig>("TestAgDatabase")._config;
+
+    public readonly TestLoginConfig _loginConfig =
+      new TestConfiguration<TestLoginConfig>("TestLogin")._config;
 
     public AgDatabase _agDatabase;
 
-    public TestAgDatabaseFixture() : base("TestAgDatabase")
+    public IEnumerable<SmoFacade.Login> _createdLogins;
+
+    public TestAgDatabaseFixture()
     {
-      _agDatabase = ConstructAgDatabase();
-      _login = new TestConfiguration<TestLoginConfig>("TestLogin");
-    }
-
-    // Public fields for testing new sql login creation.
-    public string _loginPassword => _login._config.Password;
-
-    public string _loginName => _login._config.LoginName;
-
-    public string _loginDefaultDatabase => _login._config.DefaultDatabase;
-
-    public string _username => _login._config.UserName;
-
-    public AgDatabase ConstructAgDatabase()
-    {
-      var dbConfig = new DatabaseConfig
+      _agDatabase = new AgDatabase(new DatabaseConfig
       {
-        BackupPathSqlQuery = _config.BackUpPathSqlQuery,
-        ConnectionString = _config.ConnectionString,
-        DatabaseName = _config.DatabaseName,
-        CredentialName = _config.CredentialName
-      };
+        BackupPathSqlQuery = _agConfig.BackUpPathSqlQuery,
+        ConnectionString = _agConfig.ConnectionString,
+        DatabaseName = _agConfig.DatabaseName,
+        CredentialName = _agConfig.CredentialName
+      });
 
-      return new AgDatabase(dbConfig);
+      _agDatabase.AddLogin(new LoginProperties
+      {
+        Name = _loginConfig.LoginName,
+        Password = _loginConfig.Password,
+        LoginType = LoginType.SqlLogin,
+        DefaultDatabase = _loginConfig.DefaultDatabase
+      });
+
+      _agDatabase.AddUser(new UserProperties {
+        Name = _loginConfig.LoginName,
+        LoginName = _loginConfig.LoginName,
+        Roles = new[] { new RoleProperties { Name = "db_datareader" } },
+        Permissions = new DatabasePermissionSet(DatabasePermission.Execute)
+      });
+
+      _createdLogins = GetCreatedLogins();
     }
+
+    private IEnumerable<SmoFacade.Login> GetCreatedLogins()
+    {
+      List<SmoFacade.Login> logins = new List<SmoFacade.Login>();
+      logins.Add(_agDatabase._listener.Primary.Logins
+                   .SingleOrDefault(l => l.Name.Equals(_loginConfig.LoginName, StringComparison.InvariantCultureIgnoreCase)));
+      foreach (var server in _agDatabase._listener.Secondaries)
+      {
+        logins.Add(server.Logins
+                     .SingleOrDefault(l => l.Name.Equals(_loginConfig.LoginName, StringComparison.InvariantCultureIgnoreCase)));
+      }
+
+      return logins;
+    }
+
     public void Dispose()
     {
-      // Cleanup new Sql logins created.
-      _agDatabase._listener.Primary._server.Logins[_loginName]?.DropIfExists();
-      foreach(var server in _agDatabase._listener.Secondaries) {
-        server._server.Logins[_loginName]?.DropIfExists();
-      }
-
-      // Cleanup new users created.
-      _agDatabase._listener.Primary._server.Databases[_config.DatabaseName].Users[_username].DropIfExists();
-      foreach(var server in _agDatabase._listener.Secondaries) {
-        server._server.Databases[_config.DatabaseName].Users[_username].DropIfExists();
-      }
-
+      _agDatabase.DropLogin(new LoginProperties { Name = _loginConfig.LoginName });
+      _agDatabase.DropUser(new UserProperties { Name = _loginConfig.LoginName });
       _agDatabase.Dispose();
     }
   }
