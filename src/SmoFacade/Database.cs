@@ -106,6 +106,75 @@ namespace AgDatabaseMove.SmoFacade
       return backups;
     }
 
+    public List<BackupMetadata> BackupsWithLsn(decimal lsn)
+    {
+      var backups = new List<BackupMetadata>();
+
+      var query = "SELECT s.database_name, m.physical_device_name, s.backup_start_date, s.first_lsn, s.last_lsn," +
+                  "s.database_backup_lsn, s.checkpoint_lsn, s.[type] AS backup_type, s.server_name, s.recovery_model " +
+                  "FROM msdb.dbo.backupset s " +
+                  "INNER JOIN msdb.dbo.backupmediafamily m ON s.media_set_id = m.media_set_id " +
+                  "WHERE s.backup_start_date > DATEADD(day, -30, GETDATE())" +
+                  "AND s.database_name = @dbName " +
+                  "AND is_copy_only = 0 " +
+                  "AND(s.database_backup_lsn = @lsn OR s.checkpoint_lsn = @lsn)" +
+                  "ORDER BY s.backup_start_date DESC, backup_finish_date";
+
+      using var cmd = _server.SqlConnection.CreateCommand();
+      cmd.CommandText = query;
+      var dbName = cmd.CreateParameter();
+      dbName.ParameterName = "dbName";
+      dbName.Value = _database.Name;
+      cmd.Parameters.Add(dbName);
+
+      var lsnParam = cmd.CreateParameter();
+      lsnParam.ParameterName = "lsn";
+      dbName.Value = lsn;
+      cmd.Parameters.Add(lsnParam);
+
+      using var reader = cmd.ExecuteReader();
+      while (reader.Read())
+        backups.Add(new BackupMetadata
+        {
+          CheckpointLsn = (decimal)reader["checkpoint_lsn"],
+          DatabaseBackupLsn = (decimal)reader["database_backup_lsn"],
+          DatabaseName = (string)reader["database_name"],
+          FirstLsn = (decimal)reader["first_lsn"],
+          LastLsn = (decimal)reader["last_lsn"],
+          PhysicalDeviceName = (string)reader["physical_device_name"],
+          ServerName = (string)reader["server_name"],
+          StartTime = (DateTime)reader["backup_start_date"],
+          BackupType = BackupFileTools.BackupTypeAbbrevToType((string)reader["backup_type"])
+        });
+
+      return backups;
+    }
+
+    public decimal MostRecentFullBackup()
+    {
+      var query = "SELECT MAX(checkpoint_lsn) " +
+                  "FROM msdb.dbo.backupset " +
+                  "WHERE[type] = 'D'" +
+                  "AND database_name = @dbName" +
+                  "AND is_copy_only = 0";
+
+      using var cmd = _server.SqlConnection.CreateCommand();
+      cmd.CommandText = query;
+      var dbName = cmd.CreateParameter();
+      dbName.ParameterName = "dbName";
+      dbName.Value = _database.Name;
+      cmd.Parameters.Add(dbName);
+
+      decimal returnValue = 0;
+      using var reader = cmd.ExecuteReader();
+      while (reader.Read())
+      {
+        returnValue = (decimal)reader["checkpoint_lsn"];
+      }
+
+      return returnValue;
+    }
+
     public void SingleUserMode()
     {
       _database.DatabaseOptions.UserAccess = DatabaseUserAccess.Single;

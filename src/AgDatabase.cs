@@ -119,8 +119,14 @@ namespace AgDatabaseMove
     /// </summary>
     public List<BackupMetadata> RecentBackups()
     {
+      // find most recent full backup across all servers
+      var fullBackupLsnBag = new ConcurrentBag<decimal>();
+      _listener.ForEachAgInstance(s => fullBackupLsnBag.Add(s.Database(Name).MostRecentFullBackup()));
+
+      // find all backups in that chain
+      var maxLsn = fullBackupLsnBag.Max(s => s);
       var bag = new ConcurrentBag<BackupMetadata>();
-      _listener.ForEachAgInstance(s => s.Database(Name).RecentBackups().ForEach(backup => bag.Add(backup)));
+      _listener.ForEachAgInstance(s => s.Database(Name).BackupsWithLsn(maxLsn).ForEach(backup => bag.Add(backup)));
       return bag.ToList();
     }
 
