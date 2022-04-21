@@ -17,7 +17,7 @@
     private readonly Database _database;
     private readonly Smo.User _user;
 
-    public User(Microsoft.SqlServer.Management.Smo.User user, Server server, Database database)
+    public User(Smo.User user, Server server, Database database)
     {
       _user = user;
       _server = server;
