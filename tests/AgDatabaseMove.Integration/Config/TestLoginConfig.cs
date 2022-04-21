@@ -6,6 +6,5 @@
     public string Password { get; set; }
     public string LoginName { get; set; }
     public string DefaultDatabase { get; set; }
-    public string UserName { get; set; }
   }
 }

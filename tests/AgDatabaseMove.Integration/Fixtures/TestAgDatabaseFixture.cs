@@ -37,7 +37,8 @@
         DefaultDatabase = _loginConfig.DefaultDatabase
       });
 
-      _agDatabase.AddUser(new UserProperties {
+      _agDatabase.AddUser(new UserProperties
+      {
         Name = _loginConfig.LoginName,
         LoginName = _loginConfig.LoginName,
         Roles = new[] { new RoleProperties { Name = "db_datareader" } },
@@ -63,9 +64,9 @@
 
     public void Dispose()
     {
-      _agDatabase.DropLogin(new LoginProperties { Name = _loginConfig.LoginName });
-      _agDatabase.DropUser(new UserProperties { Name = _loginConfig.LoginName });
-      _agDatabase.Dispose();
+      _agDatabase?.DropLogin(new LoginProperties { Name = _loginConfig.LoginName });
+      _agDatabase?.DropUser(new UserProperties { Name = _loginConfig.LoginName });
+      _agDatabase?.Dispose();
     }
   }
 }
