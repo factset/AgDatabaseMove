@@ -37,7 +37,7 @@ namespace AgDatabaseMove
         orderedBackups.AddRange(nextLogBackups);
         prevBackup = orderedBackups.Last();
       }
-       
+
       _orderedBackups = orderedBackups;
     }
 
@@ -62,7 +62,7 @@ namespace AgDatabaseMove
         .Where(b => b.BackupType == BackupFileTools.BackupType.Full)
         .OrderByDescending(d => d.CheckpointLsn).ToList();
 
-      if(!fullBackupsOrdered.Any()) 
+      if(!fullBackupsOrdered.Any())
         throw new BackupChainException("Could not find any full backups");
 
       var targetCheckpointLsn = fullBackupsOrdered.First().CheckpointLsn;
@@ -74,12 +74,12 @@ namespace AgDatabaseMove
       BackupMetadata lastFullBackup)
     {
       var diffBackupsOrdered = backups
-        .Where(b => 
+        .Where(b =>
                  b.BackupType == BackupFileTools.BackupType.Diff &&
                  b.DatabaseBackupLsn == lastFullBackup.CheckpointLsn)
         .OrderByDescending(b => b.LastLsn).ToList();
 
-      if(!diffBackupsOrdered.Any()) 
+      if(!diffBackupsOrdered.Any())
         return new List<BackupMetadata>();
 
       var targetLastLsn = diffBackupsOrdered.First().LastLsn;

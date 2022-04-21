@@ -44,11 +44,10 @@ namespace AgDatabaseMove.SmoFacade
     {
       var logins = Users.Where(u => u.Login != null && u.Login.Name != "sa")
         .Select(u => u.Login.Properties());
-      foreach(var login in logins) {
-        _server.DropLogin(new LoginProperties() {
+      foreach(var login in logins)
+        _server.DropLogin(new LoginProperties {
           Name = login.Name
         });
-      }
     }
 
     /// <summary>
@@ -62,7 +61,10 @@ namespace AgDatabaseMove.SmoFacade
         .Handle<FailedOperationException>()
         .WaitAndRetry(3, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(10, retryAttempt)));
 
-      policy.Execute(() => { _database.Refresh(); _database.Parent.KillDatabase(_database.Name); });
+      policy.Execute(() => {
+        _database.Refresh();
+        _database.Parent.KillDatabase(_database.Name);
+      });
     }
 
     /// <summary>
@@ -72,7 +74,7 @@ namespace AgDatabaseMove.SmoFacade
     public List<BackupMetadata> MostRecentBackupChain()
     {
       var backups = new List<BackupMetadata>();
-      
+
       var query = "SELECT s.database_name, m.physical_device_name, s.backup_start_date, s.first_lsn, s.last_lsn," +
                   "s.database_backup_lsn, s.checkpoint_lsn, s.[type] AS backup_type, s.server_name, s.recovery_model " +
                   "FROM msdb.dbo.backupset s " +
@@ -95,9 +97,8 @@ namespace AgDatabaseMove.SmoFacade
       cmd.Parameters.Add(dbName);
 
       using var reader = cmd.ExecuteReader();
-      while (reader.Read())
-        backups.Add(new BackupMetadata
-        {
+      while(reader.Read())
+        backups.Add(new BackupMetadata {
           CheckpointLsn = (decimal)reader["checkpoint_lsn"],
           DatabaseBackupLsn = (decimal)reader["database_backup_lsn"],
           DatabaseName = (string)reader["database_name"],
@@ -127,7 +128,7 @@ namespace AgDatabaseMove.SmoFacade
       cmd.Parameters.Add(dbName);
 
       using var reader = cmd.ExecuteReader();
-      if (!reader.Read())
+      if(!reader.Read())
         throw new Exception("MostRecentFullBackup SQL found no results");
 
       return (decimal)reader["most_recent_full_backup_lsn"];
@@ -159,9 +160,8 @@ namespace AgDatabaseMove.SmoFacade
       cmd.Parameters.Add(lsnParam);
 
       using var reader = cmd.ExecuteReader();
-      while (reader.Read())
-        backups.Add(new BackupMetadata
-        {
+      while(reader.Read())
+        backups.Add(new BackupMetadata {
           CheckpointLsn = (decimal)reader["checkpoint_lsn"],
           DatabaseBackupLsn = (decimal)reader["database_backup_lsn"],
           DatabaseName = (string)reader["database_name"],
@@ -208,7 +208,7 @@ namespace AgDatabaseMove.SmoFacade
         _database.Refresh();
         if(Restoring)
           return; // restoring state means we're good to drop
-        
+
         try {
           if(!string.IsNullOrEmpty(_database.AvailabilityGroupName))
             throw

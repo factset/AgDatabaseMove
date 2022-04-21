@@ -125,7 +125,8 @@ namespace AgDatabaseMove
       // find all backups in that chain
       var databaseBackupLsn = fullBackupLsnBag.Max(s => s);
       var bag = new ConcurrentBag<BackupMetadata>();
-      _listener.ForEachAgInstance(s => s.Database(Name).BackupChainFromLsn(databaseBackupLsn).ForEach(backup => bag.Add(backup)));
+      _listener.ForEachAgInstance(s => s.Database(Name).BackupChainFromLsn(databaseBackupLsn)
+                                    .ForEach(backup => bag.Add(backup)));
       return bag.ToList();
     }
 
@@ -174,6 +175,28 @@ namespace AgDatabaseMove
     public void AddRole(LoginProperties login, RoleProperties role)
     {
       _listener.ForEachAgInstance(server => server.AddRole(login, role));
+    }
+
+    public void ContainsLogin(string loginName)
+    {
+      var exceptions = new ConcurrentQueue<Exception>();
+
+      _listener.ForEachAgInstance((s, ag) => {
+        try {
+          CheckLoginExists(s, ag, loginName);
+        }
+        catch(MissingLoginException ex) {
+          exceptions.Enqueue(ex);
+        }
+        catch(MultipleLoginException ex) {
+          exceptions.Enqueue(ex);
+        }
+        catch(MissingSidException ex) {
+          exceptions.Enqueue(ex);
+        }
+      });
+
+      if(exceptions.Count > 0) throw new AggregateException(exceptions);
     }
 
     /// <summary>
@@ -230,43 +253,22 @@ namespace AgDatabaseMove
     {
       _listener.ForEachAgInstance(server => server.CheckDBConnection(Name, connectionTimeout));
     }
-    
+
     private void CheckLoginExists(Server server, AvailabilityGroup availabilityGroup, string loginName)
     {
       var matchingLogins = server.Logins.Where(l => l.Name == loginName);
-      
-      if (matchingLogins.Count() == 0)
-        throw new MissingLoginException($"Login missing on {server.Name}, {_listener.AvailabilityGroup.Name}, {loginName}");
 
-      if (matchingLogins.Count() > 1)
+      if(matchingLogins.Count() == 0)
+        throw new
+          MissingLoginException($"Login missing on {server.Name}, {_listener.AvailabilityGroup.Name}, {loginName}");
+
+      if(matchingLogins.Count() > 1)
         throw new
           MultipleLoginException($"Multiple logins exist on {server.Name}, {_listener.AvailabilityGroup.Name}, {loginName}");
 
       var sid = matchingLogins.First().Sid;
-      if (sid == null || sid.Length == 0)
+      if(sid == null || sid.Length == 0)
         throw new MissingSidException($"Sid missing on {server.Name}, {_listener.AvailabilityGroup.Name}, {loginName}");
-    }
-
-    public void ContainsLogin(string loginName)
-    {
-      var exceptions = new ConcurrentQueue<Exception>();
-
-      _listener.ForEachAgInstance((s, ag) => {
-        try {
-          CheckLoginExists(s, ag, loginName);
-        }
-        catch(MissingLoginException ex) {
-          exceptions.Enqueue(ex);
-        }
-        catch(MultipleLoginException ex) {
-          exceptions.Enqueue(ex);
-        }
-        catch(MissingSidException ex) {
-          exceptions.Enqueue(ex);
-        }
-      });
-
-      if(exceptions.Count > 0) throw new AggregateException(exceptions);
     }
   }
 }
