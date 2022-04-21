@@ -55,8 +55,8 @@
 
     public void Dispose()
     {
-      _agDatabase.DropLogin(new LoginProperties { Name = _loginConfig.LoginName });
-      _agDatabase.Dispose();
+      _agDatabase?.DropLogin(new LoginProperties { Name = _loginConfig.LoginName });
+      _agDatabase?.Dispose();
     }
   }
 }

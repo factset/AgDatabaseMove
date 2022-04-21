@@ -17,14 +17,13 @@
     public void TestLoginsExist()
     {
       _fixture._agDatabase.ContainsLogin(_fixture._loginConfig.LoginName);
-      Assert.True(true);
     }
 
     [Fact]
     public void TestLoginSidsMatch()
     {
-      Assert.Equal(_fixture._createdLogins.Select(l => l.Sid), 
-                   Enumerable.Repeat(_fixture._createdLogins.First().Sid, _fixture._createdLogins.Count()));
+      var sid = _fixture._createdLogins.First().Sid;
+      Assert.All(_fixture._createdLogins.Select(l => l.Sid), s => Assert.Equal(s, sid));
     }
   }
 }
