@@ -278,11 +278,11 @@ namespace AgDatabaseMove.SmoFacade
       backup.SqlBackup(_server);
     }
 
-    public void AddLogin(LoginProperties login)
+    public Login AddLogin(LoginProperties login)
     {
       var matchingLogin =
         Logins.SingleOrDefault(l => l.Name.Equals(login.Name, StringComparison.InvariantCultureIgnoreCase));
-      if(matchingLogin == null) matchingLogin = new Login(login, this);
+      return matchingLogin ?? new Login(login, this);
     }
 
     public void AddRole(LoginProperties login, RoleProperties role)
