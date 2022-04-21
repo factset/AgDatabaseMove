@@ -177,6 +177,16 @@ namespace AgDatabaseMove
       Parallel.ForEach(_listener.Secondaries, server => server.AddLogin(login));
     }
 
+    public void AddUser(UserProperties user)
+    {
+      _listener.Primary.AddUser(user, Name);
+    }
+
+    public void DropUser(UserProperties user)
+    {
+      _listener.Primary.DropUser(user, Name);
+    }
+
     public IEnumerable<RoleProperties> AssociatedRoles()
     {
       return _listener.Primary.Roles.Select(r => r.Properties());

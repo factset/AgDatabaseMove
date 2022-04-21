@@ -12,7 +12,7 @@ namespace AgDatabaseMove.SmoFacade
   /// </summary>
   public class Database
   {
-    private readonly Microsoft.SqlServer.Management.Smo.Database _database;
+    internal readonly Microsoft.SqlServer.Management.Smo.Database _database;
     private readonly Server _server;
 
     internal Database(Microsoft.SqlServer.Management.Smo.Database database, Server server)
@@ -22,7 +22,7 @@ namespace AgDatabaseMove.SmoFacade
     }
 
     public IEnumerable<User> Users => _database.Users.Cast<Microsoft.SqlServer.Management.Smo.User>()
-      .Select(u => new User(u, _server));
+      .Select(u => new User(u, _server, this));
 
     public string Name => _database.Name;
 
@@ -49,6 +49,20 @@ namespace AgDatabaseMove.SmoFacade
           Name = login.Name
         });
       }
+    }
+
+    public void AddUser(UserProperties user)
+    {
+      var matchingUser =
+        Users.SingleOrDefault(u => u.Name.Equals(user.Name, StringComparison.InvariantCultureIgnoreCase)) ??
+        new User(user, _server, this);
+    }
+
+    public void DropUser(UserProperties user)
+    {
+      var matchingUser =
+        Users.SingleOrDefault(u => u.Name.Equals(user.Name, StringComparison.InvariantCultureIgnoreCase));
+      matchingUser?.Drop();
     }
 
     /// <summary>
