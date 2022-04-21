@@ -13,7 +13,6 @@ namespace AgDatabaseMove
   using System.Linq;
   using System.Threading;
   using Exceptions;
-  using Polly;
   using SmoFacade;
 
 
@@ -119,14 +118,14 @@ namespace AgDatabaseMove
     /// </summary>
     public List<BackupMetadata> RecentBackups()
     {
-      // find most recent full backup across all servers
+      // find most recent full backup LSN across all replica servers
       var fullBackupLsnBag = new ConcurrentBag<decimal>();
-      _listener.ForEachAgInstance(s => fullBackupLsnBag.Add(s.Database(Name).MostRecentFullBackup()));
+      _listener.ForEachAgInstance(s => fullBackupLsnBag.Add(s.Database(Name).MostRecentFullBackupLsn()));
 
       // find all backups in that chain
-      var maxLsn = fullBackupLsnBag.Max(s => s);
+      var databaseBackupLsn = fullBackupLsnBag.Max(s => s);
       var bag = new ConcurrentBag<BackupMetadata>();
-      _listener.ForEachAgInstance(s => s.Database(Name).BackupsWithLsn(maxLsn).ForEach(backup => bag.Add(backup)));
+      _listener.ForEachAgInstance(s => s.Database(Name).BackupChainFromLsn(databaseBackupLsn).ForEach(backup => bag.Add(backup)));
       return bag.ToList();
     }
 

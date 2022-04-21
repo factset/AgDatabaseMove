@@ -49,7 +49,7 @@ namespace AgDatabaseMove
     /// <summary>
     ///   Initializes a backup chain from a stand alone database that is not part of an AG.
     /// </summary>
-    public BackupChain(Database database) : this(database.RecentBackups()) { }
+    public BackupChain(Database database) : this(database.MostRecentBackupChain()) { }
 
     /// <summary>
     ///   Backups ordered to have a full restore chain.

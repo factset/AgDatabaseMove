@@ -69,15 +69,20 @@ namespace AgDatabaseMove.SmoFacade
     ///   Queries msdb on the instance for backups of this database.
     /// </summary>
     /// <returns>A list of backups known by msdb</returns>
-    public List<BackupMetadata> RecentBackups()
+    public List<BackupMetadata> MostRecentBackupChain()
     {
       var backups = new List<BackupMetadata>();
-
+      
       var query = "SELECT s.database_name, m.physical_device_name, s.backup_start_date, s.first_lsn, s.last_lsn," +
                   "s.database_backup_lsn, s.checkpoint_lsn, s.[type] AS backup_type, s.server_name, s.recovery_model " +
                   "FROM msdb.dbo.backupset s " +
                   "INNER JOIN msdb.dbo.backupmediafamily m ON s.media_set_id = m.media_set_id " +
-                  "WHERE s.backup_start_date > DATEADD(day, -30, GETDATE())" +
+                  "WHERE s.last_lsn >= (" +
+                  "SELECT MAX(last_lsn) FROM msdb.dbo.backupset " +
+                  "WHERE [type] = 'D' " +
+                  "AND database_name = @dbName " +
+                  "AND is_copy_only = 0" +
+                  ") " +
                   "AND s.database_name = @dbName " +
                   "AND is_copy_only = 0 " +
                   "ORDER BY s.backup_start_date DESC, backup_finish_date";
@@ -88,49 +93,6 @@ namespace AgDatabaseMove.SmoFacade
       dbName.ParameterName = "dbName";
       dbName.Value = _database.Name;
       cmd.Parameters.Add(dbName);
-
-      using var reader = cmd.ExecuteReader();
-      while(reader.Read())
-        backups.Add(new BackupMetadata {
-          CheckpointLsn = (decimal)reader["checkpoint_lsn"],
-          DatabaseBackupLsn = (decimal)reader["database_backup_lsn"],
-          DatabaseName = (string)reader["database_name"],
-          FirstLsn = (decimal)reader["first_lsn"],
-          LastLsn = (decimal)reader["last_lsn"],
-          PhysicalDeviceName = (string)reader["physical_device_name"],
-          ServerName = (string)reader["server_name"],
-          StartTime = (DateTime)reader["backup_start_date"],
-          BackupType = BackupFileTools.BackupTypeAbbrevToType((string)reader["backup_type"])
-        });
-
-      return backups;
-    }
-
-    public List<BackupMetadata> BackupsWithLsn(decimal lsn)
-    {
-      var backups = new List<BackupMetadata>();
-
-      var query = "SELECT s.database_name, m.physical_device_name, s.backup_start_date, s.first_lsn, s.last_lsn," +
-                  "s.database_backup_lsn, s.checkpoint_lsn, s.[type] AS backup_type, s.server_name, s.recovery_model " +
-                  "FROM msdb.dbo.backupset s " +
-                  "INNER JOIN msdb.dbo.backupmediafamily m ON s.media_set_id = m.media_set_id " +
-                  "WHERE s.backup_start_date > DATEADD(day, -30, GETDATE())" +
-                  "AND s.database_name = @dbName " +
-                  "AND is_copy_only = 0 " +
-                  "AND(s.database_backup_lsn = @lsn OR s.checkpoint_lsn = @lsn)" +
-                  "ORDER BY s.backup_start_date DESC, backup_finish_date";
-
-      using var cmd = _server.SqlConnection.CreateCommand();
-      cmd.CommandText = query;
-      var dbName = cmd.CreateParameter();
-      dbName.ParameterName = "dbName";
-      dbName.Value = _database.Name;
-      cmd.Parameters.Add(dbName);
-
-      var lsnParam = cmd.CreateParameter();
-      lsnParam.ParameterName = "lsn";
-      dbName.Value = lsn;
-      cmd.Parameters.Add(lsnParam);
 
       using var reader = cmd.ExecuteReader();
       while (reader.Read())
@@ -150,12 +112,11 @@ namespace AgDatabaseMove.SmoFacade
       return backups;
     }
 
-    public decimal MostRecentFullBackup()
+    public decimal MostRecentFullBackupLsn()
     {
-      var query = "SELECT MAX(checkpoint_lsn) " +
+      var query = "SELECT MAX(database_backup_lsn) as most_recent_full_backup_lsn " +
                   "FROM msdb.dbo.backupset " +
-                  "WHERE[type] = 'D'" +
-                  "AND database_name = @dbName" +
+                  "WHERE database_name = @dbName " +
                   "AND is_copy_only = 0";
 
       using var cmd = _server.SqlConnection.CreateCommand();
@@ -165,14 +126,54 @@ namespace AgDatabaseMove.SmoFacade
       dbName.Value = _database.Name;
       cmd.Parameters.Add(dbName);
 
-      decimal returnValue = 0;
+      using var reader = cmd.ExecuteReader();
+      if (!reader.Read())
+        throw new Exception("MostRecentFullBackup SQL found no results");
+
+      return (decimal)reader["most_recent_full_backup_lsn"];
+    }
+
+    public List<BackupMetadata> BackupChainFromLsn(decimal databaseBackupLsn)
+    {
+      var backups = new List<BackupMetadata>();
+
+      var query = "SELECT s.database_name, m.physical_device_name, s.backup_start_date, s.first_lsn, s.last_lsn," +
+                  "s.database_backup_lsn, s.checkpoint_lsn, s.[type] AS backup_type, s.server_name, s.recovery_model " +
+                  "FROM msdb.dbo.backupset s " +
+                  "INNER JOIN msdb.dbo.backupmediafamily m ON s.media_set_id = m.media_set_id " +
+                  "WHERE s.database_name = @dbName " +
+                  "AND is_copy_only = 0 " +
+                  "AND(s.database_backup_lsn = @lsn OR s.checkpoint_lsn = @lsn)" +
+                  "ORDER BY s.backup_start_date DESC, backup_finish_date";
+
+      using var cmd = _server.SqlConnection.CreateCommand();
+      cmd.CommandText = query;
+      var dbName = cmd.CreateParameter();
+      dbName.ParameterName = "dbName";
+      dbName.Value = _database.Name;
+      cmd.Parameters.Add(dbName);
+
+      var lsnParam = cmd.CreateParameter();
+      lsnParam.ParameterName = "lsn";
+      lsnParam.Value = databaseBackupLsn;
+      cmd.Parameters.Add(lsnParam);
+
       using var reader = cmd.ExecuteReader();
       while (reader.Read())
-      {
-        returnValue = (decimal)reader["checkpoint_lsn"];
-      }
+        backups.Add(new BackupMetadata
+        {
+          CheckpointLsn = (decimal)reader["checkpoint_lsn"],
+          DatabaseBackupLsn = (decimal)reader["database_backup_lsn"],
+          DatabaseName = (string)reader["database_name"],
+          FirstLsn = (decimal)reader["first_lsn"],
+          LastLsn = (decimal)reader["last_lsn"],
+          PhysicalDeviceName = (string)reader["physical_device_name"],
+          ServerName = (string)reader["server_name"],
+          StartTime = (DateTime)reader["backup_start_date"],
+          BackupType = BackupFileTools.BackupTypeAbbrevToType((string)reader["backup_type"])
+        });
 
-      return returnValue;
+      return backups;
     }
 
     public void SingleUserMode()
