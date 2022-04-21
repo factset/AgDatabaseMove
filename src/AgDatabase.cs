@@ -12,8 +12,13 @@ namespace AgDatabaseMove
   using System.Data.SqlClient;
   using System.Linq;
   using System.Threading;
+  using System.Threading.Tasks;
   using Exceptions;
+  using Microsoft.SqlServer.Management.Smo;
+  using Polly;
   using SmoFacade;
+  using AvailabilityGroup = SmoFacade.AvailabilityGroup;
+  using Server = SmoFacade.Server;
 
 
   public interface IAgDatabase
@@ -164,7 +169,19 @@ namespace AgDatabaseMove
 
     public void AddLogin(LoginProperties login)
     {
-      _listener.ForEachAgInstance(server => server.AddLogin(login));
+      if (login.LoginType == LoginType.SqlLogin && login.Sid == null) {
+        AddNewSqlLogin(login);
+      } 
+      else {
+        _listener.ForEachAgInstance(server => server.AddLogin(login));
+      }
+    }
+
+    private void AddNewSqlLogin(LoginProperties login)
+    {
+      var createdLogin = _listener.Primary.AddLogin(login);
+      login.Sid = createdLogin.Sid;
+      Parallel.ForEach(_listener.Secondaries, server => server.AddLogin(login));
     }
 
     public IEnumerable<RoleProperties> AssociatedRoles()
