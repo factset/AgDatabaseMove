@@ -44,11 +44,10 @@ namespace AgDatabaseMove.SmoFacade
     {
       var logins = Users.Where(u => u.Login != null && u.Login.Name != "sa")
         .Select(u => u.Login.Properties());
-      foreach(var login in logins) {
-        _server.DropLogin(new LoginProperties() {
+      foreach(var login in logins)
+        _server.DropLogin(new LoginProperties {
           Name = login.Name
         });
-      }
     }
 
     /// <summary>
@@ -62,14 +61,17 @@ namespace AgDatabaseMove.SmoFacade
         .Handle<FailedOperationException>()
         .WaitAndRetry(3, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(10, retryAttempt)));
 
-      policy.Execute(() => { _database.Refresh(); _database.Parent.KillDatabase(_database.Name); });
+      policy.Execute(() => {
+        _database.Refresh();
+        _database.Parent.KillDatabase(_database.Name);
+      });
     }
 
     /// <summary>
     ///   Queries msdb on the instance for backups of this database.
     /// </summary>
     /// <returns>A list of backups known by msdb</returns>
-    public List<BackupMetadata> RecentBackups()
+    public List<BackupMetadata> MostRecentBackupChain()
     {
       var backups = new List<BackupMetadata>();
 
@@ -93,6 +95,70 @@ namespace AgDatabaseMove.SmoFacade
       dbName.ParameterName = "dbName";
       dbName.Value = _database.Name;
       cmd.Parameters.Add(dbName);
+
+      using var reader = cmd.ExecuteReader();
+      while(reader.Read())
+        backups.Add(new BackupMetadata {
+          CheckpointLsn = (decimal)reader["checkpoint_lsn"],
+          DatabaseBackupLsn = (decimal)reader["database_backup_lsn"],
+          DatabaseName = (string)reader["database_name"],
+          FirstLsn = (decimal)reader["first_lsn"],
+          LastLsn = (decimal)reader["last_lsn"],
+          PhysicalDeviceName = (string)reader["physical_device_name"],
+          ServerName = (string)reader["server_name"],
+          StartTime = (DateTime)reader["backup_start_date"],
+          BackupType = BackupFileTools.BackupTypeAbbrevToType((string)reader["backup_type"])
+        });
+
+      return backups;
+    }
+
+    public decimal MostRecentFullBackupLsn()
+    {
+      var query = "SELECT MAX(checkpoint_lsn) as most_recent_full_backup_checkpoint_lsn " +
+                  "FROM msdb.dbo.backupset " +
+                  "WHERE database_name = @dbName " +
+                  "AND [type] = 'D' " +
+                  "AND is_copy_only = 0";
+
+      using var cmd = _server.SqlConnection.CreateCommand();
+      cmd.CommandText = query;
+      var dbName = cmd.CreateParameter();
+      dbName.ParameterName = "dbName";
+      dbName.Value = _database.Name;
+      cmd.Parameters.Add(dbName);
+
+      using var reader = cmd.ExecuteReader();
+      if(!reader.Read())
+        throw new Exception("MostRecentFullBackup SQL found no results");
+
+      return (decimal)reader["most_recent_full_backup_checkpoint_lsn"];
+    }
+
+    public List<BackupMetadata> BackupChainFromLsn(decimal checkpointLsn)
+    {
+      var backups = new List<BackupMetadata>();
+
+      var query = "SELECT s.database_name, m.physical_device_name, s.backup_start_date, s.first_lsn, s.last_lsn," +
+                  "s.database_backup_lsn, s.checkpoint_lsn, s.[type] AS backup_type, s.server_name, s.recovery_model " +
+                  "FROM msdb.dbo.backupset s " +
+                  "INNER JOIN msdb.dbo.backupmediafamily m ON s.media_set_id = m.media_set_id " +
+                  "WHERE s.database_name = @dbName " +
+                  "AND is_copy_only = 0 " +
+                  "AND (s.database_backup_lsn = @lsn OR s.checkpoint_lsn = @lsn)" +
+                  "ORDER BY s.backup_start_date DESC, backup_finish_date";
+
+      using var cmd = _server.SqlConnection.CreateCommand();
+      cmd.CommandText = query;
+      var dbName = cmd.CreateParameter();
+      dbName.ParameterName = "dbName";
+      dbName.Value = _database.Name;
+      cmd.Parameters.Add(dbName);
+
+      var lsnParam = cmd.CreateParameter();
+      lsnParam.ParameterName = "lsn";
+      lsnParam.Value = checkpointLsn;
+      cmd.Parameters.Add(lsnParam);
 
       using var reader = cmd.ExecuteReader();
       while(reader.Read())
@@ -143,7 +209,7 @@ namespace AgDatabaseMove.SmoFacade
         _database.Refresh();
         if(Restoring)
           return; // restoring state means we're good to drop
-        
+
         try {
           if(!string.IsNullOrEmpty(_database.AvailabilityGroupName))
             throw
