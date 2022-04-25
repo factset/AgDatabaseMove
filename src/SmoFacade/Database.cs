@@ -115,9 +115,10 @@ namespace AgDatabaseMove.SmoFacade
 
     public decimal MostRecentFullBackupLsn()
     {
-      var query = "SELECT MAX(database_backup_lsn) as most_recent_full_backup_lsn " +
+      var query = "SELECT MAX(checkpoint_lsn) as most_recent_full_backup_checkpoint_lsn " +
                   "FROM msdb.dbo.backupset " +
                   "WHERE database_name = @dbName " +
+                  "AND [type] = 'D' " +
                   "AND is_copy_only = 0";
 
       using var cmd = _server.SqlConnection.CreateCommand();
@@ -131,10 +132,10 @@ namespace AgDatabaseMove.SmoFacade
       if(!reader.Read())
         throw new Exception("MostRecentFullBackup SQL found no results");
 
-      return (decimal)reader["most_recent_full_backup_lsn"];
+      return (decimal)reader["most_recent_full_backup_checkpoint_lsn"];
     }
 
-    public List<BackupMetadata> BackupChainFromLsn(decimal databaseBackupLsn)
+    public List<BackupMetadata> BackupChainFromLsn(decimal checkpointLsn)
     {
       var backups = new List<BackupMetadata>();
 
@@ -144,7 +145,7 @@ namespace AgDatabaseMove.SmoFacade
                   "INNER JOIN msdb.dbo.backupmediafamily m ON s.media_set_id = m.media_set_id " +
                   "WHERE s.database_name = @dbName " +
                   "AND is_copy_only = 0 " +
-                  "AND(s.database_backup_lsn = @lsn OR s.checkpoint_lsn = @lsn)" +
+                  "AND (s.database_backup_lsn = @lsn OR s.checkpoint_lsn = @lsn)" +
                   "ORDER BY s.backup_start_date DESC, backup_finish_date";
 
       using var cmd = _server.SqlConnection.CreateCommand();
@@ -156,7 +157,7 @@ namespace AgDatabaseMove.SmoFacade
 
       var lsnParam = cmd.CreateParameter();
       lsnParam.ParameterName = "lsn";
-      lsnParam.Value = databaseBackupLsn;
+      lsnParam.Value = checkpointLsn;
       cmd.Parameters.Add(lsnParam);
 
       using var reader = cmd.ExecuteReader();

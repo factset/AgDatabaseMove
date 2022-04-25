@@ -123,7 +123,7 @@ namespace AgDatabaseMove
       _listener.ForEachAgInstance(s => fullBackupLsnBag.Add(s.Database(Name).MostRecentFullBackupLsn()));
 
       // find all backups in that chain
-      var databaseBackupLsn = fullBackupLsnBag.Max(s => s);
+      var databaseBackupLsn = fullBackupLsnBag.Max();
       var bag = new ConcurrentBag<BackupMetadata>();
       _listener.ForEachAgInstance(s => s.Database(Name).BackupChainFromLsn(databaseBackupLsn)
                                     .ForEach(backup => bag.Add(backup)));
