@@ -43,7 +43,7 @@ namespace AgDatabaseMove.Unit
           LastLsn = 126000000955500001,
           DatabaseName = "TestDb",
           ServerName = "ServerA",
-          PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\Testdb_backup_2018_10_29_020007_343.trn",
+          PhysicalDeviceNames = new List<string>(){@"\\DFS\BACKUP\ServerA\testDb\Testdb_backup_2018_10_29_020007_343.trn"},
           StartTime = DateTime.Parse("2018-10-29 02:00:07.000")
         },
         new BackupMetadata {
@@ -54,7 +54,7 @@ namespace AgDatabaseMove.Unit
           LastLsn = 126000000965800001,
           DatabaseName = "TestDb",
           ServerName = "ServerB",
-          PhysicalDeviceName = @"\\DFS\BACKUP\ServerB\testDb\Testdb_backup_2018_10_29_040005_900.trn",
+          PhysicalDeviceNames = new List<string>(){@"\\DFS\BACKUP\ServerB\testDb\Testdb_backup_2018_10_29_040005_900.trn"},
           StartTime = DateTime.Parse("2018-10-29 03:00:06.000")
         },
         new BackupMetadata {
@@ -65,7 +65,7 @@ namespace AgDatabaseMove.Unit
           LastLsn = 126000000945500001,
           DatabaseName = "TestDb",
           ServerName = "ServerA",
-          PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\Testdb_backup_2018_10_28_000227_200.full",
+          PhysicalDeviceNames = new List<string>(){@"\\DFS\BACKUP\ServerA\testDb\Testdb_backup_2018_10_28_000227_200.full"},
           StartTime = DateTime.Parse("2018-10-28 00:02:28.000")
         },
         new BackupMetadata {
@@ -76,7 +76,7 @@ namespace AgDatabaseMove.Unit
           LastLsn = 126000000955800001,
           DatabaseName = "TestDb",
           ServerName = "ServerB",
-          PhysicalDeviceName = @"\\DFS\BACKUP\ServerB\testDb\Testdb_backup_2018_10_29_030006_660.trn",
+          PhysicalDeviceNames = new List<string>(){@"\\DFS\BACKUP\ServerB\testDb\Testdb_backup_2018_10_29_030006_660.trn"},
           StartTime = DateTime.Parse("2018-10-29 03:00:06.000")
         },
         new BackupMetadata {
@@ -87,7 +87,7 @@ namespace AgDatabaseMove.Unit
           LastLsn = 126000000955200001,
           DatabaseName = "TestDb",
           ServerName = "ServerA",
-          PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\Testdb_backup_2018_10_29_000339_780.diff",
+          PhysicalDeviceNames = new List<string>(){@"\\DFS\BACKUP\ServerA\testDb\Testdb_backup_2018_10_29_000339_780.diff"},
           StartTime = DateTime.Parse("2018-10-29 00:03:39.000")
         }
       };
@@ -112,11 +112,10 @@ namespace AgDatabaseMove.Unit
       var list = GetBackupList();
       var listWithStripes = CloneBackupMetaDataList(list).ToList();
       listWithStripes.ForEach(b => {
-        var path = b.PhysicalDeviceName.Split('.');
-        b.PhysicalDeviceName = $"{path[0]}_striped.{path[1]}";
+        var path = b.PhysicalDeviceNames.First().Split('.');
+        b.PhysicalDeviceNames.Add($"{path[0]}_striped.{path[1]}");
       });
-      list.AddRange(listWithStripes);
-      return list;
+      return listWithStripes;
     }
 
     private static List<BackupMetadata> GetBackupListWithStripesAndDuplicates()
@@ -203,7 +202,7 @@ namespace AgDatabaseMove.Unit
       var agDatabase = new Mock<IAgDatabase>();
       agDatabase.Setup(agd => agd.RecentBackups()).Returns(backups);
       var chain = new BackupChain(agDatabase.Object).OrderedBackups.ToList();
-      Assert.Equal(backups.GroupBy(b => b.PhysicalDeviceName).Count(), chain.Count);
+      Assert.Equal(backups.GroupBy(b => b.FirstLsn).Count(), chain.Count);
     }
 
     // TODO: test skipping of logs if diff last LSN and log last LSN matches

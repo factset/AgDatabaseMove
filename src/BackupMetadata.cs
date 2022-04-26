@@ -18,18 +18,20 @@ namespace AgDatabaseMove
              x.FirstLsn == y.FirstLsn &&
              x.BackupType == y.BackupType &&
              x.DatabaseName == y.DatabaseName &&
-             x.PhysicalDeviceName == y.PhysicalDeviceName;
+             x.DatabaseBackupLsn == y.DatabaseBackupLsn &&
+             x.CheckpointLsn == y.CheckpointLsn;
     }
 
     public int GetHashCode(BackupMetadata obj)
     {
       var hashCode = -1277603921;
       hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(obj.DatabaseName);
-      hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(obj.PhysicalDeviceName);
       hashCode = hashCode * -1521134295 +
                  EqualityComparer<BackupFileTools.BackupType>.Default.GetHashCode(obj.BackupType);
       hashCode = hashCode * -1521134295 + obj.FirstLsn.GetHashCode();
       hashCode = hashCode * -1521134295 + obj.LastLsn.GetHashCode();
+      hashCode = hashCode * -1521134295 + obj.DatabaseBackupLsn.GetHashCode();
+      hashCode = hashCode * -1521134295 + obj.CheckpointLsn.GetHashCode();
       return hashCode;
     }
   }
@@ -39,12 +41,17 @@ namespace AgDatabaseMove
   /// </summary>
   public class BackupMetadata : ICloneable
   {
+
+    public BackupMetadata()
+    {
+      PhysicalDeviceNames = new List<string>();
+    }
     public decimal CheckpointLsn { get; set; }
     public decimal DatabaseBackupLsn { get; set; }
     public string DatabaseName { get; set; }
     public decimal FirstLsn { get; set; }
     public decimal LastLsn { get; set; }
-    public string PhysicalDeviceName { get; set; }
+    public List<string> PhysicalDeviceNames { get; set; }
     public string ServerName { get; set; }
     public DateTime StartTime { get; set; }
 
@@ -58,7 +65,9 @@ namespace AgDatabaseMove
     // used during testing
     public object Clone()
     {
-      return MemberwiseClone();
+      BackupMetadata copy = (BackupMetadata)MemberwiseClone();
+      copy.PhysicalDeviceNames = new List<string>(this.PhysicalDeviceNames);
+      return copy;
     }
   }
 }

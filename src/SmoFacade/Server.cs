@@ -193,38 +193,61 @@ namespace AgDatabaseMove.SmoFacade
       var restore = new Restore { Database = databaseName, NoRecovery = true };
 
       foreach(var backup in backupOrder) {
-        var device = BackupFileTools.IsValidFileUrl(backup.PhysicalDeviceName) ? DeviceType.Url : DeviceType.File;
-        var backupDeviceItem = new BackupDeviceItem(backup.PhysicalDeviceName, device);
-        if(_credentialName != null && device == DeviceType.Url)
-          backupDeviceItem.CredentialName = _credentialName;
 
-        restore.Devices.Add(backupDeviceItem);
+        // needed for the post-restore clean-up task
+        List<BackupDeviceItem> backupDeviceItems = new List<BackupDeviceItem>();
 
-        var defaultFileLocations = DefaultFileLocations();
-        if(defaultFileLocations != null) {
-          restore.RelocateFiles.Clear();
-          var fileList = policy.Execute(() => restore.ReadFileList(_server).AsEnumerable());
-          foreach(var file in fileList) {
-            var physicalName = (string)file["PhysicalName"];
-            var fileName = GetFileName(physicalName);
-
-            if(fileRelocation != null)
-              fileName = fileRelocation(fileName);
-
-            var path = (string)file["Type"] == "L" ? defaultFileLocations?.Log : defaultFileLocations?.Data;
-            path ??= Path.GetFullPath(physicalName);
-
-            var newFilePath = Path.Combine(path, fileName);
-
-            restore.RelocateFiles.Add(new RelocateFile((string)file["LogicalName"], newFilePath));
-          }
+       
+        foreach (var physicalDeviceName in backup.PhysicalDeviceNames)
+        {
+          var backupDeviceItem = AddBackupDeviceItemToRestore(restore, physicalDeviceName, policy, fileRelocation);
+          backupDeviceItems.Add(backupDeviceItem);
         }
-
+               
         _server.ConnectionContext.StatementTimeout = 86400; // 60 * 60 * 24 = 24 hours
-
         policy.Execute(() => restore.SqlRestore(_server));
-        restore.Devices.Remove(backupDeviceItem);
+
+        // clean up
+        foreach (var backupDeviceItem in backupDeviceItems)
+        {
+          restore.Devices.Remove(backupDeviceItem);
+        }
+        restore.RelocateFiles.Clear();
       }
+    }
+
+    private BackupDeviceItem AddBackupDeviceItemToRestore(Restore restore, string physicalDeviceName, 
+      Policy policy,
+      Func<string, string> fileRelocation = null)
+    {
+
+      var device = BackupFileTools.IsValidFileUrl(physicalDeviceName) ? DeviceType.Url : DeviceType.File;
+
+      var backupDeviceItem = new BackupDeviceItem(physicalDeviceName, device);
+      if(_credentialName != null && device == DeviceType.Url)
+        backupDeviceItem.CredentialName = _credentialName;
+
+      restore.Devices.Add(backupDeviceItem);
+
+      var defaultFileLocations = DefaultFileLocations();
+      if(defaultFileLocations != null) {
+        var fileList = policy.Execute(() => restore.ReadFileList(_server).AsEnumerable());
+        foreach(var file in fileList) {
+          var physicalName = (string)file["PhysicalName"];
+          var fileName = GetFileName(physicalName);
+
+          if(fileRelocation != null)
+            fileName = fileRelocation(fileName);
+
+          var path = (string)file["Type"] == "L" ? defaultFileLocations?.Log : defaultFileLocations?.Data;
+          path ??= Path.GetFullPath(physicalName);
+
+          var newFilePath = Path.Combine(path, fileName);
+
+          restore.RelocateFiles.Add(new RelocateFile((string)file["LogicalName"], newFilePath));
+        }
+      }
+      return backupDeviceItem;
     }
 
     /// <summary>
