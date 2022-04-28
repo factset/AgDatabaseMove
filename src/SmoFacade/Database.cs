@@ -97,32 +97,19 @@ namespace AgDatabaseMove.SmoFacade
       cmd.Parameters.Add(dbName);
 
       using var reader = cmd.ExecuteReader();
-      while(reader.Read()) {
-        var backup = new BackupMetadata() {
+      while(reader.Read())
+        backups.Add(new BackupMetadata {
           CheckpointLsn = (decimal)reader["checkpoint_lsn"],
           DatabaseBackupLsn = (decimal)reader["database_backup_lsn"],
           DatabaseName = (string)reader["database_name"],
           FirstLsn = (decimal)reader["first_lsn"],
           LastLsn = (decimal)reader["last_lsn"],
+          PhysicalDeviceName = (string)reader["physical_device_name"],
           ServerName = (string)reader["server_name"],
           StartTime = (DateTime)reader["backup_start_date"],
           BackupType = BackupFileTools.BackupTypeAbbrevToType((string)reader["backup_type"])
-        };
+        });
 
-        var physicalDeviceName = (string)reader["physical_device_name"];
-
-        var oldBackup = backups.FirstOrDefault(b => new BackupMetadataEqualityComparer().Equals(b,backup));
-        // if it's a striped backup
-        if (oldBackup != null)
-        {
-          oldBackup.PhysicalDeviceNames.Add(physicalDeviceName);
-        }
-        else
-        {
-          backup.PhysicalDeviceNames.Add(physicalDeviceName);
-          backups.Add(backup);
-        }
-      }
       return backups;
     }
 
