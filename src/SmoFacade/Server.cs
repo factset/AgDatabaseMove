@@ -224,7 +224,29 @@ namespace AgDatabaseMove.SmoFacade
 
         policy.Execute(() => restore.SqlRestore(_server));
         restore.Devices.Remove(backupDeviceItem);
+
+        if(fileRelocation != null)
+          LogicalFileRename(databaseName, fileRelocation);
       }
+    }
+
+    private void LogicalFileRename(string databaseName, Func<string, string> fileRelocation)
+    {
+      var db = Database(databaseName);
+      if (db.Restoring)
+        db.RestoreWithRecovery();
+
+      foreach (FileGroup fileGroup in (SmoCollectionBase)db._database.FileGroups)
+      {
+        DataFile[] array = new DataFile[fileGroup.Files.Count];
+        fileGroup.Files.CopyTo(array, 0);
+        foreach (DataFile dataFile in array)
+          dataFile.Rename(fileRelocation(dataFile.Name));
+      }
+      LogFile[] array1 = new LogFile[db._database.LogFiles.Count];
+      db._database.LogFiles.CopyTo(array1, 0);
+      foreach (LogFile logFile in array1)
+        logFile.Rename(fileRelocation(logFile.Name));
     }
 
     /// <summary>
