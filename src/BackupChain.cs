@@ -49,7 +49,7 @@ namespace AgDatabaseMove
     /// <summary>
     ///   Initializes a backup chain from a stand alone database that is not part of an AG.
     /// </summary>
-    public BackupChain(Database database) : this(database.RecentBackups()) { }
+    public BackupChain(Database database) : this(database.MostRecentBackupChain()) { }
 
     /// <summary>
     ///   Backups ordered to have a full restore chain.
@@ -62,7 +62,8 @@ namespace AgDatabaseMove
         .Where(b => b.BackupType == BackupFileTools.BackupType.Full)
         .OrderByDescending(d => d.CheckpointLsn).ToList();
 
-      if(!fullBackupsOrdered.Any()) throw new BackupChainException("Could not find any full backups");
+      if(!fullBackupsOrdered.Any())
+        throw new BackupChainException("Could not find any full backups");
 
       var targetCheckpointLsn = fullBackupsOrdered.First().CheckpointLsn;
       // get all the stripes of this backup
@@ -73,11 +74,14 @@ namespace AgDatabaseMove
       BackupMetadata lastFullBackup)
     {
       var diffBackupsOrdered = backups
-        .Where(b => b.BackupType == BackupFileTools.BackupType.Diff &&
-                    b.DatabaseBackupLsn == lastFullBackup.CheckpointLsn)
+        .Where(b =>
+                 b.BackupType == BackupFileTools.BackupType.Diff &&
+                 b.DatabaseBackupLsn == lastFullBackup.CheckpointLsn)
         .OrderByDescending(b => b.LastLsn).ToList();
 
-      if(!diffBackupsOrdered.Any()) return new List<BackupMetadata>();
+      if(!diffBackupsOrdered.Any())
+        return new List<BackupMetadata>();
+
       var targetLastLsn = diffBackupsOrdered.First().LastLsn;
       // get all the stripes of this backup
       return diffBackupsOrdered.Where(diffBackup => diffBackup.LastLsn == targetLastLsn);
@@ -101,4 +105,5 @@ namespace AgDatabaseMove
       return true;
     }
   }
+
 }

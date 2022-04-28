@@ -123,6 +123,7 @@ namespace AgDatabaseMove.SmoFacade
       else {
         login.Create();
       }
+      login.Refresh();
 
       return login;
     }

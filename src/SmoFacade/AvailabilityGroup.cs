@@ -39,10 +39,13 @@ namespace AgDatabaseMove.SmoFacade
     public void JoinSecondary(string dbName)
     {
       var agDb = Policy
-          .HandleResult<MsftSmo.AvailabilityDatabase>(r => r == null)
-          .WaitAndRetry(4, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(10, retryAttempt)))
-          .Execute(() => { _availabilityGroup.AvailabilityDatabases.Refresh(); return _availabilityGroup.AvailabilityDatabases[dbName]; }); 
-      
+        .HandleResult<MsftSmo.AvailabilityDatabase>(r => r == null)
+        .WaitAndRetry(4, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(10, retryAttempt)))
+        .Execute(() => {
+          _availabilityGroup.AvailabilityDatabases.Refresh();
+          return _availabilityGroup.AvailabilityDatabases[dbName];
+        });
+
       agDb.JoinAvailablityGroup();
     }
 
@@ -74,7 +77,9 @@ namespace AgDatabaseMove.SmoFacade
       catch(
         MsftSmo.PropertyCannotBeRetrievedException) { } // good here, AvailabilityDatabaseSynchronizationState unavailable means it has no state
       catch(MsftSmo.SmoException e) when(e.Message.Contains("Cannot access properties or methods")) { }
-      catch(Exception) { return true; }
+      catch(Exception) {
+        return true;
+      }
 
       return false;
     }

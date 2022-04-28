@@ -290,7 +290,7 @@ namespace AgDatabaseMove.SmoFacade
     {
       var backupDirectory = BackupDirectoryOrDefault(backupDirectoryPathQuery);
       var filePath =
-        $"{backupDirectory}/{databaseName}_backup_{DateTime.Now.ToString("yyyy_MM_dd_hhmmss_fff")}.{BackupFileTools.BackupTypeToExtension(type)}";
+        $"{backupDirectory}/{_server.Name}/{databaseName}/{databaseName}_backup_{DateTime.Now.ToString("yyyy_MM_dd_hhmmss_fff")}.{BackupFileTools.BackupTypeToExtension(type)}";
       var deviceType = BackupFileTools.IsValidFileUrl(filePath) ? DeviceType.Url : DeviceType.File;
 
       var bdi = new BackupDeviceItem(filePath, deviceType);
@@ -301,11 +301,11 @@ namespace AgDatabaseMove.SmoFacade
       backup.SqlBackup(_server);
     }
 
-    public void AddLogin(LoginProperties login)
+    public Login AddLogin(LoginProperties login)
     {
       var matchingLogin =
         Logins.SingleOrDefault(l => l.Name.Equals(login.Name, StringComparison.InvariantCultureIgnoreCase));
-      if(matchingLogin == null) matchingLogin = new Login(login, this);
+      return matchingLogin ?? new Login(login, this);
     }
 
     public void AddRole(LoginProperties login, RoleProperties role)

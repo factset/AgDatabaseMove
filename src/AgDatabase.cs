@@ -12,9 +12,13 @@ namespace AgDatabaseMove
   using System.Data.SqlClient;
   using System.Linq;
   using System.Threading;
+  using System.Threading.Tasks;
   using Exceptions;
+  using Microsoft.SqlServer.Management.Smo;
   using Polly;
   using SmoFacade;
+  using AvailabilityGroup = SmoFacade.AvailabilityGroup;
+  using Server = SmoFacade.Server;
 
 
   public interface IAgDatabase
@@ -119,8 +123,15 @@ namespace AgDatabaseMove
     /// </summary>
     public List<BackupMetadata> RecentBackups()
     {
+      // find most recent full backup LSN across all replica servers
+      var fullBackupLsnBag = new ConcurrentBag<decimal>();
+      _listener.ForEachAgInstance(s => fullBackupLsnBag.Add(s.Database(Name).MostRecentFullBackupLsn()));
+
+      // find all backups in that chain
+      var databaseBackupLsn = fullBackupLsnBag.Max();
       var bag = new ConcurrentBag<BackupMetadata>();
-      _listener.ForEachAgInstance(s => s.Database(Name).RecentBackups().ForEach(backup => bag.Add(backup)));
+      _listener.ForEachAgInstance(s => s.Database(Name).BackupChainFromLsn(databaseBackupLsn)
+                                    .ForEach(backup => bag.Add(backup)));
       return bag.ToList();
     }
 
@@ -158,7 +169,19 @@ namespace AgDatabaseMove
 
     public void AddLogin(LoginProperties login)
     {
-      _listener.ForEachAgInstance(server => server.AddLogin(login));
+      if (login.LoginType == LoginType.SqlLogin && login.Sid == null) {
+        AddNewSqlLogin(login);
+      } 
+      else {
+        _listener.ForEachAgInstance(server => server.AddLogin(login));
+      }
+    }
+
+    private void AddNewSqlLogin(LoginProperties login)
+    {
+      var createdLogin = _listener.Primary.AddLogin(login);
+      login.Sid = createdLogin.Sid;
+      Parallel.ForEach(_listener.Secondaries, server => server.AddLogin(login));
     }
 
     public IEnumerable<RoleProperties> AssociatedRoles()
@@ -169,6 +192,28 @@ namespace AgDatabaseMove
     public void AddRole(LoginProperties login, RoleProperties role)
     {
       _listener.ForEachAgInstance(server => server.AddRole(login, role));
+    }
+
+    public void ContainsLogin(string loginName)
+    {
+      var exceptions = new ConcurrentQueue<Exception>();
+
+      _listener.ForEachAgInstance((s, ag) => {
+        try {
+          CheckLoginExists(s, ag, loginName);
+        }
+        catch(MissingLoginException ex) {
+          exceptions.Enqueue(ex);
+        }
+        catch(MultipleLoginException ex) {
+          exceptions.Enqueue(ex);
+        }
+        catch(MissingSidException ex) {
+          exceptions.Enqueue(ex);
+        }
+      });
+
+      if(exceptions.Count > 0) throw new AggregateException(exceptions);
     }
 
     /// <summary>
@@ -225,43 +270,22 @@ namespace AgDatabaseMove
     {
       _listener.ForEachAgInstance(server => server.CheckDBConnection(Name, connectionTimeout));
     }
-    
+
     private void CheckLoginExists(Server server, AvailabilityGroup availabilityGroup, string loginName)
     {
       var matchingLogins = server.Logins.Where(l => l.Name == loginName);
-      
-      if (matchingLogins.Count() == 0)
-        throw new MissingLoginException($"Login missing on {server.Name}, {_listener.AvailabilityGroup.Name}, {loginName}");
 
-      if (matchingLogins.Count() > 1)
+      if(matchingLogins.Count() == 0)
+        throw new
+          MissingLoginException($"Login missing on {server.Name}, {_listener.AvailabilityGroup.Name}, {loginName}");
+
+      if(matchingLogins.Count() > 1)
         throw new
           MultipleLoginException($"Multiple logins exist on {server.Name}, {_listener.AvailabilityGroup.Name}, {loginName}");
 
       var sid = matchingLogins.First().Sid;
-      if (sid == null || sid.Length == 0)
+      if(sid == null || sid.Length == 0)
         throw new MissingSidException($"Sid missing on {server.Name}, {_listener.AvailabilityGroup.Name}, {loginName}");
-    }
-
-    public void ContainsLogin(string loginName)
-    {
-      var exceptions = new ConcurrentQueue<Exception>();
-
-      _listener.ForEachAgInstance((s, ag) => {
-        try {
-          CheckLoginExists(s, ag, loginName);
-        }
-        catch(MissingLoginException ex) {
-          exceptions.Enqueue(ex);
-        }
-        catch(MultipleLoginException ex) {
-          exceptions.Enqueue(ex);
-        }
-        catch(MissingSidException ex) {
-          exceptions.Enqueue(ex);
-        }
-      });
-
-      if(exceptions.Count > 0) throw new AggregateException(exceptions);
     }
   }
 }
