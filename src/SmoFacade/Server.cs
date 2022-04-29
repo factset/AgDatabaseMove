@@ -224,10 +224,10 @@ namespace AgDatabaseMove.SmoFacade
 
         policy.Execute(() => restore.SqlRestore(_server));
         restore.Devices.Remove(backupDeviceItem);
-
-        if(fileRelocation != null)
-          LogicalFileRename(databaseName, fileRelocation);
       }
+
+      if (fileRelocation != null)
+        LogicalFileRename(databaseName, fileRelocation);
     }
 
     private void LogicalFileRename(string databaseName, Func<string, string> fileRelocation)
