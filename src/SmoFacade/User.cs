@@ -24,11 +24,11 @@
       _database = database;
     }
 
-    public User(UserProperties user, Server server, Database database)
+    public User(UserProperties userProperties, Server server, Database database)
     {
       _server = server;
       _database = database;
-      ConstructUser(user);
+      ConstructUser(userProperties);
     }
 
     public string Name => _user.Name;

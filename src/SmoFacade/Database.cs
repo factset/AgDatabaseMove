@@ -50,11 +50,10 @@ namespace AgDatabaseMove.SmoFacade
         });
     }
 
-    public void AddUser(UserProperties user)
+    public User AddUser(UserProperties user)
     {
-      var matchingUser =
-        Users.SingleOrDefault(u => u.Name.Equals(user.Name, StringComparison.InvariantCultureIgnoreCase)) ??
-        new User(user, _server, this);
+      return Users.SingleOrDefault(u => u.Name.Equals(user.Name, StringComparison.InvariantCultureIgnoreCase)) ??
+             new User(user, _server, this);
     }
 
     public void DropUser(UserProperties user)
