@@ -238,14 +238,14 @@ namespace AgDatabaseMove.SmoFacade
 
       foreach (FileGroup fileGroup in (SmoCollectionBase)db._database.FileGroups)
       {
-        DataFile[] array = new DataFile[fileGroup.Files.Count];
-        fileGroup.Files.CopyTo(array, 0);
-        foreach (DataFile dataFile in array)
+        DataFile[] dataFiles = new DataFile[fileGroup.Files.Count];
+        fileGroup.Files.CopyTo(dataFiles, 0);
+        foreach (DataFile dataFile in dataFiles)
           dataFile.Rename(fileRelocation(dataFile.Name));
       }
-      LogFile[] array1 = new LogFile[db._database.LogFiles.Count];
-      db._database.LogFiles.CopyTo(array1, 0);
-      foreach (LogFile logFile in array1)
+      LogFile[] logFiles = new LogFile[db._database.LogFiles.Count];
+      db._database.LogFiles.CopyTo(logFiles, 0);
+      foreach (LogFile logFile in logFiles)
         logFile.Rename(fileRelocation(logFile.Name));
     }
 
