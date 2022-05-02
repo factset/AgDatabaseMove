@@ -225,28 +225,23 @@ namespace AgDatabaseMove.SmoFacade
         policy.Execute(() => restore.SqlRestore(_server));
         restore.Devices.Remove(backupDeviceItem);
       }
-
-      if (fileRelocation != null)
-        LogicalFileRename(databaseName, fileRelocation);
     }
 
-    private void LogicalFileRename(string databaseName, Func<string, string> fileRelocation)
+    public void LogicalFileRename(string databaseName, Func<string, string> fileRenamer)
     {
       var db = Database(databaseName);
-      if (db.Restoring)
-        db.RestoreWithRecovery();
 
-      foreach (FileGroup fileGroup in (SmoCollectionBase)db._database.FileGroups)
+      foreach (FileGroup fileGroup in db._database.FileGroups)
       {
-        DataFile[] dataFiles = new DataFile[fileGroup.Files.Count];
+        var dataFiles = new DataFile[fileGroup.Files.Count];
         fileGroup.Files.CopyTo(dataFiles, 0);
-        foreach (DataFile dataFile in dataFiles)
-          dataFile.Rename(fileRelocation(dataFile.Name));
+        foreach (var dataFile in dataFiles)
+          dataFile.Rename(fileRenamer(dataFile.Name));
       }
-      LogFile[] logFiles = new LogFile[db._database.LogFiles.Count];
+      var logFiles = new LogFile[db._database.LogFiles.Count];
       db._database.LogFiles.CopyTo(logFiles, 0);
-      foreach (LogFile logFile in logFiles)
-        logFile.Rename(fileRelocation(logFile.Name));
+      foreach (var logFile in logFiles)
+        logFile.Rename(fileRenamer(logFile.Name));
     }
 
     /// <summary>

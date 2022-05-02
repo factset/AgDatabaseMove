@@ -118,6 +118,11 @@ namespace AgDatabaseMove
       _listener.ForEachAgInstance(s => s.Restore(backupOrder, Name, retryDurationProvider, fileRelocation));
     }
 
+    public void RenameLogicalFileName(Func<string, string> fileRenamer)
+    {
+      _listener.Primary.LogicalFileRename(Name, fileRenamer);
+    }
+
     /// <summary>
     ///   Builds a list of recent backups from msdb on each AG instance.
     /// </summary>
