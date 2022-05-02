@@ -120,7 +120,7 @@ namespace AgDatabaseMove
 
     public void RenameLogicalFileName(Func<string, string> fileRenamer)
     {
-      _listener.Primary.LogicalFileRename(Name, fileRenamer);
+      _listener.Primary.RenameLogicalFileName(Name, fileRenamer);
     }
 
     /// <summary>

@@ -227,7 +227,7 @@ namespace AgDatabaseMove.SmoFacade
       }
     }
 
-    public void LogicalFileRename(string databaseName, Func<string, string> fileRenamer)
+    public void RenameLogicalFileName(string databaseName, Func<string, string> fileRenamer)
     {
       var db = Database(databaseName);
 
