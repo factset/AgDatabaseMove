@@ -18,17 +18,15 @@ namespace AgDatabaseMove.SmoFacade
   public class Server : IDisposable
   {
     private readonly string _connectionString;
-    private readonly string _agName;
     internal readonly string _credentialName;
     internal readonly Microsoft.SqlServer.Management.Smo.Server _server;
 
-    public Server(string connectionString, string credentialName = null, string agName = "")
+    public Server(string connectionString, string credentialName = null)
     {
       _connectionString = connectionString;
       SqlConnection = new SqlConnection(_connectionString);
       _server = new Microsoft.SqlServer.Management.Smo.Server(new ServerConnection(SqlConnection));
       _credentialName = credentialName;
-      _agName = agName;
     }
 
     public Server(SqlConnectionStringBuilder connectionStringBuilder) :
@@ -44,7 +42,7 @@ namespace AgDatabaseMove.SmoFacade
       .Select(d => new Database(d, this));
 
     private AvailabilityGroup AvailabilityGroup =>
-      AvailabilityGroups.FirstOrDefault(ag => ag.Name.Equals(_agName, StringComparison.InvariantCultureIgnoreCase));
+      AvailabilityGroups.Single(ag => ag.Listeners.Contains(AgName(), StringComparer.InvariantCultureIgnoreCase));
 
     public string Name => _server.Name;
 
@@ -104,6 +102,18 @@ namespace AgDatabaseMove.SmoFacade
       return lastDirIndex > 0
         ? physicalName.Remove(0, lastDirIndex + 1)
         : physicalName;
+    }
+
+    /// <summary>
+    ///   Parses the AG name from the connection's DataSource.
+    /// </summary>
+    /// <returns>The availability group name.</returns>
+    private string AgName()
+    {
+      var dotIndex = SqlConnection?.DataSource?.IndexOf('.');
+      if(!dotIndex.HasValue)
+        return string.Empty;
+      return dotIndex >= 0 ? SqlConnection.DataSource.Remove(dotIndex.Value) : SqlConnection.DataSource;
     }
 
     /// <summary>
@@ -216,7 +226,7 @@ namespace AgDatabaseMove.SmoFacade
         restore.Devices.Remove(backupDeviceItem);
       }
 
-      if (fileRelocation != null && AvailabilityGroup.IsPrimaryInstance)
+      if (fileRelocation != null)
         LogicalFileRename(databaseName, fileRelocation);
     }
 
@@ -226,16 +236,16 @@ namespace AgDatabaseMove.SmoFacade
       if (db.Restoring)
         db.RestoreWithRecovery();
 
-      foreach (FileGroup fileGroup in db._database.FileGroups)
+      foreach (FileGroup fileGroup in (SmoCollectionBase)db._database.FileGroups)
       {
-        var dataFiles = new DataFile[fileGroup.Files.Count];
+        DataFile[] dataFiles = new DataFile[fileGroup.Files.Count];
         fileGroup.Files.CopyTo(dataFiles, 0);
-        foreach (var dataFile in dataFiles)
+        foreach (DataFile dataFile in dataFiles)
           dataFile.Rename(fileRelocation(dataFile.Name));
       }
-      var logFiles = new LogFile[db._database.LogFiles.Count];
+      LogFile[] logFiles = new LogFile[db._database.LogFiles.Count];
       db._database.LogFiles.CopyTo(logFiles, 0);
-      foreach (var logFile in logFiles)
+      foreach (LogFile logFile in logFiles)
         logFile.Rename(fileRelocation(logFile.Name));
     }
 
