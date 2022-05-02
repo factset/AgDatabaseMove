@@ -70,14 +70,14 @@ namespace AgDatabaseMove.SmoFacade
       var secondaryNames = availabilityGroup.Replicas.Where(l => l != primaryName);
 
       // Connect to each server instance
-      Primary = AgInstanceNameToServer(ref connectionStringBuilder, primaryName, credentialName);
+      Primary = AgInstanceNameToServer(ref connectionStringBuilder, primaryName, credentialName, availabilityGroup.Name);
       AvailabilityGroup = Primary.AvailabilityGroups.Single(ag => ag.Name == availabilityGroup.Name);
 
       _secondaries = new List<Server>();
       foreach(var secondaryName in secondaryNames)
         _secondaries.Add(AgInstanceNameToServer(ref connectionStringBuilder,
                                                 secondaryName,
-                                                credentialName));
+                                                credentialName, availabilityGroup.Name));
     }
 
     public IEnumerable<Server> ReplicaInstances => Secondaries.Union(new[] { Primary });
@@ -132,11 +132,11 @@ namespace AgDatabaseMove.SmoFacade
     }
 
     private static Server AgInstanceNameToServer(ref SqlConnectionStringBuilder connBuilder, string agInstanceName,
-      string credentialName)
+      string credentialName, string agName)
     {
       try {
         connBuilder.DataSource = ResolveDnsHostNameForInstance(agInstanceName, connBuilder.DataSource);
-        return new Server(connBuilder.ToString(), credentialName);
+        return new Server(connBuilder.ToString(), credentialName, agName);
       }
       catch(Exception e) {
         throw new ArgumentException($"agInstanceName param {agInstanceName} cannot be resolved by DNS", e);
