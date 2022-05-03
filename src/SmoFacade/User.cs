@@ -15,7 +15,7 @@
   {
     private readonly Server _server;
     private readonly Database _database;
-    private Smo.User _user;
+    private readonly Smo.User _user;
 
     public User(Smo.User user, Server server, Database database)
     {
@@ -24,23 +24,7 @@
       _database = database;
     }
 
-    public User(UserProperties userProperties, Server server, Database database)
-    {
-      _server = server;
-      _database = database;
-      ConstructUser(userProperties);
-    }
-
     public string Name => _user.Name;
-
-    private void ConstructUser(UserProperties userProperties)
-    {
-      _user = new Smo.User(_database._database, userProperties.Name) { Login = userProperties.LoginName };
-      _user.Create();
-
-      foreach (var role in userProperties.Roles) AddRole(role);
-      GrantPermission(userProperties.Permissions);
-    }
 
     public void AddRole(RoleProperties role)
     {

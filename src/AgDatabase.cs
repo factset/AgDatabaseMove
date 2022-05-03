@@ -186,12 +186,12 @@ namespace AgDatabaseMove
 
     public void AddUser(UserProperties user)
     {
-      _listener.Primary.AddUser(user, Name);
+      _listener.Primary.Database(Name).AddUser(user);
     }
 
     public void DropUser(UserProperties user)
     {
-      _listener.Primary.DropUser(user, Name);
+      _listener.Primary.Database(Name)?.DropUser(user);
     }
 
     public IEnumerable<RoleProperties> AssociatedRoles()

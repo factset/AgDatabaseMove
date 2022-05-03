@@ -50,16 +50,26 @@ namespace AgDatabaseMove.SmoFacade
         });
     }
 
-    public User AddUser(UserProperties user)
+    public User AddUser(UserProperties userProperties)
     {
-      return Users.SingleOrDefault(u => u.Name.Equals(user.Name, StringComparison.InvariantCultureIgnoreCase)) ??
-             new User(user, _server, this);
+      var user = Users.SingleOrDefault(u => u.Name.Equals(userProperties.Name, StringComparison.InvariantCultureIgnoreCase));
+      if (user == null) {
+        var smoUser = new Microsoft.SqlServer.Management.Smo.User(_database, userProperties.Name)
+          { Login = userProperties.LoginName };
+        smoUser.Create();
+        user = new User(smoUser, _server, this);
+
+        foreach (var role in userProperties.Roles) user.AddRole(role);
+        user.GrantPermission(userProperties.Permissions);
+      }
+
+      return user;
     }
 
-    public void DropUser(UserProperties user)
+    public void DropUser(UserProperties userProperties)
     {
       var matchingUser =
-        Users.SingleOrDefault(u => u.Name.Equals(user.Name, StringComparison.InvariantCultureIgnoreCase));
+        Users.SingleOrDefault(u => u.Name.Equals(userProperties.Name, StringComparison.InvariantCultureIgnoreCase));
       matchingUser?.Drop();
     }
 
