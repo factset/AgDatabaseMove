@@ -34,6 +34,7 @@ namespace AgDatabaseMove
     void Restore(IEnumerable<BackupMetadata> backupOrder, Func<int, TimeSpan> retryDurationProvider,
       Func<string, string> fileRelocation = null);
 
+    void RenameLogicalFileName(Func<string, string> fileRenamer);
     void AddLogin(LoginProperties login);
     IEnumerable<LoginProperties> AssociatedLogins();
     void DropLogin(LoginProperties login);
