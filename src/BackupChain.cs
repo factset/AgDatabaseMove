@@ -92,7 +92,7 @@ namespace AgDatabaseMove
     {
       // also gets all the stripes of the next backup
       return backups.Where(b => b.BackupType == BackupFileTools.BackupType.Log &&
-                                prevBackup.LastLsn >= b.FirstLsn && prevBackup.LastLsn + 1 < b.LastLsn);
+                                prevBackup.LastLsn >= b.FirstLsn && prevBackup.LastLsn <= b.LastLsn);
     }
 
     private static bool IsValidFilePath(BackupMetadata meta)
