@@ -22,7 +22,7 @@ namespace AgDatabaseMove.SmoFacade
     }
 
     public IEnumerable<User> Users => _database.Users.Cast<Microsoft.SqlServer.Management.Smo.User>()
-      .Select(u => new User(u, _server, this));
+      .Select(u => new User(u, _server));
 
     public string Name => _database.Name;
 
@@ -57,13 +57,18 @@ namespace AgDatabaseMove.SmoFacade
         var smoUser = new Microsoft.SqlServer.Management.Smo.User(_database, userProperties.Name)
           { Login = userProperties.LoginName };
         smoUser.Create();
-        user = new User(smoUser, _server, this);
+        user = new User(smoUser, _server);
 
         foreach (var role in userProperties.Roles) user.AddRole(role);
-        user.GrantPermission(userProperties.Permissions);
+        GrantPermission(userProperties);
       }
 
       return user;
+    }
+
+    private void GrantPermission(UserProperties userProperties)
+    {
+      _database.Grant(userProperties.Permissions, userProperties.Name);
     }
 
     public void DropUser(UserProperties userProperties)

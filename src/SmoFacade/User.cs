@@ -14,14 +14,14 @@
   public class User
   {
     private readonly Server _server;
-    private readonly Database _database;
+    //private readonly Database _database;
     private readonly Smo.User _user;
 
-    public User(Smo.User user, Server server, Database database)
+    public User(Smo.User user, Server server)
     {
       _user = user;
       _server = server;
-      _database = database;
+      //_database = database;
     }
 
     public string Name => _user.Name;
@@ -31,10 +31,10 @@
       _user.AddToRole(role.Name);
     }
 
-    public void GrantPermission(Smo.DatabasePermissionSet permissions)
-    {
-      _database._database.Grant(permissions, Name);
-    }
+    //public void GrantPermission(Smo.DatabasePermissionSet permissions)
+    //{
+    //  _database._database.Grant(permissions, Name);
+    //}
 
     public void Drop()
     {
