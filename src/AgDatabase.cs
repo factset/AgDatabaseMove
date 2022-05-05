@@ -42,6 +42,9 @@ namespace AgDatabaseMove
     void AddRole(LoginProperties login, RoleProperties role);
     IEnumerable<RoleProperties> AssociatedRoles();
     void ContainsLogin(string loginName);
+    void SetSizeLimit(int maxGB);
+    void SetGrowthRate(int growthMB);
+    void SetLogGrowthRate(int growthMB);
   }
 
 

@@ -14,6 +14,8 @@ namespace AgDatabaseMove.SmoFacade
   {
     internal readonly Microsoft.SqlServer.Management.Smo.Database _database;
     private readonly Server _server;
+    private const int GB_TO_KB = 1048576;
+    private const int MB_TO_KB = 1024;
 
     internal Database(Microsoft.SqlServer.Management.Smo.Database database, Server server)
     {
@@ -200,7 +202,7 @@ namespace AgDatabaseMove.SmoFacade
       var dataFile = _database.FileGroups[_database.DefaultFileGroup].Files.Cast<DataFile>()
         .Single(d => d.IsPrimaryFile);
 
-      dataFile.MaxSize = maxGB * 1048576;
+      dataFile.MaxSize = maxGB * GB_TO_KB;
       dataFile.Alter();
     }
 
@@ -210,7 +212,7 @@ namespace AgDatabaseMove.SmoFacade
         .Single(d => d.IsPrimaryFile);
 
       dataFile.GrowthType = FileGrowthType.KB;
-      dataFile.Growth = growthMB * 1024;
+      dataFile.Growth = growthMB * MB_TO_KB;
       dataFile.Alter();
     }
 
@@ -219,7 +221,7 @@ namespace AgDatabaseMove.SmoFacade
       foreach (var logFile in _database.LogFiles.Cast<LogFile>())
       {
         logFile.GrowthType = FileGrowthType.KB;
-        logFile.Growth = growthMB * 1024;
+        logFile.Growth = growthMB * MB_TO_KB;
         logFile.Alter();
       }
     }
