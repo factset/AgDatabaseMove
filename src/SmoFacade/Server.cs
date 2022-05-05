@@ -227,6 +227,23 @@ namespace AgDatabaseMove.SmoFacade
       }
     }
 
+    public void RenameLogicalFileName(string databaseName, Func<string, string> fileRenamer)
+    {
+      var db = Database(databaseName);
+
+      foreach (FileGroup fileGroup in db._database.FileGroups)
+      {
+        var dataFiles = new DataFile[fileGroup.Files.Count];
+        fileGroup.Files.CopyTo(dataFiles, 0);
+        foreach (var dataFile in dataFiles)
+          dataFile.Rename(fileRenamer(dataFile.Name));
+      }
+      var logFiles = new LogFile[db._database.LogFiles.Count];
+      db._database.LogFiles.CopyTo(logFiles, 0);
+      foreach (var logFile in logFiles)
+        logFile.Rename(fileRenamer(logFile.Name));
+    }
+
     /// <summary>
     ///   Generate a log backup, truncating the transaction log, and storing it in the default backup destination.
     ///   TODO: we should support a backup path somehow with configuration
