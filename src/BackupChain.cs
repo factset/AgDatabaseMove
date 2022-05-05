@@ -94,7 +94,7 @@ namespace AgDatabaseMove
       return backups.Where(b => b.BackupType == BackupFileTools.BackupType.Log &&
                                 prevBackup.LastLsn >= b.FirstLsn && 
                                 prevBackup.LastLsn <= b.LastLsn &&
-                                !new BackupEqualityComparer().Equals(prevBackup, b));
+                                !new BackupMetadataEqualityComparer().EqualsExceptForPhysicalDeviceName(prevBackup, b));
     }
 
     private static bool IsValidFilePath(BackupMetadata meta)
