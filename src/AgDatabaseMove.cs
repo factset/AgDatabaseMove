@@ -80,8 +80,10 @@ namespace AgDatabaseMove
         foreach(var loginProperty in _options.Source.AssociatedLogins().Select(UpdateDefaultDb))
           _options.Destination.AddLogin(loginProperty);
 
-      if(_options.Finalize)
+      if(_options.Finalize) {
         _options.Destination.JoinAg();
+        _options.Destination.RenameLogicalFileName(_options.FileRelocator);
+      }
 
       return backupList.Max(bl => bl.LastLsn);
     }
