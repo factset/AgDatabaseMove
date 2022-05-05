@@ -44,8 +44,9 @@ namespace AgDatabaseMove.SmoFacade
     {
       var logins = Users.Where(u => u.Login != null && u.Login.Name != "sa")
         .Select(u => u.Login.Properties());
-      foreach(var login in logins)
-        _server.DropLogin(new LoginProperties {
+      foreach (var login in logins)
+        _server.DropLogin(new LoginProperties
+        {
           Name = login.Name
         });
     }
@@ -53,13 +54,18 @@ namespace AgDatabaseMove.SmoFacade
     public User AddUser(UserProperties userProperties)
     {
       var user = Users.SingleOrDefault(u => u.Name.Equals(userProperties.Name, StringComparison.InvariantCultureIgnoreCase));
-      if (user == null) {
+      if (user == null)
+      {
         var smoUser = new Microsoft.SqlServer.Management.Smo.User(_database, userProperties.Name)
-          { Login = userProperties.LoginName };
+        { Login = userProperties.LoginName };
         smoUser.Create();
         user = new User(smoUser, _server);
 
-        foreach (var role in userProperties.Roles) user.AddRole(role);
+        foreach (var role in userProperties.Roles)
+        {
+          user.AddRole(role);
+        }
+
         GrantPermission(userProperties);
       }
 
@@ -89,7 +95,8 @@ namespace AgDatabaseMove.SmoFacade
         .Handle<FailedOperationException>()
         .WaitAndRetry(3, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(10, retryAttempt)));
 
-      policy.Execute(() => {
+      policy.Execute(() =>
+      {
         _database.Refresh();
         _database.Parent.KillDatabase(_database.Name);
       });
@@ -125,8 +132,9 @@ namespace AgDatabaseMove.SmoFacade
       cmd.Parameters.Add(dbName);
 
       using var reader = cmd.ExecuteReader();
-      while(reader.Read())
-        backups.Add(new BackupMetadata {
+      while (reader.Read())
+        backups.Add(new BackupMetadata
+        {
           CheckpointLsn = (decimal)reader["checkpoint_lsn"],
           DatabaseBackupLsn = (decimal)reader["database_backup_lsn"],
           DatabaseName = (string)reader["database_name"],
@@ -157,7 +165,7 @@ namespace AgDatabaseMove.SmoFacade
       cmd.Parameters.Add(dbName);
 
       using var reader = cmd.ExecuteReader();
-      if(!reader.Read())
+      if (!reader.Read())
         throw new Exception("MostRecentFullBackup SQL found no results");
 
       return (decimal)reader["most_recent_full_backup_checkpoint_lsn"];
@@ -189,8 +197,9 @@ namespace AgDatabaseMove.SmoFacade
       cmd.Parameters.Add(lsnParam);
 
       using var reader = cmd.ExecuteReader();
-      while(reader.Read())
-        backups.Add(new BackupMetadata {
+      while (reader.Read())
+        backups.Add(new BackupMetadata
+        {
           CheckpointLsn = (decimal)reader["checkpoint_lsn"],
           DatabaseBackupLsn = (decimal)reader["database_backup_lsn"],
           DatabaseName = (string)reader["database_name"],
@@ -233,23 +242,26 @@ namespace AgDatabaseMove.SmoFacade
         .WaitAndRetry(6, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(5, retryAttempt)));
 
       // ensure database is not in AvailabilityGroup, WaitAndRetry loop for each instance to sync
-      policyPrep.Execute(() => {
+      policyPrep.Execute(() =>
+      {
         _database.Refresh();
-        if(Restoring)
+        if (Restoring)
           return; // restoring state means we're good to drop
 
-        try {
-          if(!string.IsNullOrEmpty(_database.AvailabilityGroupName))
+        try
+        {
+          if (!string.IsNullOrEmpty(_database.AvailabilityGroupName))
             throw
               new Exception($"Cannot kill the database {Name} until it has been removed from the AvailabilityGroup");
-          if(_database.AvailabilityDatabaseSynchronizationState >
+          if (_database.AvailabilityDatabaseSynchronizationState >
              AvailabilityDatabaseSynchronizationState.NotSynchronizing)
             throw new
               Exception($"Cannot kill the database {Name} until AvailabilityDatabaseSynchronizationState is inaccessible");
         }
-        catch(
-          PropertyCannotBeRetrievedException) { } // good here, AvailabilityDatabaseSynchronizationState unavailable means it has no state
-        catch(SmoException e) when(e.Message.Contains("Cannot access properties or methods")) { }
+        catch (
+          PropertyCannotBeRetrievedException)
+        { } // good here, AvailabilityDatabaseSynchronizationState unavailable means it has no state
+        catch (SmoException e) when (e.Message.Contains("Cannot access properties or methods")) { }
       });
     }
   }
