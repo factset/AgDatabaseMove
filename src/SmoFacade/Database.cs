@@ -195,6 +195,35 @@ namespace AgDatabaseMove.SmoFacade
       _database.Alter(TerminationClause.RollbackTransactionsImmediately);
     }
 
+    public void SetSizeLimit(int maxGB)
+    {
+      var dataFile = _database.FileGroups[_database.DefaultFileGroup].Files.Cast<DataFile>()
+        .Single(d => d.IsPrimaryFile);
+
+      dataFile.MaxSize = maxGB * 1048576;
+      dataFile.Alter();
+    }
+
+    public void SetGrowthRate(int growthMB)
+    {
+      var dataFile = _database.FileGroups[_database.DefaultFileGroup].Files.Cast<DataFile>()
+        .Single(d => d.IsPrimaryFile);
+
+      dataFile.GrowthType = FileGrowthType.KB;
+      dataFile.Growth = growthMB * 1024;
+      dataFile.Alter();
+    }
+
+    public void SetLogGrowthRate(int growthMB)
+    {
+      foreach (var logFile in _database.LogFiles.Cast<LogFile>())
+      {
+        logFile.GrowthType = FileGrowthType.KB;
+        logFile.Growth = growthMB * 1024;
+        logFile.Alter();
+      }
+    }
+
     private void ThrowIfUnreadyToDrop()
     {
       // Deleting the database while it is initializing will leave it in a state where system redo threads are stuck.

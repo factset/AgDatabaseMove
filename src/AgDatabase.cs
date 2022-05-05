@@ -272,6 +272,21 @@ namespace AgDatabaseMove
       _listener.Primary.Database(Name).MultiUserMode();
     }
 
+    public void SetSizeLimit(int maxGB)
+    {
+      _listener.Primary.Database(Name).SetSizeLimit(maxGB);
+    }
+
+    public void SetGrowthRate(int growthMB)
+    {
+      _listener.Primary.Database(Name).SetGrowthRate(growthMB);
+    }
+
+    public void SetLogGrowthRate(int growthMB)
+    {
+      _listener.Primary.Database(Name).SetLogGrowthRate(growthMB);
+    }
+
     public void CheckDBConnections(int connectionTimeout)
     {
       _listener.ForEachAgInstance(server => server.CheckDBConnection(Name, connectionTimeout));
