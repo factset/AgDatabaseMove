@@ -39,6 +39,8 @@ namespace AgDatabaseMove
     IEnumerable<LoginProperties> AssociatedLogins();
     void DropLogin(LoginProperties login);
     void DropAllLogins();
+    void AddUser(UserProperties user);
+    void DropUser(UserProperties user);
     void AddRole(LoginProperties login, RoleProperties role);
     IEnumerable<RoleProperties> AssociatedRoles();
     void ContainsLogin(string loginName);
