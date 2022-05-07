@@ -142,7 +142,7 @@ namespace AgDatabaseMove
 
       // find all backups in that chain
       if (fullBackupLsnBag.Count == 0)
-        throw new Exception("Could not find any full backups"); 
+        throw new Exception($"Could not find any full backups for DB '{Name}'"); 
 
       var databaseBackupLsn = fullBackupLsnBag.Max();
       var bag = new ConcurrentBag<BackupMetadata>();
