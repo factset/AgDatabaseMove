@@ -131,9 +131,19 @@ namespace AgDatabaseMove
     {
       // find most recent full backup LSN across all replica servers
       var fullBackupLsnBag = new ConcurrentBag<decimal>();
-      _listener.ForEachAgInstance(s => fullBackupLsnBag.Add(s.Database(Name).MostRecentFullBackupLsn()));
+      _listener.ForEachAgInstance(s => 
+      {
+        try
+        {
+          fullBackupLsnBag.Add(s.Database(Name).MostRecentFullBackupLsn());
+        }
+        catch { }
+      });
 
       // find all backups in that chain
+      if (fullBackupLsnBag.IsEmpty)
+        throw new Exception($"Could not find any full backups for DB '{Name}'"); 
+
       var databaseBackupLsn = fullBackupLsnBag.Max();
       var bag = new ConcurrentBag<BackupMetadata>();
       _listener.ForEachAgInstance(s => s.Database(Name).BackupChainFromLsn(databaseBackupLsn)
