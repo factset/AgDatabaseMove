@@ -42,7 +42,7 @@ namespace AgDatabaseMove
     void AddRole(LoginProperties login, RoleProperties role);
     IEnumerable<RoleProperties> AssociatedRoles();
     void ContainsLogin(string loginName);
-    void SetSizeLimit(int maxGB);
+    void SetSizeLimit(int maxMB);
     void SetGrowthRate(int growthMB);
     void SetLogGrowthRate(int growthMB);
   }
@@ -275,9 +275,9 @@ namespace AgDatabaseMove
       _listener.Primary.Database(Name).MultiUserMode();
     }
 
-    public void SetSizeLimit(int maxGB)
+    public void SetSizeLimit(int maxMB)
     {
-      _listener.Primary.Database(Name).SetSizeLimit(maxGB);
+      _listener.Primary.Database(Name).SetSizeLimit(maxMB);
     }
 
     public void SetGrowthRate(int growthMB)
