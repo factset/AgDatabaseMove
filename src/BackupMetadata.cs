@@ -4,21 +4,30 @@ namespace AgDatabaseMove
   using System.Collections.Generic;
   using SmoFacade;
 
-
-  /// <summary>
-  ///   Occasionally we wind up with the same entry for a backup on multiple instance's msdb.
-  ///   For now we'll consider these backups to be equal despite their file location,
-  ///   but perhaps there's value in being able to look for the file in multiple locations.
-  /// </summary>
   public class BackupMetadataEqualityComparer : IEqualityComparer<BackupMetadata>
   {
-    public bool Equals(BackupMetadata x, BackupMetadata y)
+    /// <summary>
+    /// This is used for checking similar backups (like striped backups)
+    /// </summary>
+    /// <returns>bool</returns>
+    public bool EqualsExceptForPhysicalDeviceName(BackupMetadata x, BackupMetadata y)
     {
       return x.LastLsn == y.LastLsn &&
              x.FirstLsn == y.FirstLsn &&
              x.BackupType == y.BackupType &&
              x.DatabaseName == y.DatabaseName &&
-             x.PhysicalDeviceName == y.PhysicalDeviceName;
+             x.CheckpointLsn == y.CheckpointLsn &&
+             x.DatabaseBackupLsn == x.DatabaseBackupLsn;
+    }
+
+    /// <summary>
+    /// This is used for checking exactly the same backup (like finding duplicates)
+    /// </summary>
+    /// <returns>bool</returns>
+    public bool Equals(BackupMetadata x, BackupMetadata y)
+    {
+      return EqualsExceptForPhysicalDeviceName(x, y)
+        && x.PhysicalDeviceName == y.PhysicalDeviceName;
     }
 
     public int GetHashCode(BackupMetadata obj)
@@ -30,6 +39,8 @@ namespace AgDatabaseMove
                  EqualityComparer<BackupFileTools.BackupType>.Default.GetHashCode(obj.BackupType);
       hashCode = hashCode * -1521134295 + obj.FirstLsn.GetHashCode();
       hashCode = hashCode * -1521134295 + obj.LastLsn.GetHashCode();
+      hashCode = hashCode * -1521134295 + obj.CheckpointLsn.GetHashCode();
+      hashCode = hashCode * -1521134295 + obj.DatabaseBackupLsn.GetHashCode();
       return hashCode;
     }
   }

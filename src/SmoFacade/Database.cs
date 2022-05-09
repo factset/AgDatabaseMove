@@ -167,8 +167,13 @@ namespace AgDatabaseMove.SmoFacade
       using var reader = cmd.ExecuteReader();
       if (!reader.Read())
         throw new Exception("MostRecentFullBackup SQL found no results");
+      
+      var lsnValue = reader["most_recent_full_backup_checkpoint_lsn"];
 
-      return (decimal)reader["most_recent_full_backup_checkpoint_lsn"];
+      if (lsnValue == DBNull.Value)
+        throw new Exception("MostRecentFullBackup SQL found no results");
+
+      return (decimal)lsnValue;
     }
 
     public List<BackupMetadata> BackupChainFromLsn(decimal checkpointLsn)
