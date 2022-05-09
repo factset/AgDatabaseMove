@@ -39,6 +39,8 @@ namespace AgDatabaseMove
     IEnumerable<LoginProperties> AssociatedLogins();
     void DropLogin(LoginProperties login);
     void DropAllLogins();
+    void AddUser(UserProperties user);
+    void DropUser(UserProperties user);
     void AddRole(LoginProperties login, RoleProperties role);
     IEnumerable<RoleProperties> AssociatedRoles();
     void ContainsLogin(string loginName);
@@ -198,6 +200,16 @@ namespace AgDatabaseMove
       var createdLogin = _listener.Primary.AddLogin(login);
       login.Sid = createdLogin.Sid;
       Parallel.ForEach(_listener.Secondaries, server => server.AddLogin(login));
+    }
+
+    public void AddUser(UserProperties user)
+    {
+      _listener.Primary.Database(Name).AddUser(user);
+    }
+
+    public void DropUser(UserProperties user)
+    {
+      _listener.Primary.Database(Name)?.DropUser(user);
     }
 
     public IEnumerable<RoleProperties> AssociatedRoles()
