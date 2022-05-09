@@ -14,7 +14,6 @@ namespace AgDatabaseMove.SmoFacade
   {
     internal readonly Microsoft.SqlServer.Management.Smo.Database _database;
     private readonly Server _server;
-    private const int GB_TO_KB = 1048576;
     private const int MB_TO_KB = 1024;
 
     internal Database(Microsoft.SqlServer.Management.Smo.Database database, Server server)
@@ -197,12 +196,12 @@ namespace AgDatabaseMove.SmoFacade
       _database.Alter(TerminationClause.RollbackTransactionsImmediately);
     }
 
-    public void SetSizeLimit(int maxGB)
+    public void SetSizeLimit(int maxMB)
     {
       var dataFile = _database.FileGroups[_database.DefaultFileGroup].Files.Cast<DataFile>()
         .Single(d => d.IsPrimaryFile);
 
-      dataFile.MaxSize = maxGB * GB_TO_KB;
+      dataFile.MaxSize = maxMB * MB_TO_KB;
       dataFile.Alter();
     }
 
