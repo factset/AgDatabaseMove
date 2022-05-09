@@ -73,8 +73,10 @@ namespace AgDatabaseMove
 
       if(!backupList.Any())
         throw new BackupChainException("No backups found to restore");
+      
+      var stripedBackupSetChain = StripedBackupSet.GetStripedBackupSetChain(backupList.ToList());
 
-      _options.Destination.Restore(backupList, _options.RetryDuration, _options.FileRelocator);
+      _options.Destination.Restore(stripedBackupSetChain, _options.RetryDuration, _options.FileRelocator);
 
       if(_options.CopyLogins)
         foreach(var loginProperty in _options.Source.AssociatedLogins().Select(UpdateDefaultDb))

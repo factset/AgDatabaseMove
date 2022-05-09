@@ -178,76 +178,77 @@ namespace AgDatabaseMove.SmoFacade
     ///   wait
     /// </param>
     /// <param name="fileRelocation">Option for renaming files during the restore.</param>
-    public void Restore(IEnumerable<BackupMetadata> backupOrder, string databaseName,
+    public void Restore(IEnumerable<StripedBackupSet> stripedBackupSetChain, string databaseName,
       Func<int, TimeSpan> retryDurationProvider,
       Func<string, string> fileRelocation = null)
     {
-      var policy = Policy
+      var retryPolicy = Policy
         .Handle<ExecutionFailureException>(e => e.InnerException != null
                                                 && e.InnerException is SqlException
                                                 && e.InnerException.Message
                                                   .Contains("The process cannot access the file because it is being used by another process"))
         .WaitAndRetry(10, retryDurationProvider);
 
-
       var restore = new Restore { Database = databaseName, NoRecovery = true };
-
-      var stripedBackupSetChain = StripedBackupSet.GetStripedBackupSetChain(backupOrder.ToList());
 
       foreach(var stripedBackupSet in stripedBackupSetChain) {
 
-        // needed for the post-restore clean-up task
-        List<BackupDeviceItem> backupDeviceItems = new List<BackupDeviceItem>();
+        AddBackupDeviceItemsToRestore(restore, stripedBackupSet);
 
-
-        foreach(var backup in stripedBackupSet.StripedBackups) {
-          var backupDeviceItem = AddBackupDeviceItemToRestore(restore, backup.PhysicalDeviceName, policy, fileRelocation);
-          backupDeviceItems.Add(backupDeviceItem);
+        var defaultFileLocations = DefaultFileLocations();
+        if (defaultFileLocations != null)
+        {
+          AddRelocateFilesToRestore(restore, defaultFileLocations, retryPolicy, fileRelocation);
         }
 
         _server.ConnectionContext.StatementTimeout = 86400; // 60 * 60 * 24 = 24 hours
-        policy.Execute(() => restore.SqlRestore(_server));
+        retryPolicy.Execute(() => restore.SqlRestore(_server));
 
-        // clean up
-        foreach(var backupDeviceItem in backupDeviceItems) {
-          restore.Devices.Remove(backupDeviceItem);
-        }
+        restore.Devices.Clear();
         restore.RelocateFiles.Clear();
       }
     }
 
-    private BackupDeviceItem AddBackupDeviceItemToRestore(Restore restore, string physicalDeviceName,
-      Policy policy,
+    /// <summary>
+    /// This is like adding the `FROM URL='&lt;backup file url&gt;'` to the RESTORE T-SQL command
+    /// </summary>
+    private void AddBackupDeviceItemsToRestore(Restore restore, StripedBackupSet stripedBackupSet)
+    {
+      foreach (var stripedBackup in stripedBackupSet.StripedBackups)
+      {
+        var physicalDeviceName = stripedBackup.PhysicalDeviceName;
+        var device = BackupFileTools.IsValidFileUrl(physicalDeviceName) ? DeviceType.Url : DeviceType.File;
+
+        var backupDeviceItem = new BackupDeviceItem(physicalDeviceName, device);
+        if (_credentialName != null && device == DeviceType.Url)
+          backupDeviceItem.CredentialName = _credentialName;
+
+        restore.Devices.Add(backupDeviceItem);
+      }
+    }
+
+    /// <summary>
+    /// This is like adding the `WITH MOVE=&lt;label&gt; to &lt;path&gt;` to the RESTORE T-SQL command
+    /// </summary>
+    private void AddRelocateFilesToRestore(Restore restore, DefaultFileLocations defaultFileLocations,
+      Policy retryPolicy,
       Func<string, string> fileRelocation = null)
     {
+      var fileList = retryPolicy.Execute(() => restore.ReadFileList(_server).AsEnumerable());
+      foreach(var file in fileList) {
+        var physicalName = (string)file["PhysicalName"];
+        var fileName = GetFileName(physicalName);
 
-      var device = BackupFileTools.IsValidFileUrl(physicalDeviceName) ? DeviceType.Url : DeviceType.File;
+        if(fileRelocation != null)
+          fileName = fileRelocation(fileName);
 
-      var backupDeviceItem = new BackupDeviceItem(physicalDeviceName, device);
-      if(_credentialName != null && device == DeviceType.Url)
-        backupDeviceItem.CredentialName = _credentialName;
+        var path = (string)file["Type"] == "L" ? defaultFileLocations?.Log : defaultFileLocations?.Data;
+        path ??= Path.GetFullPath(physicalName);
 
-      restore.Devices.Add(backupDeviceItem);
+        var newFilePath = Path.Combine(path, fileName);
 
-      var defaultFileLocations = DefaultFileLocations();
-      if(defaultFileLocations != null) {
-        var fileList = policy.Execute(() => restore.ReadFileList(_server).AsEnumerable());
-        foreach(var file in fileList) {
-          var physicalName = (string)file["PhysicalName"];
-          var fileName = GetFileName(physicalName);
-
-          if(fileRelocation != null)
-            fileName = fileRelocation(fileName);
-
-          var path = (string)file["Type"] == "L" ? defaultFileLocations?.Log : defaultFileLocations?.Data;
-          path ??= Path.GetFullPath(physicalName);
-
-          var newFilePath = Path.Combine(path, fileName);
-
-          restore.RelocateFiles.Add(new RelocateFile((string)file["LogicalName"], newFilePath));
-        }
+        restore.RelocateFiles.Add(new RelocateFile((string)file["LogicalName"], newFilePath));
       }
-      return backupDeviceItem;
     }
 
     public void RenameLogicalFileName(string databaseName, Func<string, string> fileRenamer)

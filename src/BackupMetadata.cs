@@ -5,7 +5,6 @@ namespace AgDatabaseMove
   using SmoFacade;
 
   public class BackupMetadataEqualityComparer : IEqualityComparer<BackupMetadata>
-
   {
     /// <summary>
     /// This is used for checking similar backups (like striped backups)
@@ -29,7 +28,6 @@ namespace AgDatabaseMove
     {
       return EqualsExceptForPhysicalDeviceName(x, y)
         && x.PhysicalDeviceName == y.PhysicalDeviceName;
-
     }
 
     public int GetHashCode(BackupMetadata obj)
@@ -43,7 +41,7 @@ namespace AgDatabaseMove
       hashCode = hashCode * -1521134295 + obj.LastLsn.GetHashCode();
       hashCode = hashCode * -1521134295 + obj.CheckpointLsn.GetHashCode();
       hashCode = hashCode * -1521134295 + obj.DatabaseBackupLsn.GetHashCode();
-
+      
       return hashCode;
     }
   }

@@ -8,9 +8,9 @@ namespace AgDatabaseMove
 
   public class StripedBackupSet
   {
-    public List<BackupMetadata> StripedBackups { get; private set; }
+    public IEnumerable<BackupMetadata> StripedBackups { get; private set; }
 
-    public StripedBackupSet(List<BackupMetadata> backups, BackupMetadata backupToMatch)
+    public StripedBackupSet(IEnumerable<BackupMetadata> backups, BackupMetadata backupToMatch)
     {
       var stripes = backups.Where(backup => IsStriped(backup, backupToMatch));
       StripedBackups = new List<BackupMetadata>(stripes);
@@ -18,18 +18,18 @@ namespace AgDatabaseMove
 
     private bool IsStriped(BackupMetadata backup, BackupMetadata backupToMatch)
     {
-      return new BackupEqualityComparer().Equals(backup, backupToMatch);
+      return new BackupMetadataEqualityComparer().EqualsExceptForPhysicalDeviceName(backup, backupToMatch);
     }
 
-    public static List<StripedBackupSet> GetStripedBackupSetChain(List<BackupMetadata> backups)
+    public static IEnumerable<StripedBackupSet> GetStripedBackupSetChain(IEnumerable<BackupMetadata> backups)
     {
       List<StripedBackupSet> chain = new List<StripedBackupSet>(); 
-      while(backups.Count > 0)
+      while(backups.Count() > 0)
       {
         var backup = backups.First();
         var stripedBackupSet = new StripedBackupSet(backups, backup);
         chain.Add(stripedBackupSet);
-        backups = backups.Except(stripedBackupSet.StripedBackups, new BackupEqualityComparer()).ToList();
+        backups = backups.Except(stripedBackupSet.StripedBackups, new BackupMetadataEqualityComparer());
       }
       return chain;
     }
