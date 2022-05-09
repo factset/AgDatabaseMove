@@ -82,7 +82,6 @@ namespace AgDatabaseMove
 
       if(_options.Finalize) {
         _options.Destination.JoinAg();
-        _options.Destination.RenameLogicalFileName(_options.FileRelocator);
       }
 
       return backupList.Max(bl => bl.LastLsn);
