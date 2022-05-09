@@ -144,13 +144,13 @@ namespace AgDatabaseMove.SmoFacade
     {
       var backups = new List<BackupMetadata>();
 
-      var query = "SELECT s.database_name, m.physical_device_name, s.backup_start_date, s.first_lsn, s.last_lsn," +
+      var query = "SELECT s.database_name, m.physical_device_name, s.backup_start_date, s.first_lsn, s.last_lsn, " +
                   "s.database_backup_lsn, s.checkpoint_lsn, s.[type] AS backup_type, s.server_name, s.recovery_model " +
                   "FROM msdb.dbo.backupset s " +
                   "INNER JOIN msdb.dbo.backupmediafamily m ON s.media_set_id = m.media_set_id " +
                   "WHERE s.database_name = @dbName " +
                   "AND is_copy_only = 0 " +
-                  "AND (s.database_backup_lsn = @lsn OR s.checkpoint_lsn = @lsn)" +
+                  "AND (s.database_backup_lsn = @lsn OR s.checkpoint_lsn = @lsn) " +
                   "ORDER BY s.backup_start_date DESC, backup_finish_date";
 
       using var cmd = _server.SqlConnection.CreateCommand();
