@@ -14,6 +14,7 @@ namespace AgDatabaseMove.SmoFacade
   {
     internal readonly Microsoft.SqlServer.Management.Smo.Database _database;
     private readonly Server _server;
+    private const int MB_TO_KB = 1024;
 
     internal Database(Microsoft.SqlServer.Management.Smo.Database database, Server server)
     {
@@ -235,6 +236,35 @@ namespace AgDatabaseMove.SmoFacade
     {
       _database.DatabaseOptions.UserAccess = DatabaseUserAccess.Multiple;
       _database.Alter(TerminationClause.RollbackTransactionsImmediately);
+    }
+
+    public void SetSizeLimit(int maxMB)
+    {
+      var dataFile = _database.FileGroups[_database.DefaultFileGroup].Files.Cast<DataFile>()
+        .Single(d => d.IsPrimaryFile);
+
+      dataFile.MaxSize = maxMB * MB_TO_KB;
+      dataFile.Alter();
+    }
+
+    public void SetGrowthRate(int growthMB)
+    {
+      var dataFile = _database.FileGroups[_database.DefaultFileGroup].Files.Cast<DataFile>()
+        .Single(d => d.IsPrimaryFile);
+
+      dataFile.GrowthType = FileGrowthType.KB;
+      dataFile.Growth = growthMB * MB_TO_KB;
+      dataFile.Alter();
+    }
+
+    public void SetLogGrowthRate(int growthMB)
+    {
+      foreach (var logFile in _database.LogFiles.Cast<LogFile>())
+      {
+        logFile.GrowthType = FileGrowthType.KB;
+        logFile.Growth = growthMB * MB_TO_KB;
+        logFile.Alter();
+      }
     }
 
     private void ThrowIfUnreadyToDrop()
