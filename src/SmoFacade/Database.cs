@@ -112,7 +112,7 @@ namespace AgDatabaseMove.SmoFacade
 
       return backups;
     }
-    
+
     public decimal? MostRecentFullBackupLsn()
     {
       var query = "SELECT MAX(checkpoint_lsn) as most_recent_full_backup_checkpoint_lsn " +
