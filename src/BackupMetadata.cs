@@ -4,10 +4,14 @@ namespace AgDatabaseMove
   using System.Collections.Generic;
   using SmoFacade;
 
+  public class BackupMetadataEqualityComparer : IEqualityComparer<BackupMetadata>
 
-  public class BackupEqualityComparer : IEqualityComparer<BackupMetadata>
   {
-    public bool Equals(BackupMetadata x, BackupMetadata y)
+    /// <summary>
+    /// This is used for checking similar backups (like striped backups)
+    /// </summary>
+    /// <returns>bool</returns>
+    public bool EqualsExceptForPhysicalDeviceName(BackupMetadata x, BackupMetadata y)
     {
       return x.LastLsn == y.LastLsn &&
              x.FirstLsn == y.FirstLsn &&
@@ -17,33 +21,29 @@ namespace AgDatabaseMove
              x.DatabaseBackupLsn == x.DatabaseBackupLsn;
     }
 
+    /// <summary>
+    /// This is used for checking exactly the same backup (like finding duplicates)
+    /// </summary>
+    /// <returns>bool</returns>
+    public bool Equals(BackupMetadata x, BackupMetadata y)
+    {
+      return EqualsExceptForPhysicalDeviceName(x, y)
+        && x.PhysicalDeviceName == y.PhysicalDeviceName;
+
+    }
+
     public int GetHashCode(BackupMetadata obj)
     {
       var hashCode = -1277603921;
       hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(obj.DatabaseName);
+      hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(obj.PhysicalDeviceName);
       hashCode = hashCode * -1521134295 +
                  EqualityComparer<BackupFileTools.BackupType>.Default.GetHashCode(obj.BackupType);
       hashCode = hashCode * -1521134295 + obj.FirstLsn.GetHashCode();
       hashCode = hashCode * -1521134295 + obj.LastLsn.GetHashCode();
       hashCode = hashCode * -1521134295 + obj.CheckpointLsn.GetHashCode();
       hashCode = hashCode * -1521134295 + obj.DatabaseBackupLsn.GetHashCode();
-      return hashCode;
-    }
-  }
 
-  public class BackupMetadataEqualityComparer : IEqualityComparer<BackupMetadata>
-  {
-    public bool Equals(BackupMetadata x, BackupMetadata y)
-    {
-      return new BackupEqualityComparer()
-        .Equals(x,y) 
-        && x.PhysicalDeviceName == y.PhysicalDeviceName;
-    }
-
-    public int GetHashCode(BackupMetadata obj)
-    {
-      var hashCode = new BackupEqualityComparer().GetHashCode(obj);
-      hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(obj.PhysicalDeviceName);
       return hashCode;
     }
   }
