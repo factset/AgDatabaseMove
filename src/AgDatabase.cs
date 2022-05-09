@@ -138,16 +138,14 @@ namespace AgDatabaseMove
       var fullBackupLsnBag = new ConcurrentBag<decimal>();
       _listener.ForEachAgInstance(s => 
       {
-        try
-        {
-          fullBackupLsnBag.Add(s.Database(Name).MostRecentFullBackupLsn());
-        }
-        catch { }
+        var lsn = s.Database(Name).MostRecentFullBackupLsn();
+        if (lsn != null)
+          fullBackupLsnBag.Add(lsn.Value);
       });
 
       // find all backups in that chain
       if (fullBackupLsnBag.IsEmpty)
-        throw new Exception($"Could not find any full backups for DB '{Name}'"); 
+        throw new Exception($"Could not find any full backups for DB '{Name}'");
 
       var databaseBackupLsn = fullBackupLsnBag.Max();
       var bag = new ConcurrentBag<BackupMetadata>();
