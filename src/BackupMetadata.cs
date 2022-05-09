@@ -41,7 +41,6 @@ namespace AgDatabaseMove
       hashCode = hashCode * -1521134295 + obj.LastLsn.GetHashCode();
       hashCode = hashCode * -1521134295 + obj.CheckpointLsn.GetHashCode();
       hashCode = hashCode * -1521134295 + obj.DatabaseBackupLsn.GetHashCode();
-      
       return hashCode;
     }
   }
