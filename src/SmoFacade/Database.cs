@@ -112,8 +112,8 @@ namespace AgDatabaseMove.SmoFacade
 
       return backups;
     }
-
-    public decimal MostRecentFullBackupLsn()
+    
+    public decimal? MostRecentFullBackupLsn()
     {
       var query = "SELECT MAX(checkpoint_lsn) as most_recent_full_backup_checkpoint_lsn " +
                   "FROM msdb.dbo.backupset " +
@@ -130,12 +130,12 @@ namespace AgDatabaseMove.SmoFacade
 
       using var reader = cmd.ExecuteReader();
       if(!reader.Read())
-        throw new Exception("MostRecentFullBackup SQL found no results");
+        return null;
       
       var lsnValue = reader["most_recent_full_backup_checkpoint_lsn"];
 
       if (lsnValue == DBNull.Value)
-        throw new Exception("MostRecentFullBackup SQL found no results");
+        return null;
 
       return (decimal)lsnValue;
     }
