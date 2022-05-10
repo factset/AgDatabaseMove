@@ -28,12 +28,21 @@
         DatabaseName = _agConfig.DatabaseName,
         CredentialName = _agConfig.CredentialName
       });
+
       _agDatabase.AddLogin(new LoginProperties
       {
         Name = _loginConfig.LoginName,
         Password = _loginConfig.Password,
         LoginType = LoginType.SqlLogin,
         DefaultDatabase = _loginConfig.DefaultDatabase
+      });
+
+      _agDatabase.AddUser(new UserProperties
+      {
+        Name = _loginConfig.LoginName,
+        LoginName = _loginConfig.LoginName,
+        Roles = new[] { new RoleProperties { Name = "db_datareader" } },
+        Permissions = new DatabasePermissionSet(DatabasePermission.Execute)
       });
 
       _createdLogins = GetCreatedLogins();
@@ -56,6 +65,7 @@
     public void Dispose()
     {
       _agDatabase?.DropLogin(new LoginProperties { Name = _loginConfig.LoginName });
+      _agDatabase?.DropUser(new UserProperties { Name = _loginConfig.LoginName });
       _agDatabase?.Dispose();
     }
   }
