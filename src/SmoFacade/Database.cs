@@ -14,6 +14,7 @@ namespace AgDatabaseMove.SmoFacade
   {
     internal readonly Microsoft.SqlServer.Management.Smo.Database _database;
     private readonly Server _server;
+    private const int MB_TO_KB = 1024;
 
     internal Database(Microsoft.SqlServer.Management.Smo.Database database, Server server)
     {
@@ -44,10 +45,44 @@ namespace AgDatabaseMove.SmoFacade
     {
       var logins = Users.Where(u => u.Login != null && u.Login.Name != "sa")
         .Select(u => u.Login.Properties());
-      foreach(var login in logins)
-        _server.DropLogin(new LoginProperties {
+      foreach (var login in logins)
+        _server.DropLogin(new LoginProperties
+        {
           Name = login.Name
         });
+    }
+
+    public User AddUser(UserProperties userProperties)
+    {
+      var user = Users.SingleOrDefault(u => u.Name.Equals(userProperties.Name, StringComparison.InvariantCultureIgnoreCase));
+      if (user == null)
+      {
+        var smoUser = new Microsoft.SqlServer.Management.Smo.User(_database, userProperties.Name)
+        { Login = userProperties.LoginName };
+        smoUser.Create();
+        user = new User(smoUser, _server);
+
+        foreach (var role in userProperties.Roles)
+        {
+          user.AddRole(role);
+        }
+
+        GrantPermission(userProperties);
+      }
+
+      return user;
+    }
+
+    private void GrantPermission(UserProperties userProperties)
+    {
+      _database.Grant(userProperties.Permissions, userProperties.Name);
+    }
+
+    public void DropUser(UserProperties userProperties)
+    {
+      var matchingUser =
+        Users.SingleOrDefault(u => u.Name.Equals(userProperties.Name, StringComparison.InvariantCultureIgnoreCase));
+      matchingUser?.Drop();
     }
 
     /// <summary>
@@ -61,7 +96,8 @@ namespace AgDatabaseMove.SmoFacade
         .Handle<FailedOperationException>()
         .WaitAndRetry(3, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(10, retryAttempt)));
 
-      policy.Execute(() => {
+      policy.Execute(() =>
+      {
         _database.Refresh();
         _database.Parent.KillDatabase(_database.Name);
       });
@@ -97,8 +133,9 @@ namespace AgDatabaseMove.SmoFacade
       cmd.Parameters.Add(dbName);
 
       using var reader = cmd.ExecuteReader();
-      while(reader.Read())
-        backups.Add(new BackupMetadata {
+      while (reader.Read())
+        backups.Add(new BackupMetadata
+        {
           CheckpointLsn = (decimal)reader["checkpoint_lsn"],
           DatabaseBackupLsn = (decimal)reader["database_backup_lsn"],
           DatabaseName = (string)reader["database_name"],
@@ -113,7 +150,7 @@ namespace AgDatabaseMove.SmoFacade
       return backups;
     }
 
-    public decimal MostRecentFullBackupLsn()
+    public decimal? MostRecentFullBackupLsn()
     {
       var query = "SELECT MAX(checkpoint_lsn) as most_recent_full_backup_checkpoint_lsn " +
                   "FROM msdb.dbo.backupset " +
@@ -130,12 +167,11 @@ namespace AgDatabaseMove.SmoFacade
 
       using var reader = cmd.ExecuteReader();
       if(!reader.Read())
-        throw new Exception("MostRecentFullBackup SQL found no results");
+        return null;
       
       var lsnValue = reader["most_recent_full_backup_checkpoint_lsn"];
-
       if (lsnValue == DBNull.Value)
-        throw new Exception("MostRecentFullBackup SQL found no results");
+        return null;
 
       return (decimal)lsnValue;
     }
@@ -144,13 +180,13 @@ namespace AgDatabaseMove.SmoFacade
     {
       var backups = new List<BackupMetadata>();
 
-      var query = "SELECT s.database_name, m.physical_device_name, s.backup_start_date, s.first_lsn, s.last_lsn," +
+      var query = "SELECT s.database_name, m.physical_device_name, s.backup_start_date, s.first_lsn, s.last_lsn, " +
                   "s.database_backup_lsn, s.checkpoint_lsn, s.[type] AS backup_type, s.server_name, s.recovery_model " +
                   "FROM msdb.dbo.backupset s " +
                   "INNER JOIN msdb.dbo.backupmediafamily m ON s.media_set_id = m.media_set_id " +
                   "WHERE s.database_name = @dbName " +
                   "AND is_copy_only = 0 " +
-                  "AND (s.database_backup_lsn = @lsn OR s.checkpoint_lsn = @lsn)" +
+                  "AND (s.database_backup_lsn = @lsn OR s.checkpoint_lsn = @lsn) " +
                   "ORDER BY s.backup_start_date DESC, backup_finish_date";
 
       using var cmd = _server.SqlConnection.CreateCommand();
@@ -166,8 +202,9 @@ namespace AgDatabaseMove.SmoFacade
       cmd.Parameters.Add(lsnParam);
 
       using var reader = cmd.ExecuteReader();
-      while(reader.Read())
-        backups.Add(new BackupMetadata {
+      while (reader.Read())
+        backups.Add(new BackupMetadata
+        {
           CheckpointLsn = (decimal)reader["checkpoint_lsn"],
           DatabaseBackupLsn = (decimal)reader["database_backup_lsn"],
           DatabaseName = (string)reader["database_name"],
@@ -200,6 +237,35 @@ namespace AgDatabaseMove.SmoFacade
       _database.Alter(TerminationClause.RollbackTransactionsImmediately);
     }
 
+    public void SetSizeLimit(int maxMB)
+    {
+      var dataFile = _database.FileGroups[_database.DefaultFileGroup].Files.Cast<DataFile>()
+        .Single(d => d.IsPrimaryFile);
+
+      dataFile.MaxSize = maxMB * MB_TO_KB;
+      dataFile.Alter();
+    }
+
+    public void SetGrowthRate(int growthMB)
+    {
+      var dataFile = _database.FileGroups[_database.DefaultFileGroup].Files.Cast<DataFile>()
+        .Single(d => d.IsPrimaryFile);
+
+      dataFile.GrowthType = FileGrowthType.KB;
+      dataFile.Growth = growthMB * MB_TO_KB;
+      dataFile.Alter();
+    }
+
+    public void SetLogGrowthRate(int growthMB)
+    {
+      foreach (var logFile in _database.LogFiles.Cast<LogFile>())
+      {
+        logFile.GrowthType = FileGrowthType.KB;
+        logFile.Growth = growthMB * MB_TO_KB;
+        logFile.Alter();
+      }
+    }
+
     private void ThrowIfUnreadyToDrop()
     {
       // Deleting the database while it is initializing will leave it in a state where system redo threads are stuck.
@@ -210,23 +276,26 @@ namespace AgDatabaseMove.SmoFacade
         .WaitAndRetry(6, retryAttempt => TimeSpan.FromMilliseconds(Math.Pow(5, retryAttempt)));
 
       // ensure database is not in AvailabilityGroup, WaitAndRetry loop for each instance to sync
-      policyPrep.Execute(() => {
+      policyPrep.Execute(() =>
+      {
         _database.Refresh();
-        if(Restoring)
+        if (Restoring)
           return; // restoring state means we're good to drop
 
-        try {
-          if(!string.IsNullOrEmpty(_database.AvailabilityGroupName))
+        try
+        {
+          if (!string.IsNullOrEmpty(_database.AvailabilityGroupName))
             throw
               new Exception($"Cannot kill the database {Name} until it has been removed from the AvailabilityGroup");
-          if(_database.AvailabilityDatabaseSynchronizationState >
+          if (_database.AvailabilityDatabaseSynchronizationState >
              AvailabilityDatabaseSynchronizationState.NotSynchronizing)
             throw new
               Exception($"Cannot kill the database {Name} until AvailabilityDatabaseSynchronizationState is inaccessible");
         }
-        catch(
-          PropertyCannotBeRetrievedException) { } // good here, AvailabilityDatabaseSynchronizationState unavailable means it has no state
-        catch(SmoException e) when(e.Message.Contains("Cannot access properties or methods")) { }
+        catch (
+          PropertyCannotBeRetrievedException)
+        { } // good here, AvailabilityDatabaseSynchronizationState unavailable means it has no state
+        catch (SmoException e) when (e.Message.Contains("Cannot access properties or methods")) { }
       });
     }
   }

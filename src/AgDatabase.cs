@@ -40,9 +40,14 @@ namespace AgDatabaseMove
     IEnumerable<LoginProperties> AssociatedLogins();
     void DropLogin(LoginProperties login);
     void DropAllLogins();
+    void AddUser(UserProperties user);
+    void DropUser(UserProperties user);
     void AddRole(LoginProperties login, RoleProperties role);
     IEnumerable<RoleProperties> AssociatedRoles();
     void ContainsLogin(string loginName);
+    void SetSizeLimit(int maxMB);
+    void SetGrowthRate(int growthMB);
+    void SetLogGrowthRate(int growthMB);
   }
 
 
@@ -135,16 +140,14 @@ namespace AgDatabaseMove
       var fullBackupLsnBag = new ConcurrentBag<decimal>();
       _listener.ForEachAgInstance(s => 
       {
-        try
-        {
-          fullBackupLsnBag.Add(s.Database(Name).MostRecentFullBackupLsn());
-        }
-        catch { }
+        var lsn = s.Database(Name).MostRecentFullBackupLsn();
+        if (lsn != null)
+          fullBackupLsnBag.Add(lsn.Value);
       });
 
       // find all backups in that chain
       if (fullBackupLsnBag.IsEmpty)
-        throw new Exception($"Could not find any full backups for DB '{Name}'"); 
+        throw new Exception($"Could not find any full backups for DB '{Name}'");
 
       var databaseBackupLsn = fullBackupLsnBag.Max();
       var bag = new ConcurrentBag<BackupMetadata>();
@@ -200,6 +203,16 @@ namespace AgDatabaseMove
       var createdLogin = _listener.Primary.AddLogin(login);
       login.Sid = createdLogin.Sid;
       Parallel.ForEach(_listener.Secondaries, server => server.AddLogin(login));
+    }
+
+    public void AddUser(UserProperties user)
+    {
+      _listener.Primary.Database(Name).AddUser(user);
+    }
+
+    public void DropUser(UserProperties user)
+    {
+      _listener.Primary.Database(Name)?.DropUser(user);
     }
 
     public IEnumerable<RoleProperties> AssociatedRoles()
@@ -282,6 +295,21 @@ namespace AgDatabaseMove
     public void MultiUserMode()
     {
       _listener.Primary.Database(Name).MultiUserMode();
+    }
+
+    public void SetSizeLimit(int maxMB)
+    {
+      _listener.Primary.Database(Name).SetSizeLimit(maxMB);
+    }
+
+    public void SetGrowthRate(int growthMB)
+    {
+      _listener.Primary.Database(Name).SetGrowthRate(growthMB);
+    }
+
+    public void SetLogGrowthRate(int growthMB)
+    {
+      _listener.Primary.Database(Name).SetLogGrowthRate(growthMB);
     }
 
     public void CheckDBConnections(int connectionTimeout)
