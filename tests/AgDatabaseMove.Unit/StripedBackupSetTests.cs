@@ -14,7 +14,8 @@ namespace AgDatabaseMove.Unit
     {
       var backupChain = BackupOrder.GetBackupListWithStripes();
       var stripedBackupSetChain = StripedBackupSet.GetStripedBackupSetChain(backupChain);
-      Assert.True(backupChain.Count/2 == stripedBackupSetChain.Count());
+
+      Assert.Equal(backupChain.Count/2, stripedBackupSetChain.Count());
     }
 
     [Fact]
@@ -22,7 +23,8 @@ namespace AgDatabaseMove.Unit
     {
       var backupChain = BackupOrder.GetBackupList();
       var stripedBackupSetChain = StripedBackupSet.GetStripedBackupSetChain(backupChain);
-      Assert.True(backupChain.Count == stripedBackupSetChain.Count());
+
+      Assert.Equal(backupChain.Count, stripedBackupSetChain.Count());
     }
 
     [Fact]
@@ -30,6 +32,7 @@ namespace AgDatabaseMove.Unit
     {
       var backupChain = BackupOrder.GetBackupListWithStripes();
       var stripedBackupSetChain = StripedBackupSet.GetStripedBackupSetChain(backupChain);
+
       foreach (var stripedBackupSet in stripedBackupSetChain)
       {
         var stripes = stripedBackupSet.StripedBackups.ToList();
@@ -37,8 +40,8 @@ namespace AgDatabaseMove.Unit
         for (int i = 1; i < stripes.Count; i++)
         {
           var otherBackup = stripes[i];
-          Assert.True(new BackupMetadataEqualityComparer()
-            .EqualsExceptForPhysicalDeviceName(backup, otherBackup));
+          
+          Assert.True(new BackupMetadataEqualityComparer().EqualsExceptForPhysicalDeviceName(backup, otherBackup));
           Assert.NotEqual(backup, otherBackup, new BackupMetadataEqualityComparer());
         }
       }
