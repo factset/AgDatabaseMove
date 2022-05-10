@@ -31,7 +31,7 @@ namespace AgDatabaseMove
     List<BackupMetadata> RecentBackups();
     void JoinAg();
 
-    void Restore(IEnumerable<StripedBackupSet> stripedBackupSetChain, Func<int, TimeSpan> retryDurationProvider, 
+    void Restore(IEnumerable<StripedBackupSet> stripedBackupSetChain, Func<int, TimeSpan> retryDurationProvider,
       Func<string, string> fileRelocation = null);
 
     void RenameLogicalFileName(Func<string, string> fileRenamer);
