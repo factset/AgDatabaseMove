@@ -189,6 +189,7 @@ namespace AgDatabaseMove.SmoFacade
                                                   .Contains("The process cannot access the file because it is being used by another process"))
         .WaitAndRetry(10, retryDurationProvider);
 
+
       var restore = new Restore { Database = databaseName, NoRecovery = true };
 
       foreach(var stripedBackupSet in stripedBackupSetChain) {

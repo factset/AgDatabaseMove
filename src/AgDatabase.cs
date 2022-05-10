@@ -31,8 +31,7 @@ namespace AgDatabaseMove
     List<BackupMetadata> RecentBackups();
     void JoinAg();
 
-    void Restore(IEnumerable<StripedBackupSet> stripedBackupSetChain, 
-      Func<int, TimeSpan> retryDurationProvider,
+    void Restore(IEnumerable<StripedBackupSet> stripedBackupSetChain, Func<int, TimeSpan> retryDurationProvider, 
       Func<string, string> fileRelocation = null);
 
     void RenameLogicalFileName(Func<string, string> fileRenamer);
@@ -119,8 +118,7 @@ namespace AgDatabaseMove
     /// <param name="backupOrder">An ordered list of backups to restore.</param>
     /// <param name="retryDurationProvider">Retry duration function.</param>
     /// <param name="fileRelocation">A method to generate the new file location when moving the database.</param>
-    public void Restore(IEnumerable<StripedBackupSet> stripedBackupSetChain, 
-      Func<int, TimeSpan> retryDurationProvider,
+    public void Restore(IEnumerable<StripedBackupSet> stripedBackupSetChain, Func<int, TimeSpan> retryDurationProvider,
       Func<string, string> fileRelocation = null)
     {
       _listener.ForEachAgInstance(s => s.Restore(stripedBackupSetChain, Name, retryDurationProvider, fileRelocation));
