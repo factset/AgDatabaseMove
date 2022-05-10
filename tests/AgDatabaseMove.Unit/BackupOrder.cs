@@ -32,7 +32,7 @@ namespace AgDatabaseMove.Unit
       return result;
     }
 
-    private static List<BackupMetadata> GetBackupList()
+    public static List<BackupMetadata> GetBackupList()
     {
       return new List<BackupMetadata> {
         new BackupMetadata {
@@ -107,7 +107,7 @@ namespace AgDatabaseMove.Unit
       return list;
     }
 
-    private static List<BackupMetadata> GetBackupListWithStripes()
+    public static List<BackupMetadata> GetBackupListWithStripes()
     {
       var list = GetBackupList();
       var listWithStripes = CloneBackupMetaDataList(list).ToList();

@@ -12,11 +12,11 @@ namespace AgDatabaseMove
 
     public StripedBackupSet(IEnumerable<BackupMetadata> backups, BackupMetadata backupToMatch)
     {
-      var stripes = backups.Where(backup => IsStriped(backup, backupToMatch));
+      var stripes = backups.Where(backup => AreTwoBackupsStriped(backup, backupToMatch));
       StripedBackups = new List<BackupMetadata>(stripes);
     }
 
-    private bool IsStriped(BackupMetadata backup, BackupMetadata backupToMatch)
+    public static bool AreTwoBackupsStriped(BackupMetadata backup, BackupMetadata backupToMatch)
     {
       return new BackupMetadataEqualityComparer().EqualsExceptForPhysicalDeviceName(backup, backupToMatch);
     }
