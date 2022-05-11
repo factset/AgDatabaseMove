@@ -191,12 +191,13 @@ namespace AgDatabaseMove.SmoFacade
 
 
       var restore = new Restore { Database = databaseName, NoRecovery = true };
+      
+      var defaultFileLocations = DefaultFileLocations();
 
       foreach(var stripedBackupSet in stripedBackupSetChain) {
 
         AddBackupDeviceItemsToRestore(restore, stripedBackupSet);
 
-        var defaultFileLocations = DefaultFileLocations();
         if (defaultFileLocations != null)
         {
           AddRelocateFilesToRestore(restore, defaultFileLocations, retryPolicy, fileRelocation);
