@@ -10,27 +10,24 @@ namespace AgDatabaseMove
   {
     public IEnumerable<BackupMetadata> StripedBackups { get; private set; }
 
-    public StripedBackupSet(IEnumerable<BackupMetadata> backups, BackupMetadata backupToMatch)
+    private StripedBackupSet(IEnumerable<BackupMetadata> stripedBackups)
     {
-      var stripes = backups.Where(backup => AreTwoBackupsStriped(backup, backupToMatch));
-      StripedBackups = new List<BackupMetadata>(stripes);
-    }
-
-    public static bool AreTwoBackupsStriped(BackupMetadata backup, BackupMetadata backupToMatch)
-    {
-      return new BackupMetadataEqualityComparer().EqualsExceptForPhysicalDeviceName(backup, backupToMatch);
+      StripedBackups = stripedBackups;
     }
 
     public static IEnumerable<StripedBackupSet> GetStripedBackupSetChain(IEnumerable<BackupMetadata> backups)
     {
-      List<StripedBackupSet> chain = new List<StripedBackupSet>(); 
-      while(backups.Count() > 0)
-      {
-        var backup = backups.First();
-        var stripedBackupSet = new StripedBackupSet(backups, backup);
-        chain.Add(stripedBackupSet);
-        backups = backups.Except(stripedBackupSet.StripedBackups, new BackupMetadataEqualityComparer());
-      }
+      var chain = backups
+        .GroupBy(b => new
+        {
+          b.FirstLsn,
+          b.LastLsn,
+          b.CheckpointLsn,
+          b.DatabaseBackupLsn,
+          b.BackupType,
+          b.DatabaseName
+        })
+        .Select(group => new StripedBackupSet(group.ToList()));
       return chain;
     }
   }
