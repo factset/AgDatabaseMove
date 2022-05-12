@@ -16,9 +16,10 @@ namespace AgDatabaseMove.Unit
     public void CombinesStripedBackups()
     {
       var backupChain = BackupOrder.GetBackupListWithStripes();
+
       var stripedBackupSetChain = StripedBackupSet.GetStripedBackupSetChain(backupChain);
 
-      Assert.Equal(backupChain.Count/2, stripedBackupSetChain.Count());
+      Assert.Equal(backupChain.Distinct(stripedBackupComparer).Count(), stripedBackupSetChain.Count());
     }
 
     [Fact]
@@ -34,6 +35,8 @@ namespace AgDatabaseMove.Unit
     public void StripedBackupsAreEqualExceptForPhysicalDeviceName()
     {
       var backupChain = BackupOrder.GetBackupListWithStripes();
+    
+
       var stripedBackupSetChain = StripedBackupSet.GetStripedBackupSetChain(backupChain);
 
       foreach (var stripedBackupSet in stripedBackupSetChain)
