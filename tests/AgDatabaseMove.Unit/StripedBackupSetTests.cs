@@ -9,6 +9,7 @@ namespace AgDatabaseMove.Unit
   public class StripedBackupSetTests
   {
 
+    private static readonly StripedBackupEqualityComparer stripedBackupComparer = new StripedBackupEqualityComparer();
     private static readonly BackupMetadataEqualityComparer backupComparer = new BackupMetadataEqualityComparer();
 
     [Fact]
@@ -43,7 +44,7 @@ namespace AgDatabaseMove.Unit
         {
           var otherBackup = stripes[i];
           
-          Assert.True(backupComparer.EqualsExceptForPhysicalDeviceName(backup, otherBackup));
+          Assert.Equal(backup, otherBackup, stripedBackupComparer);
           Assert.NotEqual(backup, otherBackup, backupComparer);
         }
       }

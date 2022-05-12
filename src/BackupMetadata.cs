@@ -2,15 +2,12 @@ namespace AgDatabaseMove
 {
   using System;
   using System.Collections.Generic;
+  using System.Linq;
   using SmoFacade;
 
-  public class BackupMetadataEqualityComparer : IEqualityComparer<BackupMetadata>
+  public class StripedBackupEqualityComparer : IEqualityComparer<BackupMetadata>
   {
-    /// <summary>
-    /// This is used for checking similar backups (like striped backups)
-    /// </summary>
-    /// <returns>bool</returns>
-    public bool EqualsExceptForPhysicalDeviceName(BackupMetadata x, BackupMetadata y)
+    public bool Equals(BackupMetadata x, BackupMetadata y)
     {
       return x.LastLsn == y.LastLsn &&
              x.FirstLsn == y.FirstLsn &&
@@ -20,27 +17,38 @@ namespace AgDatabaseMove
              x.DatabaseBackupLsn == x.DatabaseBackupLsn;
     }
 
-    /// <summary>
-    /// This is used for checking exactly the same backup (like finding duplicates)
-    /// </summary>
-    /// <returns>bool</returns>
-    public bool Equals(BackupMetadata x, BackupMetadata y)
-    {
-      return EqualsExceptForPhysicalDeviceName(x, y)
-        && x.PhysicalDeviceName == y.PhysicalDeviceName;
-    }
-
     public int GetHashCode(BackupMetadata obj)
     {
       var hashCode = -1277603921;
       hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(obj.DatabaseName);
-      hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(obj.PhysicalDeviceName);
       hashCode = hashCode * -1521134295 +
                  EqualityComparer<BackupFileTools.BackupType>.Default.GetHashCode(obj.BackupType);
       hashCode = hashCode * -1521134295 + obj.FirstLsn.GetHashCode();
       hashCode = hashCode * -1521134295 + obj.LastLsn.GetHashCode();
       hashCode = hashCode * -1521134295 + obj.CheckpointLsn.GetHashCode();
       hashCode = hashCode * -1521134295 + obj.DatabaseBackupLsn.GetHashCode();
+      return hashCode;
+    }
+
+  }
+
+  /// <summary>
+  /// Two BackupMetadatas are the same, if they are like striped backups but also have the same `PhysicalDeviceName`
+  /// </summary>
+  public class BackupMetadataEqualityComparer : IEqualityComparer<BackupMetadata>
+  {
+    private readonly StripedBackupEqualityComparer _stripedBackupEqualityComparer = new StripedBackupEqualityComparer();
+    
+    public bool Equals(BackupMetadata x, BackupMetadata y)
+    {
+      return _stripedBackupEqualityComparer.Equals(x, y)
+        && x.PhysicalDeviceName == y.PhysicalDeviceName;
+    }
+
+    public int GetHashCode(BackupMetadata obj)
+    {
+      var hashCode = _stripedBackupEqualityComparer.GetHashCode(obj);
+      hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(obj.PhysicalDeviceName);
       return hashCode;
     }
   }
@@ -70,6 +78,24 @@ namespace AgDatabaseMove
     public object Clone()
     {
       return MemberwiseClone();
+    }
+  }
+
+  public class StripedBackupSet
+  {
+    public IEnumerable<BackupMetadata> StripedBackups { get; private set; }
+
+    private StripedBackupSet(IEnumerable<BackupMetadata> stripedBackups)
+    {
+      StripedBackups = stripedBackups;
+    }
+
+    public static IEnumerable<StripedBackupSet> GetStripedBackupSetChain(IEnumerable<BackupMetadata> backups)
+    {
+      var chain = backups
+        .GroupBy(b => b, new StripedBackupEqualityComparer())
+        .Select(group => new StripedBackupSet(group));
+      return chain;
     }
   }
 }
