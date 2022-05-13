@@ -14,7 +14,7 @@ namespace AgDatabaseMove
              x.BackupType == y.BackupType &&
              x.DatabaseName == y.DatabaseName &&
              x.CheckpointLsn == y.CheckpointLsn &&
-             x.DatabaseBackupLsn == x.DatabaseBackupLsn;
+             x.DatabaseBackupLsn == y.DatabaseBackupLsn;
     }
 
     public int GetHashCode(BackupMetadata obj)
