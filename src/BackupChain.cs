@@ -24,7 +24,7 @@ namespace AgDatabaseMove
       if(recentBackups == null || recentBackups.Count == 0)
         throw new BackupChainException("There are no recent backups to form a chain");
 
-      var backups = recentBackups.Distinct(new BackupMetadataEqualityComparer())
+      var backups = recentBackups.Distinct(BackupMetadataEqualityComparer.Instance)
         .Where(IsValidFilePath) // A third party application caused invalid path strings to be inserted into backupmediafamily
         .ToList();
 
@@ -94,7 +94,7 @@ namespace AgDatabaseMove
       return backups.Where(b => b.BackupType == BackupFileTools.BackupType.Log &&
                                 prevBackup.LastLsn >= b.FirstLsn &&
                                 prevBackup.LastLsn <= b.LastLsn &&
-                                !new StripedBackupEqualityComparer().Equals(prevBackup, b));
+                                !StripedBackupEqualityComparer.Instance.Equals(prevBackup, b));
     }
 
     private static bool IsValidFilePath(BackupMetadata meta)

@@ -9,8 +9,8 @@ namespace AgDatabaseMove.Unit
   public class StripedBackupSetTests
   {
 
-    private static readonly StripedBackupEqualityComparer stripedBackupComparer = new StripedBackupEqualityComparer();
-    private static readonly BackupMetadataEqualityComparer backupComparer = new BackupMetadataEqualityComparer();
+    private static readonly StripedBackupEqualityComparer stripedBackupComparer = StripedBackupEqualityComparer.Instance;
+    private static readonly BackupMetadataEqualityComparer backupComparer = BackupMetadataEqualityComparer.Instance;
 
     [Fact]
     public void CombinesStripedBackups()

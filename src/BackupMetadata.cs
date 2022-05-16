@@ -7,6 +7,20 @@ namespace AgDatabaseMove
 
   public class StripedBackupEqualityComparer : IEqualityComparer<BackupMetadata>
   {
+    private static StripedBackupEqualityComparer _instance = null;
+    private StripedBackupEqualityComparer() { }
+
+    public static StripedBackupEqualityComparer Instance {
+      get
+      {
+        if (_instance == null)
+        {
+          _instance = new StripedBackupEqualityComparer();
+        }
+        return _instance;
+      }
+    }
+
     public bool Equals(BackupMetadata x, BackupMetadata y)
     {
       return x.LastLsn == y.LastLsn &&
@@ -37,8 +51,23 @@ namespace AgDatabaseMove
   /// </summary>
   public class BackupMetadataEqualityComparer : IEqualityComparer<BackupMetadata>
   {
-    private readonly StripedBackupEqualityComparer _stripedBackupEqualityComparer = new StripedBackupEqualityComparer();
-    
+    private readonly StripedBackupEqualityComparer _stripedBackupEqualityComparer = StripedBackupEqualityComparer.Instance;
+
+    private static BackupMetadataEqualityComparer _instance = null;
+    private BackupMetadataEqualityComparer() { }
+
+    public static BackupMetadataEqualityComparer Instance
+    {
+      get
+      {
+        if (_instance == null)
+        {
+          _instance = new BackupMetadataEqualityComparer();
+        }
+        return _instance;
+      }
+    }
+
     public bool Equals(BackupMetadata x, BackupMetadata y)
     {
       return _stripedBackupEqualityComparer.Equals(x, y)
@@ -93,7 +122,7 @@ namespace AgDatabaseMove
     public static IEnumerable<StripedBackupSet> GetStripedBackupSetChain(IEnumerable<BackupMetadata> backups)
     {
       var chain = backups
-        .GroupBy(b => b, new StripedBackupEqualityComparer())
+        .GroupBy(b => b, StripedBackupEqualityComparer.Instance)
         .Select(group => new StripedBackupSet(group));
       return chain;
     }
