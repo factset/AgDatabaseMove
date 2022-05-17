@@ -7,19 +7,9 @@ namespace AgDatabaseMove
 
   public class StripedBackupEqualityComparer : IEqualityComparer<BackupMetadata>
   {
-    private static StripedBackupEqualityComparer _instance = null;
+    private static readonly Lazy<StripedBackupEqualityComparer> s_instance = new Lazy<StripedBackupEqualityComparer>(() => new StripedBackupEqualityComparer());
     private StripedBackupEqualityComparer() { }
-
-    public static StripedBackupEqualityComparer Instance {
-      get
-      {
-        if (_instance == null)
-        {
-          _instance = new StripedBackupEqualityComparer();
-        }
-        return _instance;
-      }
-    }
+    public static StripedBackupEqualityComparer Instance => s_instance.Value;
 
     public bool Equals(BackupMetadata x, BackupMetadata y)
     {
@@ -51,22 +41,11 @@ namespace AgDatabaseMove
   /// </summary>
   public class BackupMetadataEqualityComparer : IEqualityComparer<BackupMetadata>
   {
-    private readonly StripedBackupEqualityComparer _stripedBackupEqualityComparer = StripedBackupEqualityComparer.Instance;
+    private static readonly StripedBackupEqualityComparer _stripedBackupEqualityComparer = StripedBackupEqualityComparer.Instance;
 
-    private static BackupMetadataEqualityComparer _instance = null;
+    private static readonly Lazy<BackupMetadataEqualityComparer> s_instance = new Lazy<BackupMetadataEqualityComparer>(() => new BackupMetadataEqualityComparer());
     private BackupMetadataEqualityComparer() { }
-
-    public static BackupMetadataEqualityComparer Instance
-    {
-      get
-      {
-        if (_instance == null)
-        {
-          _instance = new BackupMetadataEqualityComparer();
-        }
-        return _instance;
-      }
-    }
+    public static BackupMetadataEqualityComparer Instance => s_instance.Value;
 
     public bool Equals(BackupMetadata x, BackupMetadata y)
     {
