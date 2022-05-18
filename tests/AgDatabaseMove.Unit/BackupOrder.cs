@@ -32,7 +32,7 @@ namespace AgDatabaseMove.Unit
       return result;
     }
 
-    private static List<BackupMetadata> GetBackupList()
+    public static List<BackupMetadata> GetBackupList()
     {
       return new List<BackupMetadata> {
         new BackupMetadata {
@@ -107,15 +107,24 @@ namespace AgDatabaseMove.Unit
       return list;
     }
 
-    private static List<BackupMetadata> GetBackupListWithStripes()
+    public static List<BackupMetadata> GetBackupListWithStripes()
     {
       var list = GetBackupList();
       var listWithStripes = CloneBackupMetaDataList(list).ToList();
+      var listWithStripes2 = CloneBackupMetaDataList(list).ToList();
+
       listWithStripes.ForEach(b => {
         var path = b.PhysicalDeviceName.Split('.');
         b.PhysicalDeviceName = $"{path[0]}_striped.{path[1]}";
       });
+
+      listWithStripes2.ForEach(b => {
+        var path = b.PhysicalDeviceName.Split('.');
+        b.PhysicalDeviceName = $"{path[0]}_striped2.{path[1]}";
+      });
+
       list.AddRange(listWithStripes);
+      list.AddRange(listWithStripes2);
       return list;
     }
 
