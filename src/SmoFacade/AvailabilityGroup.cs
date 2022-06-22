@@ -57,7 +57,14 @@ namespace AgDatabaseMove.SmoFacade
 
     public void Remove(string dbName)
     {
-      _availabilityGroup.AvailabilityDatabases[dbName]?.Drop();
+      if (IsPrimaryInstance)
+      {
+        _availabilityGroup.AvailabilityDatabases[dbName]?.Drop();
+      } 
+      else
+      {
+        _availabilityGroup.AvailabilityDatabases[dbName]?.LeaveAvailabilityGroup();
+      }
     }
 
     public bool IsInitializing(string dbName)

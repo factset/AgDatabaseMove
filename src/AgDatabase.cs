@@ -99,8 +99,15 @@ namespace AgDatabaseMove
     /// </summary>
     public void Delete()
     {
+      _listener.ForEachAgInstance((s, ag) => {
+        if (!ag.IsPrimaryInstance)
+        {
+          ag.Remove(Name);
+          s.Database(Name)?.Drop();
+        }
+      });
       _listener.AvailabilityGroup.Remove(Name);
-      _listener.ForEachAgInstance(s => s.Database(Name)?.Drop());
+      _listener.Primary.Database(Name)?.Drop();
     }
 
     /// <summary>
