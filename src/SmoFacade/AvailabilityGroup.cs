@@ -60,7 +60,8 @@ namespace AgDatabaseMove.SmoFacade
       if (IsPrimaryInstance)
       {
         _availabilityGroup.AvailabilityDatabases[dbName]?.Drop();
-      } else
+      } 
+      else
       {
         _availabilityGroup.AvailabilityDatabases[dbName]?.LeaveAvailabilityGroup();
       }
