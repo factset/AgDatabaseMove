@@ -35,7 +35,7 @@ namespace AgDatabaseMove
       IEnumerable<BackupMetadata> nextLogBackups;
       while((nextLogBackups = NextLogBackup(backups, prevBackup)).Any()) {
         orderedBackups.AddRange(nextLogBackups);
-        prevBackup = orderedBackups.Last();
+        prevBackup = nextLogBackups.First();
       }
 
       _orderedBackups = orderedBackups;
