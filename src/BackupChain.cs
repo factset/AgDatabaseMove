@@ -35,7 +35,7 @@ namespace AgDatabaseMove
       IEnumerable<BackupMetadata> nextLogBackups;
       while((nextLogBackups = NextLogBackup(backups, prevBackup)).Any()) {
         orderedBackups.AddRange(nextLogBackups);
-        prevBackup = nextLogBackups.First();
+        prevBackup = orderedBackups.Last();
       }
 
       _orderedBackups = orderedBackups;
@@ -94,7 +94,8 @@ namespace AgDatabaseMove
       return backups.Where(b => b.BackupType == BackupFileTools.BackupType.Log &&
                                 prevBackup.LastLsn >= b.FirstLsn &&
                                 prevBackup.LastLsn <= b.LastLsn &&
-                                !StripedBackupEqualityComparer.Instance.Equals(prevBackup, b));
+                                !StripedBackupEqualityComparer.Instance.Equals(prevBackup, b))
+                    .OrderBy(b => b.LastLsn);
     }
 
     private static bool IsValidFilePath(BackupMetadata meta)

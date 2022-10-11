@@ -277,13 +277,14 @@ namespace AgDatabaseMove.Unit
     }
 
     [Fact]
-    public void SingleServerChainSizeEquality()
+    public void SingleServerChainEquality()
     {
       var list = GetBackupListSingleServer();
       var agDb = new Mock<IAgDatabase>();
       agDb.Setup(db => db.RecentBackups()).Returns(list);
       var chain = new BackupChain(agDb.Object).OrderedBackups.ToList();
-      Assert.Equal(list.Count, chain.Count);
+      list.Reverse();
+      Assert.Equal(list, chain);
     }
 
     // TODO: test skipping of logs if diff last LSN and log last LSN matches
