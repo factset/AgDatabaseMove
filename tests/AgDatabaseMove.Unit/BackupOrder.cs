@@ -205,14 +205,15 @@ namespace AgDatabaseMove.Unit
       return list;
     }
 
-    private static void VerifyListIsAValidBackupChain(List<BackupMetadata> backupChain)
+    private static void VerifyListIsAValidBackupChain(List<StripedBackupSet> backupChain)
     {
+      Assert.True(backupChain.Any());
       bool foundFull, foundDiff, foundLog;
       foundFull = foundDiff = foundLog = false;
-      BackupMetadata full = null;
-      BackupMetadata lastBackup = null;
-
-      BackupMetadata currentBackup;
+      StripedBackupSet full = null;
+      StripedBackupSet lastBackup = null;
+      
+      StripedBackupSet currentBackup;
       while((currentBackup = backupChain.FirstOrDefault()) != null) {
         if(currentBackup.BackupType == BackupFileTools.BackupType.Full) {
           Assert.True(!foundFull && !foundDiff && !foundLog);
@@ -274,7 +275,7 @@ namespace AgDatabaseMove.Unit
       var agDatabase = new Mock<IAgDatabase>();
       agDatabase.Setup(agd => agd.RecentBackups()).Returns(backups);
       var chain = new BackupChain(agDatabase.Object).OrderedBackups.ToList();
-      Assert.Equal(backups.GroupBy(b => b.PhysicalDeviceName).Count(), chain.Count);
+      Assert.Equal(backups.Distinct(StripedBackupEqualityComparer.Instance).GroupBy(b => b.PhysicalDeviceName).Count(), chain.Count);
     }
 
     [Fact]

@@ -89,14 +89,28 @@ namespace AgDatabaseMove
     }
   }
 
-  public class StripedBackupSet
+  public class StripedBackupSet : BackupMetadata
   {
     public IEnumerable<BackupMetadata> StripedBackups { get; private set; }
 
     private StripedBackupSet(IEnumerable<BackupMetadata> stripedBackups)
     {
       StripedBackups = stripedBackups;
+      SetMetadata(StripedBackups.First());
     }
+
+    private void SetMetadata(BackupMetadata firstStripe)
+    {
+     CheckpointLsn = firstStripe.CheckpointLsn;
+     DatabaseBackupLsn = firstStripe.DatabaseBackupLsn;
+     DatabaseName = firstStripe.DatabaseName;
+     FirstLsn = firstStripe.FirstLsn;
+     LastLsn = firstStripe.LastLsn;
+     PhysicalDeviceName = null;
+     ServerName = firstStripe.ServerName;
+     StartTime = firstStripe.StartTime; // or is null more appropriate?
+     BackupType = firstStripe.BackupType;
+   }
 
     public static IEnumerable<StripedBackupSet> GetStripedBackupSetChain(IEnumerable<BackupMetadata> backups)
     {
