@@ -30,7 +30,7 @@ namespace AgDatabaseMove
 
       var orderedBackups = MostRecentFullBackup(backups).ToList();
       orderedBackups.AddRange(MostRecentDiffBackup(backups, orderedBackups.First()));
-      orderedBackups.AddRange(FirstBackupInChain(backups, orderedBackups.Last()));
+      orderedBackups.AddRange(FirstLogBackupInChain(backups, orderedBackups.Last()));
 
       var prevBackup = orderedBackups.Last();
       IEnumerable<BackupMetadata> nextLogBackups;
@@ -97,7 +97,7 @@ namespace AgDatabaseMove
                                !StripedBackupEqualityComparer.Instance.Equals(prevBackup, b));
     }
 
-    private static IEnumerable<BackupMetadata> FirstBackupInChain(IEnumerable<BackupMetadata> backups, 
+    private static IEnumerable<BackupMetadata> FirstLogBackupInChain(IEnumerable<BackupMetadata> backups, 
      BackupMetadata lastDiff)
     {
       var possibleLogs = backups.Where(b => b.BackupType == BackupFileTools.BackupType.Log &&
