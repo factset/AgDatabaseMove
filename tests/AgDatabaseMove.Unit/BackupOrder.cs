@@ -93,7 +93,8 @@ namespace AgDatabaseMove.Unit
       };
     }
 
-  public static List<BackupMetadata> GetBackupListSingleServer()
+  // Tests the case where Log1.LastLsn == Diff.LastLsn == Log2.FirstLsn
+  public static List<BackupMetadata> GetBackupListWhereDiffBetweenLogs()
   {
     return new List<BackupMetadata> {
       new BackupMetadata {
@@ -277,14 +278,14 @@ namespace AgDatabaseMove.Unit
     }
 
     [Fact]
-    public void SingleServerChainEquality()
+    public void DiffBetweenTwoLogs()
     {
-      var list = GetBackupListSingleServer();
+      var list = GetBackupListWhereDiffBetweenLogs();
       var agDb = new Mock<IAgDatabase>();
       agDb.Setup(db => db.RecentBackups()).Returns(list);
       var chain = new BackupChain(agDb.Object).OrderedBackups.ToList();
-      list.Reverse();
-      Assert.Equal(list, chain);
+      Assert.Equal(4, chain.Count());
+      VerifyListIsAValidBackupChain(chain);
     }
 
     // TODO: test skipping of logs if diff last LSN and log last LSN matches

@@ -30,6 +30,7 @@ namespace AgDatabaseMove
 
       var orderedBackups = MostRecentFullBackup(backups).ToList();
       orderedBackups.AddRange(MostRecentDiffBackup(backups, orderedBackups.First()));
+      orderedBackups.AddRange(NextLogBackupAfterDiff(backups, orderedBackups.Last()));
 
       var prevBackup = orderedBackups.Last();
       IEnumerable<BackupMetadata> nextLogBackups;
@@ -92,10 +93,20 @@ namespace AgDatabaseMove
     {
       // also gets all the stripes of the next backup
       return backups.Where(b => b.BackupType == BackupFileTools.BackupType.Log &&
-                                prevBackup.LastLsn >= b.FirstLsn &&
-                                prevBackup.LastLsn <= b.LastLsn &&
+                                prevBackup.LastLsn == b.FirstLsn &&
                                 !StripedBackupEqualityComparer.Instance.Equals(prevBackup, b))
                     .OrderBy(b => b.LastLsn);
+    }
+
+    private static IEnumerable<BackupMetadata> NextLogBackupAfterDiff(IEnumerable<BackupMetadata> backups, 
+     BackupMetadata lastDiff)
+    {
+      return backups.Where(b => b.BackupType == BackupFileTools.BackupType.Log &&
+                                       lastDiff.LastLsn >= b.FirstLsn &&
+                                       lastDiff.LastLsn <= b.LastLsn &&
+                                       !StripedBackupEqualityComparer.Instance.Equals(lastDiff, b))
+                    .GroupBy(b => b, StripedBackupEqualityComparer.Instance)
+                    .OrderBy(b => b.First().LastLsn).Last();
     }
 
     private static bool IsValidFilePath(BackupMetadata meta)
