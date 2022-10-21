@@ -24,25 +24,26 @@ namespace AgDatabaseMove
       if(recentBackups == null || recentBackups.Count == 0)
         throw new BackupChainException("There are no recent backups to form a chain");
 
-      var backups = StripedBackupSet.GetStripedBackupSetChain(recentBackups.Distinct(BackupMetadataEqualityComparer.Instance)
-        .Where(IsValidFilePath) // A third party application caused invalid path strings to be inserted into backupmediafamily
-        .ToList());
+      var backups = recentBackups
+                    .Distinct(BackupMetadataEqualityComparer.Instance)
+                    .Where(IsValidFilePath); // A third party application caused invalid path strings to be inserted into backupmediafamily
+      var stripedBackups = StripedBackupSet.GetStripedBackupSetChain(backups).ToList();
 
-      var orderedBackups = new List<StripedBackupSet> { MostRecentFullBackup(backups) };
-      StripedBackupSet diff; 
-      if ((diff = MostRecentDiffBackup(backups, orderedBackups.First())) != null)
+      var orderedBackups = new List<StripedBackupSet> { MostRecentFullBackup(stripedBackups) };
+      var diff = MostRecentDiffBackup(stripedBackups, orderedBackups.First());
+      if (diff != null)
       {
        orderedBackups.Add(diff);
       }
 
-      StripedBackupSet nextLog;
-      if ((nextLog = FirstLogInChain(backups, orderedBackups.Last())) != null)
+      var nextLog = FirstLogInChain(stripedBackups, orderedBackups.Last());
+      if (nextLog != null)
       {
        orderedBackups.Add(nextLog);
       }
 
       var prevBackup = orderedBackups.Last();
-      while((nextLog = NextLogBackup(backups, prevBackup)) != null) { // Need to make sure it returns something significant like null maybe?
+      while((nextLog = NextLogBackup(stripedBackups, prevBackup)) != null) {
         orderedBackups.Add(nextLog);
         prevBackup = nextLog;
       }
@@ -79,7 +80,7 @@ namespace AgDatabaseMove
     }
 
     private static StripedBackupSet MostRecentDiffBackup(IEnumerable<StripedBackupSet> backups,
-      StripedBackupSet lastFullBackup)
+      BackupMetadata lastFullBackup)
     {
       return backups.Where(b => b.BackupType == BackupFileTools.BackupType.Diff &&
                                 b.DatabaseBackupLsn == lastFullBackup.CheckpointLsn)
@@ -88,25 +89,20 @@ namespace AgDatabaseMove
     }
 
     private static StripedBackupSet NextLogBackup(IEnumerable<StripedBackupSet> backups,
-      StripedBackupSet prevLog)
+      BackupMetadata prevLog)
     {
-      // also gets all the stripes of the next backup
-      return backups.Where(b => b.BackupType == BackupFileTools.BackupType.Log &&
-                                prevLog.LastLsn == b.FirstLsn).SingleOrDefault();
+      return backups.SingleOrDefault(b => b.BackupType == BackupFileTools.BackupType.Log &&
+                                          prevLog.LastLsn == b.FirstLsn);
     }
 
     private static StripedBackupSet FirstLogInChain(IEnumerable<StripedBackupSet> backups, 
-     StripedBackupSet lastBackup)
+     BackupMetadata lastBackup)
     {
       var possibleLogs = backups.Where(b => b.BackupType == BackupFileTools.BackupType.Log &&
                                        lastBackup.LastLsn >= b.FirstLsn &&
-                                       lastBackup.LastLsn <= b.LastLsn);
-      if (possibleLogs.Count() > 1)
-      {
-        return possibleLogs.OrderBy(b => b.LastLsn).Last();
-      }
+                                       lastBackup.LastLsn <= b.LastLsn).ToList();
 
-      return possibleLogs.SingleOrDefault();
+      return possibleLogs.OrderByDescending(b => b.LastLsn).FirstOrDefault();
     }
 
     private static bool IsValidFilePath(BackupMetadata meta)
