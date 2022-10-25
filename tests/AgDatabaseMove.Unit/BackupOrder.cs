@@ -212,8 +212,8 @@ namespace AgDatabaseMove.Unit
       foundFull = foundDiff = foundLog = false;
       StripedBackupSet full = null;
       StripedBackupSet lastBackup = null;
-      
       StripedBackupSet currentBackup;
+
       while((currentBackup = backupChain.FirstOrDefault()) != null) {
         if(currentBackup.BackupType == BackupFileTools.BackupType.Full) {
           Assert.True(!foundFull && !foundDiff && !foundLog);
