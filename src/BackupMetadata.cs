@@ -114,7 +114,7 @@ namespace AgDatabaseMove
       PhysicalDeviceName = null;
     }
 
-    public static IEnumerable<StripedBackupSet> GetStripedBackupSetChain(IEnumerable<BackupMetadata> backups)
+    internal static IEnumerable<StripedBackupSet> GetStripedBackupSetChain(IEnumerable<BackupMetadata> backups)
     {
       var chain = backups
         .GroupBy(b => b, StripedBackupEqualityComparer.Instance)
