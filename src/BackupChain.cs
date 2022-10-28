@@ -27,7 +27,7 @@ namespace AgDatabaseMove
       var backups = recentBackups
                     .Distinct(BackupMetadataEqualityComparer.Instance)
                     .Where(IsValidFilePath); // A third party application caused invalid path strings to be inserted into backupmediafamily
-      var stripedBackups = StripedBackupSet.GetStripedBackupSetChain(backups).ToList();
+      var stripedBackups = StripedBackupSet.GetStripedBackupSetChain(backups);
 
       var orderedBackups = new List<StripedBackupSet> { MostRecentFullBackup(stripedBackups) };
       var diff = MostRecentDiffBackup(stripedBackups, orderedBackups.First());
