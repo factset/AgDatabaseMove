@@ -65,7 +65,7 @@
       }
     }
 
-    public static string Combine(string path1, string path2)
+    public static string CombinePaths(string path1, string path2)
     {
       if (string.IsNullOrEmpty(path1)) { return path2; }
       if (string.IsNullOrEmpty(path2)) { return path1; }

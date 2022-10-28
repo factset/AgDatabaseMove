@@ -103,7 +103,7 @@ namespace AgDatabaseMove.Unit
     [InlineData("C:\\dir\\", "\\file.ext", "C:\\dir\\file.ext")]
     public void CombineTests(string path, string file, string answer)
     {
-      Assert.Equal(answer, BackupFileTools.Combine(path, file));
+      Assert.Equal(answer, BackupFileTools.CombinePaths(path, file));
     }
 
   }
