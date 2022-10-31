@@ -34,12 +34,14 @@ namespace AgDatabaseMove
       if (diff != null) { orderedBackups.Add(diff); }
 
       var nextLog = FirstLogInChain(stripedBackups, orderedBackups.Last());
-      if (nextLog != null) { orderedBackups.Add(nextLog); }
-
-      var prevBackup = orderedBackups.Last();
-      while((nextLog = NextLogBackup(stripedBackups, prevBackup)) != null) {
+      if (nextLog != null) { 
         orderedBackups.Add(nextLog);
-        prevBackup = nextLog;
+        var prevBackup = nextLog;
+        while ((nextLog = NextLogBackup(stripedBackups, prevBackup)) != null)
+        {
+          orderedBackups.Add(nextLog);
+          prevBackup = nextLog;
+        }
       }
 
       _orderedBackups = orderedBackups;
