@@ -178,7 +178,7 @@ namespace AgDatabaseMove.SmoFacade
     ///   wait
     /// </param>
     /// <param name="fileRelocation">Option for renaming files during the restore.</param>
-    public void Restore(IEnumerable<StripedBackupSet> stripedBackupSetChain, string databaseName,
+    public void Restore(IEnumerable<StripedBackup> stripedBackupSetChain, string databaseName,
       Func<int, TimeSpan> retryDurationProvider,
       Func<string, string> fileRelocation = null)
     {
@@ -214,9 +214,9 @@ namespace AgDatabaseMove.SmoFacade
     /// <summary>
     /// This is like adding the `FROM URL='&lt;backup file url&gt;'` to the RESTORE T-SQL command
     /// </summary>
-    private void AddBackupDeviceItemsToRestore(Restore restore, StripedBackupSet stripedBackupSet)
+    private void AddBackupDeviceItemsToRestore(Restore restore, StripedBackup stripedBackups)
     {
-      foreach (var stripedBackup in stripedBackupSet.StripedBackups)
+      foreach (var stripedBackup in stripedBackups.StripedBackups)
       {
         var physicalDeviceName = stripedBackup.PhysicalDeviceName;
         var device = BackupFileTools.IsValidFileUrl(physicalDeviceName) ? DeviceType.Url : DeviceType.File;

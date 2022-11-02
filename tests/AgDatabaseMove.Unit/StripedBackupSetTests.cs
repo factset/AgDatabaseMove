@@ -17,7 +17,7 @@ namespace AgDatabaseMove.Unit
     {
       var backupChain = BackupOrder.GetBackupListWithStripes();
 
-      var stripedBackupSetChain = StripedBackupSet.GetStripedBackupSetChain(backupChain);
+      var stripedBackupSetChain = StripedBackup.GetStripedBackupSetChain(backupChain);
 
       Assert.Equal(backupChain.Distinct(stripedBackupComparer).Count(), stripedBackupSetChain.Count());
     }
@@ -26,7 +26,7 @@ namespace AgDatabaseMove.Unit
     public void DoesntCombineNonStripedBackups()
     {
       var backupChain = BackupOrder.GetBackupList();
-      var stripedBackupSetChain = StripedBackupSet.GetStripedBackupSetChain(backupChain);
+      var stripedBackupSetChain = StripedBackup.GetStripedBackupSetChain(backupChain);
 
       Assert.Equal(backupChain.Count, stripedBackupSetChain.Count());
     }
@@ -37,7 +37,7 @@ namespace AgDatabaseMove.Unit
       var backupChain = BackupOrder.GetBackupListWithStripes();
     
 
-      var stripedBackupSetChain = StripedBackupSet.GetStripedBackupSetChain(backupChain);
+      var stripedBackupSetChain = StripedBackup.GetStripedBackupSetChain(backupChain);
 
       foreach (var stripedBackupSet in stripedBackupSetChain)
       {
