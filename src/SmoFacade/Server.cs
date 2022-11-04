@@ -247,7 +247,7 @@ namespace AgDatabaseMove.SmoFacade
         var path = (string)file["Type"] == "L" ? defaultFileLocations?.Log : defaultFileLocations?.Data;
         path ??= Path.GetFullPath(physicalName);
 
-        var newFilePath = Path.Combine(path, fileName);
+        var newFilePath = BackupFileTools.CombinePaths(path, fileName);
 
         restore.RelocateFiles.Add(new RelocateFile((string)file["LogicalName"], newFilePath));
       }

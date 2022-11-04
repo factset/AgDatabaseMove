@@ -79,9 +79,32 @@ namespace AgDatabaseMove.Unit
     [InlineData(@"C:\dir")]
     [InlineData(@"C:\")]
     [InlineData(@"C:\inval|d")]
+    [InlineData(@"C:\is\not/valid")]
+    [InlineData(@"C:/is/not\valid")]
+    [InlineData(@"C:\is\not\/valid")]
+    [InlineData(@"C:/is/not/\valid")]
     public void InValidPathTests(string path)
     {
       Assert.False(BackupFileTools.IsValidFilePath(path));
     }
+
+    [Theory]
+    [InlineData("", "C:\\dir\\file.ext", "C:\\dir\\file.ext")]
+    [InlineData("C:\\dir\\file.ext", "", "C:\\dir\\file.ext")]
+    [InlineData("", "C:/dir/file.ext", "C:/dir/file.ext")]
+    [InlineData("C:/dir/file.ext", "", "C:/dir/file.ext")]
+    [InlineData("C:\\dir\\", "file.ext", "C:\\dir\\file.ext")]
+    [InlineData("C:/dir/", "file.ext", "C:/dir/file.ext")]
+    [InlineData("C:\\dir", "file.ext", "C:\\dir\\file.ext")]
+    [InlineData("C:/dir", "file.ext", "C:/dir/file.ext")]
+    [InlineData("C:/dir", "/file.ext", "C:/dir/file.ext")]
+    [InlineData("C:\\dir", "\\file.ext", "C:\\dir\\file.ext")]
+    [InlineData("C:/dir/", "/file.ext", "C:/dir/file.ext")]
+    [InlineData("C:\\dir\\", "\\file.ext", "C:\\dir\\file.ext")]
+    public void CombineTests(string path, string file, string answer)
+    {
+      Assert.Equal(answer, BackupFileTools.CombinePaths(path, file));
+    }
+
   }
 }

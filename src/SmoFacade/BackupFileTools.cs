@@ -64,5 +64,17 @@
         return false;
       }
     }
+
+    public static string CombinePaths(string path1, string path2)
+    {
+      if (string.IsNullOrEmpty(path1)) { return path2; }
+      if (string.IsNullOrEmpty(path2)) { return path1; }
+
+      // assumes path1 contains desired separators
+      var separator = path1.Contains(@"\") ? @"\" : "/";
+      var path = path1.EndsWith(separator) ? path1.Substring(0, path1.Length - 1) : path1;
+      var file = path2.StartsWith(separator) ? path2.Substring(1) : path2;
+      return $"{path}{separator}{file}";
+    }
   }
 }
