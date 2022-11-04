@@ -28,10 +28,10 @@ namespace AgDatabaseMove
     bool Exists();
     void Delete();
     void LogBackup();
-    List<BackupMetadata> RecentBackups();
+    List<SingleBackup> RecentBackups();
     void JoinAg();
 
-    void Restore(IEnumerable<StripedBackupSet> stripedBackupSetChain, Func<int, TimeSpan> retryDurationProvider,
+    void Restore(IEnumerable<StripedBackup> stripedBackupChain, Func<int, TimeSpan> retryDurationProvider,
       Func<string, string> fileRelocation = null);
 
     void RenameLogicalFileName(Func<string, string> fileRenamer);
@@ -125,10 +125,10 @@ namespace AgDatabaseMove
     /// <param name="backupOrder">An ordered list of backups to restore.</param>
     /// <param name="retryDurationProvider">Retry duration function.</param>
     /// <param name="fileRelocation">A method to generate the new file location when moving the database.</param>
-    public void Restore(IEnumerable<StripedBackupSet> stripedBackupSetChain, Func<int, TimeSpan> retryDurationProvider,
+    public void Restore(IEnumerable<StripedBackup> stripedBackupChain, Func<int, TimeSpan> retryDurationProvider,
       Func<string, string> fileRelocation = null)
     {
-      _listener.ForEachAgInstance(s => s.Restore(stripedBackupSetChain, Name, retryDurationProvider, fileRelocation));
+      _listener.ForEachAgInstance(s => s.Restore(stripedBackupChain, Name, retryDurationProvider, fileRelocation));
     }
 
     public void RenameLogicalFileName(Func<string, string> fileRenamer)
@@ -139,7 +139,7 @@ namespace AgDatabaseMove
     /// <summary>
     ///   Builds a list of recent backups from msdb on each AG instance.
     /// </summary>
-    public List<BackupMetadata> RecentBackups()
+    public List<SingleBackup> RecentBackups()
     {
       // find most recent full backup LSN across all replica servers
       var fullBackupLsnBag = new ConcurrentBag<decimal>();
@@ -155,7 +155,7 @@ namespace AgDatabaseMove
         throw new Exception($"Could not find any full backups for DB '{Name}'");
 
       var databaseBackupLsn = fullBackupLsnBag.Max();
-      var bag = new ConcurrentBag<BackupMetadata>();
+      var bag = new ConcurrentBag<SingleBackup>();
       _listener.ForEachAgInstance(s => s.Database(Name).BackupChainFromLsn(databaseBackupLsn)
                                     .ForEach(backup => bag.Add(backup)));
       return bag.ToList();

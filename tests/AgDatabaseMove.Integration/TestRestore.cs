@@ -19,7 +19,7 @@ namespace AgDatabaseMove.Integration
 
   public class TestRestoreFixture : IDisposable
   {
-    public readonly List<LoginProperties> _preTestLogins;
+    public readonly Dictionary<string, List<LoginProperties>> _preTestLogins = new Dictionary<string, List<LoginProperties>>();
     public readonly AgDatabase _source;
     public readonly AgDatabase _test;
     public TestRestoreConfig _config;
@@ -35,7 +35,10 @@ namespace AgDatabaseMove.Integration
       _test.Delete();
 
       // We only snapshot the primary instance's logins. It works for our integration environment, but we could do better and snapshot each instance's.
-      _preTestLogins = _test._listener.Primary.Logins.Select(l => l.Properties()).ToList();
+      _test._listener.ForEachAgInstance(server => {
+        _preTestLogins.Add(server.Name, server.Logins.Select(l => l.Properties()).ToList());
+      });
+
     }
 
     public void Dispose()
@@ -51,7 +54,7 @@ namespace AgDatabaseMove.Integration
     private void CleanupLogins(Server server)
     {
       var postTestLogins = server.Logins.ToList();
-      var newLogins = postTestLogins.Where(post => _preTestLogins.All(pre => pre.Name != post.Name));
+      var newLogins = postTestLogins.Where(post => _preTestLogins[server.Name].All(pre => pre.Name != post.Name));
       foreach(var login in newLogins) login.Drop();
     }
   }
@@ -89,7 +92,8 @@ namespace AgDatabaseMove.Integration
         Destination = Test,
         Overwrite = false,
         Finalize = false,
-        FileRelocator = RestoreFileRelocator
+        FileRelocator = RestoreFileRelocator,
+        RetryDuration = attempt => TimeSpan.FromSeconds(attempt * 10)
       });
 
       mover.Move();
@@ -131,7 +135,8 @@ namespace AgDatabaseMove.Integration
         Destination = Test,
         Overwrite = false,
         Finalize = false,
-        FileRelocator = RestoreFileRelocator
+        FileRelocator = RestoreFileRelocator,
+        RetryDuration = attempt => TimeSpan.FromSeconds(attempt * 10)
       });
 
       int seconds;
@@ -168,7 +173,8 @@ namespace AgDatabaseMove.Integration
         Destination = Test,
         Finalize = true,
         CopyLogins = true,
-        FileRelocator = RestoreFileRelocator
+        FileRelocator = RestoreFileRelocator,
+        RetryDuration = attempt => TimeSpan.FromSeconds(attempt * 10)
       });
 
       mover.Move();

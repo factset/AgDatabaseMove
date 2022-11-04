@@ -107,9 +107,9 @@ namespace AgDatabaseMove.SmoFacade
     ///   Queries msdb on the instance for backups of this database.
     /// </summary>
     /// <returns>A list of backups known by msdb</returns>
-    public List<BackupMetadata> MostRecentBackupChain()
+    public List<SingleBackup> MostRecentBackupChain()
     {
-      var backups = new List<BackupMetadata>();
+      var backups = new List<SingleBackup>();
 
       var query = "SELECT s.database_name, m.physical_device_name, s.backup_start_date, s.first_lsn, s.last_lsn," +
                   "s.database_backup_lsn, s.checkpoint_lsn, s.[type] AS backup_type, s.server_name, s.recovery_model " +
@@ -134,7 +134,7 @@ namespace AgDatabaseMove.SmoFacade
 
       using var reader = cmd.ExecuteReader();
       while (reader.Read())
-        backups.Add(new BackupMetadata
+        backups.Add(new SingleBackup
         {
           CheckpointLsn = (decimal)reader["checkpoint_lsn"],
           DatabaseBackupLsn = (decimal)reader["database_backup_lsn"],
@@ -176,9 +176,9 @@ namespace AgDatabaseMove.SmoFacade
       return (decimal)lsnValue;
     }
 
-    public List<BackupMetadata> BackupChainFromLsn(decimal checkpointLsn)
+    public List<SingleBackup> BackupChainFromLsn(decimal checkpointLsn)
     {
-      var backups = new List<BackupMetadata>();
+      var backups = new List<SingleBackup>();
 
       var query = "SELECT s.database_name, m.physical_device_name, s.backup_start_date, s.first_lsn, s.last_lsn, " +
                   "s.database_backup_lsn, s.checkpoint_lsn, s.[type] AS backup_type, s.server_name, s.recovery_model " +
@@ -203,7 +203,7 @@ namespace AgDatabaseMove.SmoFacade
 
       using var reader = cmd.ExecuteReader();
       while (reader.Read())
-        backups.Add(new BackupMetadata
+        backups.Add(new SingleBackup
         {
           CheckpointLsn = (decimal)reader["checkpoint_lsn"],
           DatabaseBackupLsn = (decimal)reader["database_backup_lsn"],

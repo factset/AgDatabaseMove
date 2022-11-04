@@ -5,13 +5,13 @@ namespace AgDatabaseMove
   using System.Linq;
   using SmoFacade;
 
-  public class StripedBackupEqualityComparer : IEqualityComparer<BackupMetadata>
+  public class StripedBackupEqualityComparer : IEqualityComparer<SingleBackup>
   {
     private static readonly Lazy<StripedBackupEqualityComparer> s_instance = new Lazy<StripedBackupEqualityComparer>(() => new StripedBackupEqualityComparer());
     private StripedBackupEqualityComparer() { }
     public static StripedBackupEqualityComparer Instance => s_instance.Value;
 
-    public bool Equals(BackupMetadata x, BackupMetadata y)
+    public bool Equals(SingleBackup x, SingleBackup y)
     {
       return x.LastLsn == y.LastLsn &&
              x.FirstLsn == y.FirstLsn &&
@@ -21,7 +21,7 @@ namespace AgDatabaseMove
              x.DatabaseBackupLsn == y.DatabaseBackupLsn;
     }
 
-    public int GetHashCode(BackupMetadata obj)
+    public int GetHashCode(SingleBackup obj)
     {
       var hashCode = -1277603921;
       hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(obj.DatabaseName);
@@ -39,7 +39,7 @@ namespace AgDatabaseMove
   /// <summary>
   /// Two BackupMetadatas are the same, if they are like striped backups but also have the same `PhysicalDeviceName`
   /// </summary>
-  public class BackupMetadataEqualityComparer : IEqualityComparer<BackupMetadata>
+  public class BackupMetadataEqualityComparer : IEqualityComparer<SingleBackup>
   {
     private static readonly StripedBackupEqualityComparer _stripedBackupEqualityComparer = StripedBackupEqualityComparer.Instance;
 
@@ -47,13 +47,13 @@ namespace AgDatabaseMove
     private BackupMetadataEqualityComparer() { }
     public static BackupMetadataEqualityComparer Instance => s_instance.Value;
 
-    public bool Equals(BackupMetadata x, BackupMetadata y)
+    public bool Equals(SingleBackup x, SingleBackup y)
     {
       return _stripedBackupEqualityComparer.Equals(x, y)
         && x.PhysicalDeviceName == y.PhysicalDeviceName;
     }
 
-    public int GetHashCode(BackupMetadata obj)
+    public int GetHashCode(SingleBackup obj)
     {
       var hashCode = _stripedBackupEqualityComparer.GetHashCode(obj);
       hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(obj.PhysicalDeviceName);
@@ -64,14 +64,13 @@ namespace AgDatabaseMove
   /// <summary>
   ///   Metadata about backups from msdb.dbo.backupset and msdb.dbo.backupmediafamily
   /// </summary>
-  public class BackupMetadata : ICloneable
+  public abstract class BackupMetadata : ICloneable
   {
     public decimal CheckpointLsn { get; set; }
     public decimal DatabaseBackupLsn { get; set; }
     public string DatabaseName { get; set; }
     public decimal FirstLsn { get; set; }
     public decimal LastLsn { get; set; }
-    public string PhysicalDeviceName { get; set; }
     public string ServerName { get; set; }
     public DateTime StartTime { get; set; }
 
@@ -82,27 +81,46 @@ namespace AgDatabaseMove
     /// </summary>
     public BackupFileTools.BackupType BackupType { get; set; }
 
+    internal BackupMetadata() { }
+
+    internal BackupMetadata(BackupMetadata backup)
+    {
+      CheckpointLsn = backup.CheckpointLsn;
+      DatabaseBackupLsn = backup.DatabaseBackupLsn;
+      DatabaseName = backup.DatabaseName;
+      FirstLsn = backup.FirstLsn;
+      LastLsn = backup.LastLsn;
+      ServerName = backup.ServerName;
+      StartTime = backup.StartTime;
+      BackupType = backup.BackupType;
+    }
+
     // used during testing
     public object Clone()
     {
       return MemberwiseClone();
     }
+ }
+
+  public class SingleBackup : BackupMetadata
+  {
+    public string PhysicalDeviceName { get; set; }
   }
 
-  public class StripedBackupSet
+  public class StripedBackup : BackupMetadata
   {
-    public IEnumerable<BackupMetadata> StripedBackups { get; private set; }
+    public IEnumerable<SingleBackup> StripedBackups { get; }
 
-    private StripedBackupSet(IEnumerable<BackupMetadata> stripedBackups)
+    private StripedBackup(IEnumerable<SingleBackup> stripedBackups) : base(stripedBackups.First())
     {
       StripedBackups = stripedBackups;
     }
 
-    public static IEnumerable<StripedBackupSet> GetStripedBackupSetChain(IEnumerable<BackupMetadata> backups)
+    internal static IEnumerable<StripedBackup> GetStripedBackupChain(IEnumerable<SingleBackup> backups)
     {
       var chain = backups
         .GroupBy(b => b, StripedBackupEqualityComparer.Instance)
-        .Select(group => new StripedBackupSet(group));
+        .Select(group => new StripedBackup(group));
       return chain;
     }
   }

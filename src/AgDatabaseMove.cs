@@ -66,17 +66,15 @@ namespace AgDatabaseMove
       _options.Source.LogBackup();
 
       var backupChain = new BackupChain(_options.Source);
-      var backupList = backupChain.OrderedBackups.ToList();
+      var stripedBackupList = backupChain.OrderedBackups.ToList();
 
       if(_options.Destination.Restoring && lastLsn != null)
-        backupList.RemoveAll(b => b.LastLsn <= lastLsn.Value);
+        stripedBackupList.RemoveAll(b => b.LastLsn <= lastLsn.Value);
 
-      if(!backupList.Any())
+      if(!stripedBackupList.Any())
         throw new BackupChainException("No backups found to restore");
       
-      var stripedBackupSetChain = StripedBackupSet.GetStripedBackupSetChain(backupList);
-
-      _options.Destination.Restore(stripedBackupSetChain, _options.RetryDuration, _options.FileRelocator);
+      _options.Destination.Restore(stripedBackupList, _options.RetryDuration, _options.FileRelocator);
 
       if(_options.CopyLogins)
         foreach(var loginProperty in _options.Source.AssociatedLogins().Select(UpdateDefaultDb))
@@ -86,7 +84,7 @@ namespace AgDatabaseMove
         _options.Destination.JoinAg();
       }
 
-      return backupList.Max(bl => bl.LastLsn);
+      return stripedBackupList.Max(bl => bl.LastLsn);
     }
   }
 }
