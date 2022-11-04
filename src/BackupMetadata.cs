@@ -116,7 +116,7 @@ namespace AgDatabaseMove
       StripedBackups = stripedBackups;
     }
 
-    internal static IEnumerable<StripedBackup> GetStripedBackupSetChain(IEnumerable<SingleBackup> backups)
+    internal static IEnumerable<StripedBackup> GetStripedBackupChain(IEnumerable<SingleBackup> backups)
     {
       var chain = backups
         .GroupBy(b => b, StripedBackupEqualityComparer.Instance)
