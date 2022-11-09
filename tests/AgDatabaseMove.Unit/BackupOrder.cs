@@ -21,21 +21,21 @@ namespace AgDatabaseMove.Unit
 
     public static IEnumerable<object[]> NegativeTestData => new List<object[]> {
       new object[] { GetBackupListWithoutFull() },
-      new object[] { new List<BackupMetadata>() }
+      new object[] { new List<SingleBackup>() }
     };
 
-    private static IEnumerable<BackupMetadata> CloneBackupMetaDataList(List<BackupMetadata> list)
+    private static IEnumerable<SingleBackup> CloneBackupMetaDataList(List<SingleBackup> list)
     {
-      var result = new List<BackupMetadata>();
-      list.ForEach(b => { result.Add((BackupMetadata)b.Clone()); });
+      var result = new List<SingleBackup>();
+      list.ForEach(b => { result.Add((SingleBackup)b.Clone()); });
       result.Reverse();
       return result;
     }
 
-    public static List<BackupMetadata> GetBackupList()
+    public static List<SingleBackup> GetBackupList()
     {
-      return new List<BackupMetadata> {
-        new BackupMetadata {
+      return new List<SingleBackup> {
+        new SingleBackup {
           BackupType = BackupFileTools.BackupType.Log,
           DatabaseBackupLsn = 126000000943800037,
           CheckpointLsn = 126000000953600034,
@@ -46,7 +46,7 @@ namespace AgDatabaseMove.Unit
           PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\Testdb_backup_2018_10_29_020007_343.trn",
           StartTime = DateTime.Parse("2018-10-29 02:00:07.000")
         },
-        new BackupMetadata {
+        new SingleBackup {
           BackupType = BackupFileTools.BackupType.Log,
           DatabaseBackupLsn = 126000000943800037,
           CheckpointLsn = 126000000953600034,
@@ -57,7 +57,7 @@ namespace AgDatabaseMove.Unit
           PhysicalDeviceName = @"\\DFS\BACKUP\ServerB\testDb\Testdb_backup_2018_10_29_040005_900.trn",
           StartTime = DateTime.Parse("2018-10-29 03:00:06.000")
         },
-        new BackupMetadata {
+        new SingleBackup {
           BackupType = BackupFileTools.BackupType.Full,
           DatabaseBackupLsn = 126000000882000037,
           CheckpointLsn = 126000000943800037,
@@ -68,7 +68,7 @@ namespace AgDatabaseMove.Unit
           PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\Testdb_backup_2018_10_28_000227_200.full",
           StartTime = DateTime.Parse("2018-10-28 00:02:28.000")
         },
-        new BackupMetadata {
+        new SingleBackup {
           BackupType = BackupFileTools.BackupType.Log,
           DatabaseBackupLsn = 126000000943800037,
           CheckpointLsn = 126000000953600034,
@@ -79,7 +79,7 @@ namespace AgDatabaseMove.Unit
           PhysicalDeviceName = @"\\DFS\BACKUP\ServerB\testDb\Testdb_backup_2018_10_29_030006_660.trn",
           StartTime = DateTime.Parse("2018-10-29 03:00:06.000")
         },
-        new BackupMetadata {
+        new SingleBackup {
           BackupType = BackupFileTools.BackupType.Diff,
           DatabaseBackupLsn = 126000000943800037,
           CheckpointLsn = 126000000953600034,
@@ -93,21 +93,83 @@ namespace AgDatabaseMove.Unit
       };
     }
 
-    private static List<BackupMetadata> GetBackupListWithoutLogs()
+  // Tests the case where Log1.LastLsn == Diff.LastLsn == Log2.FirstLsn
+  public static List<SingleBackup> GetBackupListWhereDiffBetweenLogs()
+  {
+    return new List<SingleBackup> {
+      new SingleBackup {
+        BackupType = BackupFileTools.BackupType.Log,
+        DatabaseBackupLsn = 95000000019800037,
+        CheckpointLsn = 95000000037700002,
+        FirstLsn = 95000000037500001,
+        LastLsn = 95000000038000001,
+        DatabaseName = "TestDb",
+        ServerName = "ServerA",
+        PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\Testdb_backup_2018_10_29_020007_819.trn",
+        StartTime = DateTime.Parse("2018-10-29 05:00:07.000")
+      },
+      new SingleBackup {
+        BackupType = BackupFileTools.BackupType.Log,
+        DatabaseBackupLsn = 95000000019800037,
+        CheckpointLsn = 95000000037200002,
+        FirstLsn = 95000000037000001,
+        LastLsn = 95000000037500001,
+        DatabaseName = "TestDb",
+        ServerName = "ServerA",
+        PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\Testdb_backup_2018_10_29_040005_727.trn",
+        StartTime = DateTime.Parse("2018-10-29 04:00:06.000")
+      },
+      new SingleBackup {
+        BackupType = BackupFileTools.BackupType.Log,
+        DatabaseBackupLsn = 95000000019800037,
+        CheckpointLsn = 95000000036700001,
+        FirstLsn = 95000000036200001,
+        LastLsn = 95000000037000001,
+        DatabaseName = "TestDb",
+        ServerName = "ServerA",
+        PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\Testdb_backup_2018_10_29_030006_620.trn",
+        StartTime = DateTime.Parse("2018-10-29 03:00:06.000")
+      },
+      new SingleBackup {
+        BackupType = BackupFileTools.BackupType.Diff,
+        DatabaseBackupLsn = 95000000019800037,
+        CheckpointLsn = 95000000036700001,
+        FirstLsn = 95000000036700001,
+        LastLsn = 95000000037000001,
+        DatabaseName = "TestDb",
+        ServerName = "ServerA",
+        PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\Testdb_backup_2018_10_29_000339_887.diff",
+        StartTime = DateTime.Parse("2018-10-29 02:03:39.000")
+      },
+      new SingleBackup {
+        BackupType = BackupFileTools.BackupType.Full,
+        DatabaseBackupLsn = 93000000021200037,
+        CheckpointLsn = 95000000019800037,
+        FirstLsn = 95000000019800037,
+        LastLsn = 95000000021500001,
+        DatabaseName = "TestDb",
+        ServerName = "ServerA",
+        PhysicalDeviceName = @"\\DFS\BACKUP\ServerA\testDb\Testdb_backup_2018_10_28_000227_815.full",
+        StartTime = DateTime.Parse("2018-10-28 00:02:28.000")
+      }
+    };
+  }
+
+  private static List<SingleBackup> GetBackupListWithoutLogs()
     {
       var list = GetBackupList();
       list.RemoveAll(b => b.BackupType == BackupFileTools.BackupType.Log);
       return list;
     }
 
-    private static List<BackupMetadata> GetBackupListWithoutDiff()
+    private static List<SingleBackup> GetBackupListWithoutDiff()
     {
       var list = GetBackupList();
       list.RemoveAll(b => b.BackupType == BackupFileTools.BackupType.Diff);
       return list;
     }
 
-    public static List<BackupMetadata> GetBackupListWithStripes()
+    public static List<SingleBackup> GetBackupListWithStripes()
     {
       var list = GetBackupList();
       var listWithStripes = CloneBackupMetaDataList(list).ToList();
@@ -128,7 +190,7 @@ namespace AgDatabaseMove.Unit
       return list;
     }
 
-    private static List<BackupMetadata> GetBackupListWithStripesAndDuplicates()
+    private static List<SingleBackup> GetBackupListWithStripesAndDuplicates()
     {
       var listWithStripes = GetBackupListWithStripes();
       var duplicate = CloneBackupMetaDataList(listWithStripes);
@@ -136,21 +198,22 @@ namespace AgDatabaseMove.Unit
       return listWithStripes;
     }
 
-    private static List<BackupMetadata> GetBackupListWithoutFull()
+    private static List<SingleBackup> GetBackupListWithoutFull()
     {
       var list = GetBackupList();
       list.RemoveAll(b => b.BackupType == BackupFileTools.BackupType.Full);
       return list;
     }
 
-    private static void VerifyListIsAValidBackupChain(List<BackupMetadata> backupChain)
+    private static void VerifyListIsAValidBackupChain(List<StripedBackup> backupChain)
     {
+      Assert.True(backupChain.Any());
       bool foundFull, foundDiff, foundLog;
       foundFull = foundDiff = foundLog = false;
-      BackupMetadata full = null;
-      BackupMetadata lastBackup = null;
+      StripedBackup full = null;
+      StripedBackup lastBackup = null;
+      StripedBackup currentBackup;
 
-      BackupMetadata currentBackup;
       while((currentBackup = backupChain.FirstOrDefault()) != null) {
         if(currentBackup.BackupType == BackupFileTools.BackupType.Full) {
           Assert.True(!foundFull && !foundDiff && !foundLog);
@@ -176,7 +239,7 @@ namespace AgDatabaseMove.Unit
 
     [Theory]
     [MemberData(nameof(PositiveTestData))]
-    public void BackupChainIsCorrect(List<BackupMetadata> backupList)
+    public void BackupChainIsCorrect(List<SingleBackup> backupList)
     {
       var agDatabase = new Mock<IAgDatabase>();
       agDatabase.Setup(agd => agd.RecentBackups()).Returns(backupList);
@@ -186,7 +249,7 @@ namespace AgDatabaseMove.Unit
 
     [Theory]
     [MemberData(nameof(NegativeTestData))]
-    public void CanDetectBackupChainIsWrong(List<BackupMetadata> backupList)
+    public void CanDetectBackupChainIsWrong(List<SingleBackup> backupList)
     {
       var agDatabase = new Mock<IAgDatabase>();
       agDatabase.Setup(agd => agd.RecentBackups()).Returns(backupList);
@@ -212,7 +275,18 @@ namespace AgDatabaseMove.Unit
       var agDatabase = new Mock<IAgDatabase>();
       agDatabase.Setup(agd => agd.RecentBackups()).Returns(backups);
       var chain = new BackupChain(agDatabase.Object).OrderedBackups.ToList();
-      Assert.Equal(backups.GroupBy(b => b.PhysicalDeviceName).Count(), chain.Count);
+      Assert.Equal(backups.Distinct(StripedBackupEqualityComparer.Instance).GroupBy(b => b.PhysicalDeviceName).Count(), chain.Count);
+    }
+
+    [Fact]
+    public void DiffBetweenTwoLogs()
+    {
+      var list = GetBackupListWhereDiffBetweenLogs();
+      var agDb = new Mock<IAgDatabase>();
+      agDb.Setup(db => db.RecentBackups()).Returns(list);
+      var chain = new BackupChain(agDb.Object).OrderedBackups.ToList();
+      Assert.Equal(4, chain.Count());
+      VerifyListIsAValidBackupChain(chain);
     }
 
     // TODO: test skipping of logs if diff last LSN and log last LSN matches
