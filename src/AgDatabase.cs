@@ -34,6 +34,9 @@ namespace AgDatabaseMove
     void Restore(IEnumerable<StripedBackup> stripedBackupChain, Func<int, TimeSpan> retryDurationProvider,
       Func<string, string> fileRelocation = null);
 
+    void Restore(SingleBackup fullBackup, Func<int, TimeSpan> retryDurationProvider,
+      Func<string, string> fileRelocation = null);
+
     void RenameLogicalFileName(Func<string, string> fileRenamer);
     void AddLogin(LoginProperties login);
     IEnumerable<LoginProperties> AssociatedLogins();
@@ -129,6 +132,12 @@ namespace AgDatabaseMove
       Func<string, string> fileRelocation = null)
     {
       _listener.ForEachAgInstance(s => s.Restore(stripedBackupChain, Name, retryDurationProvider, fileRelocation));
+    }
+
+    public void Restore(SingleBackup fullBackup, Func<int, TimeSpan> retryDurationProvider,
+      Func<string, string> fileRelocation = null)
+    {
+      _listener.ForEachAgInstance(s => s.Restore(fullBackup, Name, retryDurationProvider, fileRelocation));
     }
 
     public void RenameLogicalFileName(Func<string, string> fileRenamer)
