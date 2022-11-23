@@ -15,6 +15,8 @@ namespace AgDatabaseMove.Integration
   {
     public DatabaseConfig From { get; set; }
     public DatabaseConfig To { get; set; }
+    public string FullBackup { get; set; }
+    public string TestQuery { get; set; }
   }
 
   public class TestRestoreFixture : IDisposable
@@ -182,6 +184,27 @@ namespace AgDatabaseMove.Integration
 
       Test.Delete();
       Assert.False(Test.Exists());
+    }
+
+    [Fact]
+    public void TestSimpleRecovery()
+    {
+      var fullBackup = new SingleBackup { PhysicalDeviceName = Config.FullBackup, BackupType = BackupFileTools.BackupType.Full};
+      Func<int, TimeSpan> retryDurationProvider = attempt => TimeSpan.FromSeconds(10 * attempt);
+      Test.Restore(fullBackup, retryDurationProvider);
+      Test.JoinAg();
+      Assert.True(Test.Exists());
+
+      // Assert database has data from full backup.
+      var connectionStringBuilder = new SqlConnectionStringBuilder(Config.To.ConnectionString);
+      connectionStringBuilder.InitialCatalog = Test.Name;
+      using var connection = new SqlConnection(connectionStringBuilder.ToString());
+      connection.Open();
+      using var testQuery = new SqlCommand(Config.TestQuery, connection);
+      var reader = testQuery.ExecuteReader();
+      Assert.True(reader.HasRows);
+
+      Test.Delete();
     }
   }
 }
