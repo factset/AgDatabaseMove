@@ -137,6 +137,8 @@ namespace AgDatabaseMove
     public void Restore(SingleBackup fullBackup, Func<int, TimeSpan> retryDurationProvider,
       Func<string, string> fileRelocation = null)
     {
+      if(fullBackup.BackupType != BackupFileTools.BackupType.Full)
+        throw new ArgumentException("Provided backup must be a full database backup.");
       _listener.ForEachAgInstance(s => s.Restore(fullBackup, Name, retryDurationProvider, fileRelocation));
     }
 

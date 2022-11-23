@@ -206,5 +206,16 @@ namespace AgDatabaseMove.Integration
 
       Test.Delete();
     }
-  }
+
+    [Fact]
+    public void TestThrowsIfBackupNotFull()
+    {
+      var logBackup = new SingleBackup { PhysicalDeviceName = Config.FullBackup, BackupType = BackupFileTools.BackupType.Log };
+      var diffBackup = new SingleBackup { PhysicalDeviceName = Config.FullBackup, BackupType = BackupFileTools.BackupType.Diff };
+      Func<int, TimeSpan> retryDurationProvider = attempt => TimeSpan.FromSeconds(10 * attempt);
+
+      Assert.Throws<ArgumentException>(() => Test.Restore(logBackup, retryDurationProvider));
+      Assert.Throws<ArgumentException>(() => Test.Restore(diffBackup, retryDurationProvider));
+    }
+ }
 }
