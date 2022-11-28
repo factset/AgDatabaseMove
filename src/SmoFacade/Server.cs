@@ -10,6 +10,7 @@ namespace AgDatabaseMove.SmoFacade
   using Microsoft.SqlServer.Management.Common;
   using Microsoft.SqlServer.Management.Smo;
   using Polly;
+  using Polly.Retry;
 
 
   /// <summary>
@@ -168,10 +169,37 @@ namespace AgDatabaseMove.SmoFacade
       return database == null ? null : new Database(database, this);
     }
 
+    private RetryPolicy GetRestoreRetryPolicy(Func<int, TimeSpan> retryDurationProvider)
+    {
+      return Policy.Handle<ExecutionFailureException>(e => e.InnerException != null
+                                                           && e.InnerException is SqlException
+                                                           && e.InnerException.Message
+                                                             .Contains("The process cannot access the file because it is being used by another process"))
+        .WaitAndRetry(10, retryDurationProvider);
+  }
+
+    public void Restore(SingleBackup fullBackup, string databaseName,
+      Func<int, TimeSpan> retryDurationProvider,
+      Func<string, string> fileRelocation = null)
+    {
+      var retryPolicy = GetRestoreRetryPolicy(retryDurationProvider);
+      var restore = new Restore { Database = databaseName, NoRecovery = true };
+      var defaultFileLocations = DefaultFileLocations();
+
+      AddBackupDeviceItemsToRestore(restore, fullBackup);
+      if (defaultFileLocations != null)
+      {
+        AddRelocateFilesToRestore(restore, defaultFileLocations, retryPolicy, fileRelocation);
+      }
+
+      _server.ConnectionContext.StatementTimeout = 86400; // 60 * 60 * 24 = 24 hours
+      retryPolicy.Execute(() => restore.SqlRestore(_server));
+    }
+
     /// <summary>
     ///   Restores each of the backups. If the default file location is available it will move the files to there.
     /// </summary>
-    /// <param name="backupOrder">An ordered list of backups to apply.</param>
+    /// <param name="stripedBackupSetChain">An ordered list of striped backups to apply.</param>
     /// <param name="databaseName">Database to restore to.</param>
     /// <param name="retryDurationProvider">
     ///   Retry duration function. Retry 10 times, input retry number, output timespan to
@@ -182,21 +210,13 @@ namespace AgDatabaseMove.SmoFacade
       Func<int, TimeSpan> retryDurationProvider,
       Func<string, string> fileRelocation = null)
     {
-      var retryPolicy = Policy
-        .Handle<ExecutionFailureException>(e => e.InnerException != null
-                                                && e.InnerException is SqlException
-                                                && e.InnerException.Message
-                                                  .Contains("The process cannot access the file because it is being used by another process"))
-        .WaitAndRetry(10, retryDurationProvider);
-
-
+      var retryPolicy = GetRestoreRetryPolicy(retryDurationProvider);
       var restore = new Restore { Database = databaseName, NoRecovery = true };
-      
       var defaultFileLocations = DefaultFileLocations();
 
-      foreach(var stripedBackupSet in stripedBackupSetChain) {
+      foreach(var stripedBackups in stripedBackupSetChain) {
 
-        AddBackupDeviceItemsToRestore(restore, stripedBackupSet);
+        AddBackupDeviceItemsToRestore(restore, stripedBackups);
 
         if (defaultFileLocations != null)
         {
@@ -216,17 +236,24 @@ namespace AgDatabaseMove.SmoFacade
     /// </summary>
     private void AddBackupDeviceItemsToRestore(Restore restore, StripedBackup stripedBackups)
     {
-      foreach (var stripedBackup in stripedBackups.StripedBackups)
-      {
-        var physicalDeviceName = stripedBackup.PhysicalDeviceName;
-        var device = BackupFileTools.IsValidFileUrl(physicalDeviceName) ? DeviceType.Url : DeviceType.File;
-
-        var backupDeviceItem = new BackupDeviceItem(physicalDeviceName, device);
-        if (_credentialName != null && device == DeviceType.Url)
-          backupDeviceItem.CredentialName = _credentialName;
-
-        restore.Devices.Add(backupDeviceItem);
+      foreach (var stripe in stripedBackups.StripedBackups) {
+        AddBackupDeviceItemsToRestore(restore, stripe);
       }
+    }
+
+    /// <summary>
+    /// This is like adding the `FROM URL='&lt;backup file url&gt;'` to the RESTORE T-SQL command.
+    /// </summary>
+    private void AddBackupDeviceItemsToRestore(Restore restore, SingleBackup singleBackup)
+    {
+      var physicalDeviceName = singleBackup.PhysicalDeviceName;
+      var device = BackupFileTools.IsValidFileUrl(physicalDeviceName) ? DeviceType.Url : DeviceType.File;
+
+      var backupDeviceItem = new BackupDeviceItem(physicalDeviceName, device);
+      if (_credentialName != null && device == DeviceType.Url)
+        backupDeviceItem.CredentialName = _credentialName;
+
+      restore.Devices.Add(backupDeviceItem);
     }
 
     /// <summary>
