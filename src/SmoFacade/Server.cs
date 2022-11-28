@@ -10,6 +10,7 @@ namespace AgDatabaseMove.SmoFacade
   using Microsoft.SqlServer.Management.Common;
   using Microsoft.SqlServer.Management.Smo;
   using Polly;
+  using Polly.Retry;
 
 
   /// <summary>
@@ -168,17 +169,20 @@ namespace AgDatabaseMove.SmoFacade
       return database == null ? null : new Database(database, this);
     }
 
+    private RetryPolicy GetRestoreRetryPolicy(Func<int, TimeSpan> retryDurationProvider)
+    {
+      return Policy.Handle<ExecutionFailureException>(e => e.InnerException != null
+                                                           && e.InnerException is SqlException
+                                                           && e.InnerException.Message
+                                                             .Contains("The process cannot access the file because it is being used by another process"))
+        .WaitAndRetry(10, retryDurationProvider);
+  }
+
     public void Restore(SingleBackup fullBackup, string databaseName,
       Func<int, TimeSpan> retryDurationProvider,
       Func<string, string> fileRelocation = null)
     {
-      var retryPolicy = Policy
-        .Handle<ExecutionFailureException>(e => e.InnerException != null
-                                                && e.InnerException is SqlException
-                                                && e.InnerException.Message
-                                                  .Contains("The process cannot access the file because it is being used by another process"))
-        .WaitAndRetry(10, retryDurationProvider);
-
+      var retryPolicy = GetRestoreRetryPolicy(retryDurationProvider);
       var restore = new Restore { Database = databaseName, NoRecovery = true };
       var defaultFileLocations = DefaultFileLocations();
 
@@ -206,16 +210,8 @@ namespace AgDatabaseMove.SmoFacade
       Func<int, TimeSpan> retryDurationProvider,
       Func<string, string> fileRelocation = null)
     {
-      var retryPolicy = Policy
-        .Handle<ExecutionFailureException>(e => e.InnerException != null
-                                                && e.InnerException is SqlException
-                                                && e.InnerException.Message
-                                                  .Contains("The process cannot access the file because it is being used by another process"))
-        .WaitAndRetry(10, retryDurationProvider);
-
-
+      var retryPolicy = GetRestoreRetryPolicy(retryDurationProvider);
       var restore = new Restore { Database = databaseName, NoRecovery = true };
-      
       var defaultFileLocations = DefaultFileLocations();
 
       foreach(var stripedBackups in stripedBackupSetChain) {
