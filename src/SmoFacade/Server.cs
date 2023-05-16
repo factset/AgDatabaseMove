@@ -337,7 +337,7 @@ namespace AgDatabaseMove.SmoFacade
     {
       var backupDirectory = BackupDirectoryOrDefault(backupDirectoryPathQuery);
       var filePath =
-        $"{backupDirectory}/{_server.Name}/{databaseName}/{databaseName}_backup_{DateTime.Now.ToString("yyyy_MM_dd_hhmmss_fff")}.{BackupFileTools.BackupTypeToExtension(type)}";
+        $"{backupDirectory}/{_server.ComputerNamePhysicalNetBIOS}/{databaseName}/{databaseName}_backup_{DateTime.Now.ToString("yyyy_MM_dd_hhmmss_fff")}.{BackupFileTools.BackupTypeToExtension(type)}";
       var deviceType = BackupFileTools.IsValidFileUrl(filePath) ? DeviceType.Url : DeviceType.File;
 
       var bdi = new BackupDeviceItem(filePath, deviceType);
