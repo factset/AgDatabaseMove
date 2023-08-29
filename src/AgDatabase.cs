@@ -23,6 +23,7 @@ namespace AgDatabaseMove
 
   public interface IAgDatabase
   {
+    IListener Listener { get; }
     bool Restoring { get; }
     string Name { get; }
     bool Exists();
@@ -78,6 +79,8 @@ namespace AgDatabaseMove
     public decimal SizeMb => _listener.Primary.DatabaseSizeMb(Name);
 
     public int ServerRemainingDiskMb => _listener.Primary.RemainingDiskMb();
+
+    public IListener Listener => _listener;
 
     /// <summary>
     ///   Determines if the database is in a restoring state.
