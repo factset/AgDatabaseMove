@@ -62,7 +62,6 @@ namespace AgDatabaseMove
   public class AgDatabase : IDisposable, IAgDatabase
   {
     private readonly string _backupPathSqlQuery;
-    internal readonly IListener _listener;
 
     /// <summary>
     ///   A constructor that uses a config object for more options.
@@ -72,20 +71,20 @@ namespace AgDatabaseMove
     {
       Name = dbConfig.DatabaseName;
       _backupPathSqlQuery = dbConfig.BackupPathSqlQuery;
-      _listener = new Listener(new SqlConnectionStringBuilder(dbConfig.ConnectionString) { InitialCatalog = "master" },
+      Listener = new Listener(new SqlConnectionStringBuilder(dbConfig.ConnectionString) { InitialCatalog = "master" },
                                dbConfig.CredentialName);
     }
 
-    public decimal SizeMb => _listener.Primary.DatabaseSizeMb(Name);
+    public decimal SizeMb => Listener.Primary.DatabaseSizeMb(Name);
 
-    public int ServerRemainingDiskMb => _listener.Primary.RemainingDiskMb();
+    public int ServerRemainingDiskMb => Listener.Primary.RemainingDiskMb();
 
-    public IListener Listener => _listener;
+    public IListener Listener { get; }
 
     /// <summary>
     ///   Determines if the database is in a restoring state.
     /// </summary>
-    public bool Restoring => _listener.Primary.Database(Name)?.Restoring ?? false;
+    public bool Restoring => Listener.Primary.Database(Name)?.Restoring ?? false;
 
     /// <summary>
     ///   Database name
@@ -97,7 +96,7 @@ namespace AgDatabaseMove
     /// </summary>
     public bool Exists()
     {
-      return _listener.Primary.Database(Name) != null;
+      return Listener.Primary.Database(Name) != null;
     }
 
     /// <summary>
@@ -105,15 +104,15 @@ namespace AgDatabaseMove
     /// </summary>
     public void Delete()
     {
-      _listener.ForEachAgInstance((s, ag) => {
+      Listener.ForEachAgInstance((s, ag) => {
         if (!ag.IsPrimaryInstance)
         {
           ag.Remove(Name);
           s.Database(Name)?.Drop();
         }
       });
-      _listener.AvailabilityGroup.Remove(Name);
-      _listener.Primary.Database(Name)?.Drop();
+      Listener.AvailabilityGroup.Remove(Name);
+      Listener.Primary.Database(Name)?.Drop();
     }
 
     /// <summary>
@@ -121,7 +120,7 @@ namespace AgDatabaseMove
     /// </summary>
     public void LogBackup()
     {
-      _listener.Primary.LogBackup(Name, _backupPathSqlQuery);
+      Listener.Primary.LogBackup(Name, _backupPathSqlQuery);
     }
 
     /// <summary>
@@ -134,7 +133,7 @@ namespace AgDatabaseMove
     public void Restore(IEnumerable<StripedBackup> stripedBackupChain, Func<int, TimeSpan> retryDurationProvider,
       Func<string, string> fileRelocation = null)
     {
-      _listener.ForEachAgInstance(s => s.Restore(stripedBackupChain, Name, retryDurationProvider, fileRelocation));
+      Listener.ForEachAgInstance(s => s.Restore(stripedBackupChain, Name, retryDurationProvider, fileRelocation));
     }
 
     public void Restore(SingleBackup fullBackup, Func<int, TimeSpan> retryDurationProvider,
@@ -142,12 +141,12 @@ namespace AgDatabaseMove
     {
       if(fullBackup.BackupType != BackupFileTools.BackupType.Full)
         throw new ArgumentException("Provided backup must be a full database backup.");
-      _listener.ForEachAgInstance(s => s.Restore(fullBackup, Name, retryDurationProvider, fileRelocation));
+      Listener.ForEachAgInstance(s => s.Restore(fullBackup, Name, retryDurationProvider, fileRelocation));
     }
 
     public void RenameLogicalFileName(Func<string, string> fileRenamer)
     {
-      _listener.Primary.RenameLogicalFileName(Name, fileRenamer);
+      Listener.Primary.RenameLogicalFileName(Name, fileRenamer);
     }
 
     /// <summary>
@@ -157,7 +156,7 @@ namespace AgDatabaseMove
     {
       // find most recent full backup LSN across all replica servers
       var fullBackupLsnBag = new ConcurrentBag<decimal>();
-      _listener.ForEachAgInstance(s => 
+      Listener.ForEachAgInstance(s => 
       {
         var lsn = s.Database(Name).MostRecentFullBackupLsn();
         if (lsn != null)
@@ -170,7 +169,7 @@ namespace AgDatabaseMove
 
       var databaseBackupLsn = fullBackupLsnBag.Max();
       var bag = new ConcurrentBag<SingleBackup>();
-      _listener.ForEachAgInstance(s => s.Database(Name).BackupChainFromLsn(databaseBackupLsn)
+      Listener.ForEachAgInstance(s => s.Database(Name).BackupChainFromLsn(databaseBackupLsn)
                                     .ForEach(backup => bag.Add(backup)));
       return bag.ToList();
     }
@@ -181,11 +180,11 @@ namespace AgDatabaseMove
     public void JoinAg()
     {
       FinalizePrimary();
-      _listener.ForEachAgInstance((s, ag) => {
+      Listener.ForEachAgInstance((s, ag) => {
         if(ag.IsPrimaryInstance)
           ag.JoinPrimary(Name);
       });
-      _listener.ForEachAgInstance((s, ag) => {
+      Listener.ForEachAgInstance((s, ag) => {
         if(!ag.IsPrimaryInstance)
           ag.JoinSecondary(Name);
       });
@@ -193,18 +192,18 @@ namespace AgDatabaseMove
 
     public IEnumerable<LoginProperties> AssociatedLogins()
     {
-      return _listener.Primary.Database(Name).Users.Where(u => u.Login != null && u.Login.Name != "sa")
+      return Listener.Primary.Database(Name).Users.Where(u => u.Login != null && u.Login.Name != "sa")
         .Select(u => u.Login.Properties());
     }
 
     public void DropLogin(LoginProperties login)
     {
-      _listener.ForEachAgInstance(server => server.DropLogin(login));
+      Listener.ForEachAgInstance(server => server.DropLogin(login));
     }
 
     public void DropAllLogins()
     {
-      _listener.ForEachAgInstance(s => s.Database(Name)?.DropAssociatedLogins());
+      Listener.ForEachAgInstance(s => s.Database(Name)?.DropAssociatedLogins());
     }
 
     public void AddLogin(LoginProperties login)
@@ -213,42 +212,42 @@ namespace AgDatabaseMove
         AddNewSqlLogin(login);
       } 
       else {
-        _listener.ForEachAgInstance(server => server.AddLogin(login));
+        Listener.ForEachAgInstance(server => server.AddLogin(login));
       }
     }
 
     private void AddNewSqlLogin(LoginProperties login)
     {
-      var createdLogin = _listener.Primary.AddLogin(login);
+      var createdLogin = Listener.Primary.AddLogin(login);
       login.Sid = createdLogin.Sid;
-      Parallel.ForEach(_listener.Secondaries, server => server.AddLogin(login));
+      Parallel.ForEach(Listener.Secondaries, server => server.AddLogin(login));
     }
 
     public void AddUser(UserProperties user)
     {
-      _listener.Primary.Database(Name).AddUser(user);
+      Listener.Primary.Database(Name).AddUser(user);
     }
 
     public void DropUser(UserProperties user)
     {
-      _listener.Primary.Database(Name)?.DropUser(user);
+      Listener.Primary.Database(Name)?.DropUser(user);
     }
 
     public IEnumerable<RoleProperties> AssociatedRoles()
     {
-      return _listener.Primary.Roles.Select(r => r.Properties());
+      return Listener.Primary.Roles.Select(r => r.Properties());
     }
 
     public void AddRole(LoginProperties login, RoleProperties role)
     {
-      _listener.ForEachAgInstance(server => server.AddRole(login, role));
+      Listener.ForEachAgInstance(server => server.AddRole(login, role));
     }
 
     public void ContainsLogin(string loginName)
     {
       var exceptions = new ConcurrentQueue<Exception>();
 
-      _listener.ForEachAgInstance((s, ag) => {
+      Listener.ForEachAgInstance((s, ag) => {
         try {
           CheckLoginExists(s, ag, loginName);
         }
@@ -271,17 +270,17 @@ namespace AgDatabaseMove
     /// </summary>
     public void Dispose()
     {
-      _listener?.Dispose();
+      Listener?.Dispose();
     }
 
     public void FullBackup()
     {
-      _listener.Primary.FullBackup(Name, _backupPathSqlQuery);
+      Listener.Primary.FullBackup(Name, _backupPathSqlQuery);
     }
 
     public void FinalizePrimary()
     {
-      _listener.ForEachAgInstance(FinalizePrimary);
+      Listener.ForEachAgInstance(FinalizePrimary);
     }
 
     private void FinalizePrimary(Server server, AvailabilityGroup availabilityGroup)
@@ -299,7 +298,7 @@ namespace AgDatabaseMove
     public bool IsInitializing()
     {
       var result = 0;
-      _listener.ForEachAgInstance((s, ag) => {
+      Listener.ForEachAgInstance((s, ag) => {
         if(ag.IsInitializing(Name))
           Interlocked.Increment(ref result);
       });
@@ -308,32 +307,32 @@ namespace AgDatabaseMove
 
     public void RestrictedUserMode()
     {
-      _listener.Primary.Database(Name).RestrictedUserMode();
+      Listener.Primary.Database(Name).RestrictedUserMode();
     }
 
     public void MultiUserMode()
     {
-      _listener.Primary.Database(Name).MultiUserMode();
+      Listener.Primary.Database(Name).MultiUserMode();
     }
 
     public void SetSizeLimit(int maxMB)
     {
-      _listener.Primary.Database(Name).SetSizeLimit(maxMB);
+      Listener.Primary.Database(Name).SetSizeLimit(maxMB);
     }
 
     public void SetGrowthRate(int growthMB)
     {
-      _listener.Primary.Database(Name).SetGrowthRate(growthMB);
+      Listener.Primary.Database(Name).SetGrowthRate(growthMB);
     }
 
     public void SetLogGrowthRate(int growthMB)
     {
-      _listener.Primary.Database(Name).SetLogGrowthRate(growthMB);
+      Listener.Primary.Database(Name).SetLogGrowthRate(growthMB);
     }
 
     public void CheckDBConnections(int connectionTimeout)
     {
-      _listener.ForEachAgInstance(server => server.CheckDBConnection(Name, connectionTimeout));
+      Listener.ForEachAgInstance(server => server.CheckDBConnection(Name, connectionTimeout));
     }
 
     private void CheckLoginExists(Server server, AvailabilityGroup availabilityGroup, string loginName)
@@ -342,15 +341,15 @@ namespace AgDatabaseMove
 
       if(matchingLogins.Count() == 0)
         throw new
-          MissingLoginException($"Login missing on {server.Name}, {_listener.AvailabilityGroup.Name}, {loginName}");
+          MissingLoginException($"Login missing on {server.Name}, {Listener.AvailabilityGroup.Name}, {loginName}");
 
       if(matchingLogins.Count() > 1)
         throw new
-          MultipleLoginException($"Multiple logins exist on {server.Name}, {_listener.AvailabilityGroup.Name}, {loginName}");
+          MultipleLoginException($"Multiple logins exist on {server.Name}, {Listener.AvailabilityGroup.Name}, {loginName}");
 
       var sid = matchingLogins.First().Sid;
       if(sid == null || sid.Length == 0)
-        throw new MissingSidException($"Sid missing on {server.Name}, {_listener.AvailabilityGroup.Name}, {loginName}");
+        throw new MissingSidException($"Sid missing on {server.Name}, {Listener.AvailabilityGroup.Name}, {loginName}");
     }
   }
 }

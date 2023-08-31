@@ -37,7 +37,7 @@ namespace AgDatabaseMove.Integration
       _test.Delete();
 
       // We only snapshot the primary instance's logins. It works for our integration environment, but we could do better and snapshot each instance's.
-      _test._listener.ForEachAgInstance(server => {
+      _test.Listener.ForEachAgInstance(server => {
         _preTestLogins.Add(server.Name, server.Logins.Select(l => l.Properties()).ToList());
       });
 
@@ -46,7 +46,7 @@ namespace AgDatabaseMove.Integration
     public void Dispose()
     {
       if(_test != null) {
-        _test._listener.ForEachAgInstance(CleanupLogins);
+        _test.Listener.ForEachAgInstance(CleanupLogins);
         _test.Dispose();
       }
 
