@@ -20,6 +20,12 @@ jobs:
           BuildConfiguration: Debug
 
     steps:
+    - task: UseDotNet@2
+      displayName: 'Use dotnet 2.0'
+      inputs:
+        packageType: sdk
+        version: 2.0
+        installationPath: $(Agent.ToolsDirectory)/dotnet
     - task: DotNetCoreCLI@2
       inputs:
         command: 'restore'
