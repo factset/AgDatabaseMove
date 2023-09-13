@@ -51,9 +51,9 @@
     private IEnumerable<SmoFacade.Login> GetCreatedLogins()
     {
       List<SmoFacade.Login> logins = new List<SmoFacade.Login>();
-      logins.Add(_agDatabase._listener.Primary.Logins
+      logins.Add(_agDatabase.Listener.Primary.Logins
                    .SingleOrDefault(l => l.Name.Equals(_loginConfig.LoginName, StringComparison.InvariantCultureIgnoreCase)));
-      foreach (var server in _agDatabase._listener.Secondaries)
+      foreach (var server in _agDatabase.Listener.Secondaries)
       {
         logins.Add(server.Logins
                      .SingleOrDefault(l => l.Name.Equals(_loginConfig.LoginName, StringComparison.InvariantCultureIgnoreCase)));

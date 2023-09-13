@@ -9,7 +9,7 @@ namespace AgDatabaseMove.SmoFacade
   using System.Threading.Tasks;
 
 
-  internal interface IListener : IDisposable
+  public interface IListener : IDisposable
   {
     /// <summary>
     ///   The primary instance at the time of construction.

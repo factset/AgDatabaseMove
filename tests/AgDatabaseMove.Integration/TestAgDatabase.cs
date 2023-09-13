@@ -29,14 +29,14 @@
     [Fact]
     public void TestUserExists()
     {
-      var db = _fixture._agDatabase._listener.Primary.Database(_fixture._agConfig.DatabaseName);
+      var db = _fixture._agDatabase.Listener.Primary.Database(_fixture._agConfig.DatabaseName);
       Assert.Contains(_fixture._loginConfig.LoginName, db.Users.Select(u => u.Name));
     }
 
     [Fact]
     public void TestUserHasRoles()
     {
-      var db = _fixture._agDatabase._listener.Primary.Database(_fixture._agConfig.DatabaseName)._database;
+      var db = _fixture._agDatabase.Listener.Primary.Database(_fixture._agConfig.DatabaseName)._database;
       var user = db.Users[_fixture._loginConfig.LoginName];
       Assert.True(user.EnumRoles().Contains("db_datareader"));
     }
@@ -44,7 +44,7 @@
     [Fact]
     public void TestUserHasPermissions()
     {
-      var db = _fixture._agDatabase._listener.Primary.Database(_fixture._loginConfig.DefaultDatabase)._database;
+      var db = _fixture._agDatabase.Listener.Primary.Database(_fixture._loginConfig.DefaultDatabase)._database;
       var permissions = db.EnumDatabasePermissions(_fixture._loginConfig.LoginName);
       Assert.NotNull(permissions.FirstOrDefault(p => p.PermissionType.Execute));
     }
