@@ -54,7 +54,9 @@ namespace AgDatabaseMove.SmoFacade
     /// <returns>A string containing the hex representation of the password hash.</returns>
     public string PasswordHash()
     {
-      var sql = "SELECT password_hash as passwordHash FROM sys.sql_logins WHERE name = @loginName";
+      var sqlVersion = _server._server.Version;
+      var sql = sqlVersion.Major < 13 ? "SELECT CAST(password AS varbinary(max)) as passwordHash FROM sys.syslogins WHERE name = @loginName" 
+        : "SELECT password_hash as passwordHash FROM sys.sql_logins WHERE name = @loginName";
 
       var cmd = new SqlCommand(sql, _server.SqlConnection);
       var dbName = cmd.CreateParameter();
