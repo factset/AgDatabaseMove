@@ -17,7 +17,7 @@
     public static bool IsValidFileUrl(string path)
     {
       return Uri.TryCreate(path, UriKind.Absolute, out var uriResult)
-             && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps || uriResult.IsUnc)
+             && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps)
              && Path.HasExtension(path);
     }
 
