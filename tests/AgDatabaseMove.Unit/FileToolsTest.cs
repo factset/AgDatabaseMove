@@ -15,9 +15,6 @@ namespace AgDatabaseMove.Unit
     [InlineData(@"https://storage-account.blob.core.windows.net/container/file.bad")]
     [InlineData(@"https://storage-account.blob.core.windows.net/container/sql/db_name/backup_2020_09_02_170003_697.trn")]
     [InlineData(@"http://a.bak")]
-    [InlineData(@"\\UNC\syntax\path\file.ext")]
-    [InlineData(@"\\server\file.ext")]
-    [InlineData(@"//Unix/syntax/file.ext")]
     public void ValidUrlTests(string url)
     {
       Assert.True(BackupFileTools.IsValidFileUrl(url));
@@ -59,8 +56,13 @@ namespace AgDatabaseMove.Unit
     }
 
     [Theory]
-    [InlineData(@"C:\dir\file.ext")]
     [InlineData(@"/some/file.ext")]
+    [InlineData(@"\\UNC\syntax\path\file.ext")]
+    [InlineData(@"\\server\file.ext")]
+    [InlineData(@"//Unix/syntax/file.ext")]
+    [InlineData(@"\\backup-server\dfs\backup\database.bak")]
+    [InlineData(@"\\storage-array\shared\backups\full_backup.full")]
+    [InlineData(@"\\network-storage\logs\transaction_log.trn")]
     public void ValidPathTests(string path)
     {
       Assert.True(BackupFileTools.IsValidFilePath(path));
@@ -83,6 +85,9 @@ namespace AgDatabaseMove.Unit
     [InlineData(@"C:/is/not\valid")]
     [InlineData(@"C:\is\not\/valid")]
     [InlineData(@"C:/is/not/\valid")]
+    [InlineData(@"\\server")]
+    [InlineData(@"\\server\dir")]
+    [InlineData(@"\\server\dir\")]
     public void InValidPathTests(string path)
     {
       Assert.False(BackupFileTools.IsValidFilePath(path));
