@@ -56,6 +56,7 @@ namespace AgDatabaseMove.Unit
     }
 
     [Theory]
+    [InlineData(@"C:\dir\file.ext")]
     [InlineData(@"/some/file.ext")]
     [InlineData(@"\\UNC\syntax\path\file.ext")]
     [InlineData(@"\\server\file.ext")]
