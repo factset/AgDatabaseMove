@@ -28,7 +28,8 @@ namespace AgDatabaseMove
     string Name { get; }
     bool Exists();
     void Delete();
-    void LogBackup();
+    void FullBackup(string fileName = null);
+    void LogBackup(string fileName = null);
     List<SingleBackup> RecentBackups();
     void JoinAg();
 
@@ -118,9 +119,9 @@ namespace AgDatabaseMove
     /// <summary>
     ///   Takes a log backup on the primary instance.
     /// </summary>
-    public void LogBackup()
+    public void LogBackup(string fileName = null)
     {
-      Listener.Primary.LogBackup(Name, _backupPathSqlQuery);
+      Listener.Primary.LogBackup(Name, _backupPathSqlQuery, fileName);
     }
 
     /// <summary>
@@ -273,9 +274,9 @@ namespace AgDatabaseMove
       Listener?.Dispose();
     }
 
-    public void FullBackup()
+    public void FullBackup(string fileName = null)
     {
-      Listener.Primary.FullBackup(Name, _backupPathSqlQuery);
+      Listener.Primary.FullBackup(Name, _backupPathSqlQuery, fileName);
     }
 
     public void FinalizePrimary()
