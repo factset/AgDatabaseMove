@@ -28,8 +28,8 @@ namespace AgDatabaseMove
     string Name { get; }
     bool Exists();
     void Delete();
-    void FullBackup(string fileName = null);
-    void LogBackup(string fileName = null);
+    void FullBackup();
+    void LogBackup();
     List<SingleBackup> RecentBackups();
     void JoinAg();
 
@@ -63,6 +63,7 @@ namespace AgDatabaseMove
   public class AgDatabase : IDisposable, IAgDatabase
   {
     private readonly string _backupPathSqlQuery;
+    private readonly Func<string, BackupFileTools.BackupType, string> _backupFileNamer;
 
     /// <summary>
     ///   A constructor that uses a config object for more options.
@@ -72,6 +73,7 @@ namespace AgDatabaseMove
     {
       Name = dbConfig.DatabaseName;
       _backupPathSqlQuery = dbConfig.BackupPathSqlQuery;
+      _backupFileNamer = dbConfig.BackupFileNamer;
       Listener = new Listener(new SqlConnectionStringBuilder(dbConfig.ConnectionString) { InitialCatalog = "master" },
                                dbConfig.CredentialName);
     }
@@ -119,9 +121,9 @@ namespace AgDatabaseMove
     /// <summary>
     ///   Takes a log backup on the primary instance.
     /// </summary>
-    public void LogBackup(string fileName = null)
+    public void LogBackup()
     {
-      Listener.Primary.LogBackup(Name, _backupPathSqlQuery, fileName);
+      Listener.Primary.LogBackup(Name, _backupPathSqlQuery, _backupFileNamer);
     }
 
     /// <summary>
@@ -274,9 +276,9 @@ namespace AgDatabaseMove
       Listener?.Dispose();
     }
 
-    public void FullBackup(string fileName = null)
+    public void FullBackup()
     {
-      Listener.Primary.FullBackup(Name, _backupPathSqlQuery, fileName);
+      Listener.Primary.FullBackup(Name, _backupPathSqlQuery, _backupFileNamer);
     }
 
     public void FinalizePrimary()
