@@ -1,5 +1,6 @@
 ﻿namespace AgDatabaseMove
 {
+  using System;
   using SmoFacade;
 
 
@@ -25,6 +26,15 @@
     ///   <example> SELECT Backup_path FROM [msdb].[dbo].[_Sys_Backup_config]</example>
     /// </summary>
     public string BackupPathSqlQuery { get; set; }
+
+    /// <summary>
+    ///   Optional delegate to customize backup file naming. Receives the database name and backup type,
+    ///   and returns the file path relative to the backup directory, excluding the file extension.
+    ///   The library appends the appropriate extension (.bak, .trn, .diff) automatically.
+    ///   When null, the default naming convention is used:
+    ///   {ComputerNamePhysicalNetBIOS}/{databaseName}/{databaseName}_backup_{timestamp}
+    /// </summary>
+    public Func<string, BackupFileTools.BackupType, string> BackupFileNamer { get; set; }
 
     /// <summary>
     ///   Server credential used for backup and restore operations. Necessary for SqlServer 2012 and older

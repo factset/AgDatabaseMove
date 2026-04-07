@@ -307,11 +307,12 @@ namespace AgDatabaseMove.SmoFacade
     ///   {0} databaseName
     ///   {1} time
     /// </param>
-    public void LogBackup(string databaseName, string backupDirectoryPathQuery = null)
+    public void LogBackup(string databaseName, string backupDirectoryPathQuery = null,
+      Func<string, BackupFileTools.BackupType, string> backupFileNamer = null)
     {
       var backup = new Backup
         { Action = BackupActionType.Log, Database = databaseName, LogTruncation = BackupTruncateLogType.Truncate };
-      Backup(backup, backupDirectoryPathQuery, databaseName, BackupFileTools.BackupType.Log);
+      Backup(backup, backupDirectoryPathQuery, databaseName, BackupFileTools.BackupType.Log, backupFileNamer);
     }
 
     /// <summary>
@@ -324,20 +325,31 @@ namespace AgDatabaseMove.SmoFacade
     ///   {0} databaseName
     ///   {1} time
     /// </param>
-    public void FullBackup(string databaseName, string backupDirectoryPathQuery = null)
+    public void FullBackup(string databaseName, string backupDirectoryPathQuery = null,
+      Func<string, BackupFileTools.BackupType, string> backupFileNamer = null)
     {
       var backup = new Backup {
         Action = BackupActionType.Database, Database = databaseName, LogTruncation = BackupTruncateLogType.NoTruncate
       };
-      Backup(backup, backupDirectoryPathQuery, databaseName, BackupFileTools.BackupType.Full);
+      Backup(backup, backupDirectoryPathQuery, databaseName, BackupFileTools.BackupType.Full, backupFileNamer);
+    }
+
+    private string BackupFileNameOrDefault(Func<string, BackupFileTools.BackupType, string> backupFileNamer,
+      string databaseName, BackupFileTools.BackupType type)
+    {
+      var ext = BackupFileTools.BackupTypeToExtension(type);
+      var baseName = backupFileNamer != null
+        ? backupFileNamer(databaseName, type)
+        : $"{_server.ComputerNamePhysicalNetBIOS}/{databaseName}/{databaseName}_backup_{DateTime.Now:yyyy_MM_dd_hhmmss_fff}";
+      return $"{baseName}.{ext}";
     }
 
     private void Backup(Backup backup, string backupDirectoryPathQuery, string databaseName,
-      BackupFileTools.BackupType type)
+      BackupFileTools.BackupType type, Func<string, BackupFileTools.BackupType, string> backupFileNamer)
     {
       var backupDirectory = BackupDirectoryOrDefault(backupDirectoryPathQuery);
-      var filePath =
-        $"{backupDirectory}/{_server.ComputerNamePhysicalNetBIOS}/{databaseName}/{databaseName}_backup_{DateTime.Now.ToString("yyyy_MM_dd_hhmmss_fff")}.{BackupFileTools.BackupTypeToExtension(type)}";
+      var file = BackupFileNameOrDefault(backupFileNamer, databaseName, type);
+      var filePath = $"{backupDirectory}/{file}";
       var deviceType = BackupFileTools.IsValidFileUrl(filePath) ? DeviceType.Url : DeviceType.File;
 
       var bdi = new BackupDeviceItem(filePath, deviceType);
