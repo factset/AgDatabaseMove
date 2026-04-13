@@ -349,7 +349,7 @@ namespace AgDatabaseMove.SmoFacade
     {
       var backupDirectory = BackupDirectoryOrDefault(backupDirectoryPathQuery);
       var file = BackupFileNameOrDefault(backupFileNamer, databaseName, type);
-      var filePath = $"{backupDirectory}/{file}";
+      var filePath = BackupFileTools.CombinePaths(backupDirectory, file);
       var deviceType = BackupFileTools.IsValidFileUrl(filePath) ? DeviceType.Url : DeviceType.File;
 
       var bdi = new BackupDeviceItem(filePath, deviceType);
