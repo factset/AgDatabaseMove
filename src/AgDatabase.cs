@@ -43,6 +43,8 @@ namespace AgDatabaseMove
     void AddLogin(LoginProperties login);
     IEnumerable<LoginProperties> AssociatedLogins();
     void DropLogin(LoginProperties login);
+    void EnableLogin(LoginProperties login);
+    void DisableLogin(LoginProperties login);
     void DropAllLogins();
     void AddUser(UserProperties user);
     void DropUser(UserProperties user);
@@ -202,6 +204,16 @@ namespace AgDatabaseMove
     public void DropLogin(LoginProperties login)
     {
       Listener.ForEachAgInstance(server => server.DropLogin(login));
+    }
+
+    public void EnableLogin(LoginProperties login)
+    {
+        Listener.ForEachAgInstance(server => server.EnableLogin(login));
+    }
+
+    public void DisableLogin(LoginProperties login)
+    {
+        Listener.ForEachAgInstance(server => server.DisableLogin(login));
     }
 
     public void DropAllLogins()
