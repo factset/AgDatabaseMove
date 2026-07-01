@@ -62,6 +62,16 @@ namespace AgDatabaseMove.SmoFacade
       _server.Logins[login.Name]?.DropIfExists();
     }
 
+    public void EnableLogin(LoginProperties login)
+    {
+       _server.Logins[login.Name]?.Enable();
+    }
+
+    public void DisableLogin(LoginProperties login)
+    {
+       _server.Logins[login.Name]?.Disable();
+    }
+
     public decimal DatabaseSizeMb(string dbName)
     {
       var query = "SELECT total_size_mb = (SUM(size) * 8. / 1024) " +
